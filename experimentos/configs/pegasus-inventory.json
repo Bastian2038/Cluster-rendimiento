@@ -1,0 +1,21 @@
+{
+  "protocol_version": "pegasus-idle-v1",
+  "node": {"alias": "Pegasus", "expected_hostname": "spark-cfea", "node_count": 1, "role": "observer", "rank": null},
+  "duration_seconds": 300,
+  "interval_seconds": 1,
+  "warmup_seconds": 0,
+  "trial": 1,
+  "repetitions": 1,
+  "idle_thresholds": {
+    "cpu_busy_p95_pct": 10,
+    "gpu_utilization_p95_pct": 5,
+    "memory_available_drift_mib": 1024,
+    "max_sample_lateness_seconds": 0.5
+  },
+  "notes": [
+    "Referencia exploratoria del sistema, no benchmark de Qwen.",
+    "No detener servicios ni vaciar caches. VS Code y Codex pueden permanecer activos.",
+    "Umbrales operacionales provisionales; no especificaciones NVIDIA.",
+    "Sin carga experimental iniciada por este recolector; observar procesos durante la ventana."
+  ]
+}

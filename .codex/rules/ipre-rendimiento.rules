@@ -1,0 +1,25 @@
+# Reglas locales: se combinan con las globales al abrir ipre-rendimiento como proyecto confiable.
+# prompt prevalece sobre allow; no se cambia la autorización de nvidia-smi.
+prefix_rule(
+    pattern = ["docker", "exec"],
+    decision = "prompt",
+    justification = "Revisar el comando y contenedor de destino antes de ejecutar dentro de un contenedor en ipre-rendimiento.",
+    match = ["docker exec example-container true", "docker exec -i example-container python3 --version"],
+    not_match = ["docker ps", "docker inspect example-container"],
+)
+
+prefix_rule(
+    pattern = ["npx", "skills", "add"],
+    decision = "prompt",
+    justification = "Revisar origen y alcance antes de instalar skills desde ipre-rendimiento; esta regla también incluye --list.",
+    match = ["npx skills add example/repo", "npx skills add nvidia/skills --list"],
+    not_match = ["npx skills list"],
+)
+
+prefix_rule(
+    pattern = ["npx", "--yes", "skills", "add"],
+    decision = "prompt",
+    justification = "Revisar origen y alcance antes de instalar skills desde ipre-rendimiento; --yes no evita esta aprobación.",
+    match = ["npx --yes skills add example/repo", "npx --yes skills add nvidia/skills --list"],
+    not_match = ["npx --yes skills list"],
+)

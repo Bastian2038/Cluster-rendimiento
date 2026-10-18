@@ -1,0 +1,18 @@
+__MACOSX/
+__pycache__/
+*.py[cod]
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode
+
+# Artefactos generados por ejecuciones. Los datos raw son inmutables y se
+# conservan fuera de Git; configuraciones, esquemas y resúmenes sí se versionan.
+resultados/raw/
+resultados/tmp/

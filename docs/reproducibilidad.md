@@ -1,0 +1,19 @@
+# Reproducibilidad de campañas de rendimiento
+
+La capa actual de biblioteca estándar proporciona `infraestructura.manifest`, `infraestructura.inventory` y `infraestructura.inventory_report`, con esquemas JSON 2.0. Un inventario registra configuración observada; no mide inferencia ni SFT. Los runners de rendimiento siguen pendientes. La [metodología](metodologia-rendimiento.md) define variables y métricas.
+
+## Identidad y evidencia
+
+Cada corrida registra `run_id`, fecha, hosts observados, commit y estado Git, configuración solicitada, entorno efectivo, inputs con hashes, logs, telemetría y resultados raw. El manifiesto compacto `manifest.json` referencia por SHA-256 a `raw/context.json`; el contexto indexa los otros artefactos. `COMPLETE` o `FAILED` marca el cierre. Un host solicitado no se considera participante hasta verificar evidencia efectiva por nodo/rank. Conservar separados valores solicitados y observados y declarar diferencias.
+
+Para inventario, `kind=system-baseline` usa `model=null`: no inventar revisión de modelo ni usar `allow-floating-revision`. El [protocolo de Pegasus](inventario-pegasus.md) define captura y criterios de reposo. Un informe se deriva sin repetir captura mediante `python3 -m infraestructura.inventory_report resultados/raw/system-baseline/<run_id> --output <ruta-nueva>.md`. `COMPLETE` confirma adquisición; `assessment.idle_status` evalúa reposo. Ninguno equivale a benchmark de Qwen.
+
+Para una futura corrida Qwen, fijar modelo y tokenizer con revisiones Git completas, variante, dtype, cuantización, framework/versión, dataset/carga con hash, parámetros, semilla, comando y recursos. Registrar warmup, ventana, repeticiones, trial, estrategia y grados de paralelización, backend, batch/microbatch/acumulación cuando apliquen, y métricas con definición/unidades. En multi-node añadir identidad de nodos, roles/ranks, world size, launcher, mapeo a dispositivos, red/NCCL relevante, logs y telemetría por nodo/rank. El manifiesto es base común: el runner futuro debe aportar esas mediciones propias.
+
+## Ciclo de vida
+
+`python3 -m infraestructura.manifest start` valida configuración y crea un directorio nuevo `resultados/raw/<kind>/<run_id>/`. La CLI admite `--kind`, `--model-id`, `--model-revision`, `--tokenizer-id`, `--tokenizer-revision`, `--config` y entradas `--input nombre=ruta`; consultar `--help` antes de preparar una ejecución. El modo estricto requiere Git identificable, árbol limpio y revisiones inmutables de 40 caracteres para corridas con modelo. `--allow-dirty`, `--allow-floating-revision` y `--allow-missing-git` son excepciones explícitas para desarrollo, no evidencia definitiva.
+
+El runner autorizado escribe observaciones nuevas dentro de la corrida. `python3 -m infraestructura.manifest finalize <run_dir> --status complete` comprueba entradas, inventaría artefactos y cierra; usar `--status failed --error <descripción>` ante fallas. No reutilizar `run_id` ni modificar raw después del cierre. Para leer una corrida cerrada usar `infraestructura.manifest.load_run(run_dir)`, que comprueba coherencia de manifiesto, contexto y marcador. Los resúmenes versionables se escriben aparte y enlazan hashes de las fuentes; no sobrescriben evidencia. No guardar credenciales, tokens, variables de entorno completas, URLs con secretos ni datos sensibles en configuración, logs o manifiestos.
+
+Una comparación Pegasus-only frente a Pegasus + Octopus solo se interpreta con commit, entorno, Qwen/revisión, tokenizer, carga y distribución de tokens, dtype, cuantización, framework y protocolo controlados en la misma campaña. Registrar toda desviación y clasificar su efecto. El baseline histórico no sustituye la repetición contemporánea; la topología de cuatro nodos no debe describirse como observada.

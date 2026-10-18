@@ -1,0 +1,479 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ipre.local/schemas/run-context.schema.json",
+  "title": "Contexto técnico de una corrida IPRE 2.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "policy",
+    "git",
+    "system",
+    "accelerator",
+    "requested_config",
+    "requested_config_file",
+    "inputs",
+    "input_verification",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "policy": {
+      "$ref": "#/$defs/policy"
+    },
+    "git": {
+      "$ref": "#/$defs/git"
+    },
+    "system": {
+      "$ref": "#/$defs/system"
+    },
+    "packages": {
+      "type": "object",
+      "description": "Versiones efectivas observadas; null significa no disponible.",
+      "additionalProperties": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "accelerator": {
+      "$ref": "#/$defs/accelerator"
+    },
+    "requested_config": {
+      "type": "object",
+      "description": "Contenido JSON solicitado por el investigador. Su forma depende del pipeline.",
+      "additionalProperties": true
+    },
+    "requested_config_file": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/namedFile"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/namedFile"
+      }
+    },
+    "input_verification": {
+      "type": "array",
+      "description": "Comprobación de las entradas realizada durante finalize.",
+      "items": {
+        "$ref": "#/$defs/inputVerification"
+      }
+    },
+    "services": {
+      "$ref": "#/$defs/services"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fileIdentity"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "policy": {
+            "properties": {
+              "strict": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "policy": {
+            "properties": {
+              "exceptions": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "policy": {
+            "properties": {
+              "exceptions": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "strict",
+        "exceptions"
+      ],
+      "properties": {
+        "strict": {
+          "type": "boolean"
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "dirty_worktree",
+              "floating_revision",
+              "missing_git"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "fileIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "namedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "inputVerification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "path",
+        "expected_sha256",
+        "observed_sha256",
+        "expected_size_bytes",
+        "observed_size_bytes",
+        "matches"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expected_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "observed_sha256": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/sha256"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_size_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "observed_size_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "matches": {
+          "type": "boolean"
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commit",
+        "dirty",
+        "root",
+        "branch",
+        "changed_paths",
+        "error"
+      ],
+      "properties": {
+        "commit": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "dirty": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "root": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "branch": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "changed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "error": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hostname",
+        "fqdn",
+        "platform",
+        "machine",
+        "processor",
+        "python_version",
+        "python_implementation"
+      ],
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "fqdn": {
+          "type": "string"
+        },
+        "platform": {
+          "type": "string"
+        },
+        "machine": {
+          "type": "string"
+        },
+        "processor": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "python_version": {
+          "type": "string"
+        },
+        "python_implementation": {
+          "type": "string"
+        }
+      }
+    },
+    "gpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "index",
+        "name",
+        "uuid",
+        "driver_version",
+        "memory_total_mib"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "name": {
+          "type": "string"
+        },
+        "uuid": {
+          "type": "string"
+        },
+        "driver_version": {
+          "type": "string"
+        },
+        "memory_total_mib": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        }
+      }
+    },
+    "accelerator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nvidia_smi_available",
+        "gpus",
+        "error"
+      ],
+      "properties": {
+        "nvidia_smi_available": {
+          "type": "boolean"
+        },
+        "gpus": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/gpu"
+          }
+        },
+        "error": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "vllmService": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_url",
+        "models",
+        "version",
+        "observed_at",
+        "errors"
+      ],
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "models": {
+          "description": "Respuesta JSON preservada del endpoint /v1/models, o null si no se obtuvo.",
+          "type": [
+            "array",
+            "boolean",
+            "number",
+            "object",
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "description": "Respuesta JSON preservada del endpoint /version, o null si no se obtuvo.",
+          "type": [
+            "array",
+            "boolean",
+            "number",
+            "object",
+            "string",
+            "null"
+          ]
+        },
+        "observed_at": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "endpoint",
+              "type",
+              "message"
+            ],
+            "properties": {
+              "endpoint": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vllm"
+      ],
+      "properties": {
+        "vllm": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/vllmService"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

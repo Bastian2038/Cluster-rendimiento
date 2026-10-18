@@ -1,0 +1,182 @@
+{
+  "migration_date": "2026-10-07",
+  "source_commit": "e4ce6d6b68b70d833018842f2edc1444da331404",
+  "old_root": "/home/bastiangl/ipre",
+  "sesgo_root": "/home/bastiangl/ipre-sesgo",
+  "rendimiento_root": "/home/bastiangl/ipre-rendimiento",
+  "history": "Existing Git history and origin retained in ipre-sesgo; ipre-rendimiento starts on main without commits or remote.",
+  "transfers": [
+    {
+      "action": "move",
+      "path": "infraestructura/inventory.py",
+      "source_sha256": "c67c2c9b727b3af350358d3395876ac44a5bc1f758225dec602b1a1f9ca0d215",
+      "destination_sha256": "c67c2c9b727b3af350358d3395876ac44a5bc1f758225dec602b1a1f9ca0d215"
+    },
+    {
+      "action": "move",
+      "path": "infraestructura/inventory_report.py",
+      "source_sha256": "754cf3b2e655d0f1fa96e0efd057a13481da453921e1891a614ba8817808b3e2",
+      "destination_sha256": "754cf3b2e655d0f1fa96e0efd057a13481da453921e1891a614ba8817808b3e2"
+    },
+    {
+      "action": "move",
+      "path": "experimentos/configs/pegasus-inventory.json",
+      "source_sha256": "8f6c2094888dd390f851fbf083509c5116809f077729bc1be5729cfebe124c91",
+      "destination_sha256": "8f6c2094888dd390f851fbf083509c5116809f077729bc1be5729cfebe124c91"
+    },
+    {
+      "action": "move",
+      "path": "experimentos/configs/plantillas/rendimiento.example.json",
+      "source_sha256": "07751fa40c75ce7cf9b46ac19cce6875f4b29d423c71893a0be03b01d9a8d5da",
+      "destination_sha256": "07751fa40c75ce7cf9b46ac19cce6875f4b29d423c71893a0be03b01d9a8d5da"
+    },
+    {
+      "action": "move",
+      "path": "tests/test_inventory.py",
+      "source_sha256": "2ad4d8382127bfdd5bb0774392248481caa77101f9f00a799f41b5d917f4b610",
+      "destination_sha256": "2ad4d8382127bfdd5bb0774392248481caa77101f9f00a799f41b5d917f4b610"
+    },
+    {
+      "action": "move",
+      "path": "tests/test_inventory_report.py",
+      "source_sha256": "3da357719590087811f19e3094f317333f76b0af50ab682b6b7da8b78683bcfb",
+      "destination_sha256": "3da357719590087811f19e3094f317333f76b0af50ab682b6b7da8b78683bcfb"
+    },
+    {
+      "action": "move",
+      "path": "docs/metodologia-rendimiento.md",
+      "source_sha256": "e6b24b1baec24f2278c8c69693d9f75ed4e9699396bad00650830b4b419c26b4",
+      "destination_sha256": "38b547beeb9ed0a5f6c599daae28804e340c443391d0aa34deb9ef8b2268a763"
+    },
+    {
+      "action": "move",
+      "path": "docs/inventario-pegasus.md",
+      "source_sha256": "25a8f94a375658c11962cf3c20e6ac4c00ec14a415f81ddfe208618f3d20b434",
+      "destination_sha256": "25a8f94a375658c11962cf3c20e6ac4c00ec14a415f81ddfe208618f3d20b434"
+    },
+    {
+      "action": "independent_copy",
+      "path": "infraestructura/__init__.py",
+      "source_sha256": "02c1d5de2cb7831063639cac4094b646d4cd28c23acf6e653a149239c1a5ff69",
+      "destination_sha256": "02c1d5de2cb7831063639cac4094b646d4cd28c23acf6e653a149239c1a5ff69"
+    },
+    {
+      "action": "independent_copy",
+      "path": "infraestructura/rutas.py",
+      "source_sha256": "ac8b93b36033c61163dd0ff9e60f923401acf0d2f8ecf659362874549a4bfd4c",
+      "destination_sha256": "ac8b93b36033c61163dd0ff9e60f923401acf0d2f8ecf659362874549a4bfd4c"
+    },
+    {
+      "action": "independent_copy",
+      "path": "infraestructura/manifest.py",
+      "source_sha256": "967c8e345e6cb09826ecba923fffc3e65651f219a3862dc284224d73ad3eb009",
+      "destination_sha256": "967c8e345e6cb09826ecba923fffc3e65651f219a3862dc284224d73ad3eb009"
+    },
+    {
+      "action": "independent_copy",
+      "path": "infraestructura/schemas/run-manifest.schema.json",
+      "source_sha256": "f024a90f208e16489386b23a7b9203d6d2ca2a5fe975e92982a92e5a0d6d107c",
+      "destination_sha256": "f024a90f208e16489386b23a7b9203d6d2ca2a5fe975e92982a92e5a0d6d107c"
+    },
+    {
+      "action": "independent_copy",
+      "path": "infraestructura/schemas/run-context.schema.json",
+      "source_sha256": "269af851c59cce4f7a36176966284e83a21b46c974fcf13d1a1800fac4b506c3",
+      "destination_sha256": "269af851c59cce4f7a36176966284e83a21b46c974fcf13d1a1800fac4b506c3"
+    },
+    {
+      "action": "independent_copy",
+      "path": "tests/__init__.py",
+      "source_sha256": "d359990c93e3d9e2f2232c0828a8d65c7614090b6c08f42c2e9b5e2eead2566b",
+      "destination_sha256": "d359990c93e3d9e2f2232c0828a8d65c7614090b6c08f42c2e9b5e2eead2566b"
+    },
+    {
+      "action": "independent_copy",
+      "path": "tests/test_manifest.py",
+      "source_sha256": "c5121ce1de6addd3751ea77420e83339fedf5848133e130003a7ac601b549205",
+      "destination_sha256": "c5121ce1de6addd3751ea77420e83339fedf5848133e130003a7ac601b549205"
+    },
+    {
+      "action": "independent_copy",
+      "path": ".gitignore",
+      "source_sha256": "3051534e1b7cba900515ff3a67a1c57db6286cf3260dd735506bad4883a82dda",
+      "destination_sha256": "3051534e1b7cba900515ff3a67a1c57db6286cf3260dd735506bad4883a82dda"
+    }
+  ],
+  "historical_runs": [
+    {
+      "run_id": "diagnostico-higia-20260929T142154Z",
+      "kind": "sesgo",
+      "status": "running",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/diagnostico/diagnostico-higia-20260929T142154Z/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/diagnostico/diagnostico-higia-20260929T142154Z/manifest.json",
+      "sha256": "a072a4de4eec4e0b310733930b781fab00d65b9151d098dc337a381331146845"
+    },
+    {
+      "run_id": "20260928T204540.191851Z-e8380647",
+      "kind": "sesgo",
+      "status": "complete",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/sesgo/20260928T204540.191851Z-e8380647/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/sesgo/20260928T204540.191851Z-e8380647/manifest.json",
+      "sha256": "8b4e0c2feb9932ff88ac1f826e19b92406691f01e9c3334ee07f1d8f853338c4"
+    },
+    {
+      "run_id": "20260928T234930.168050Z-7ecfb70d",
+      "kind": "sesgo",
+      "status": "complete",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/sesgo/20260928T234930.168050Z-7ecfb70d/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/sesgo/20260928T234930.168050Z-7ecfb70d/manifest.json",
+      "sha256": "1c025efaf443fa797c78ef1610b8b889a97800451d345423657ce8e9b09ebd91"
+    },
+    {
+      "run_id": "20260928T235628.846793Z-afcca55d",
+      "kind": "sesgo",
+      "status": "complete",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/sesgo/20260928T235628.846793Z-afcca55d/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/sesgo/20260928T235628.846793Z-afcca55d/manifest.json",
+      "sha256": "a78afba0ad2d88bd0f53fc236752b918cf2ff2551cdc9ae6fc3f78549fdc9374"
+    },
+    {
+      "run_id": "20260929T161049.534794Z-b00d5366",
+      "kind": "sesgo",
+      "status": "complete",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/sesgo/20260929T161049.534794Z-b00d5366/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/sesgo/20260929T161049.534794Z-b00d5366/manifest.json",
+      "sha256": "caaec114d6b481ab20f99479e335fc963ab795682076459f0b14ea309c07b890"
+    },
+    {
+      "run_id": "20260929T181753.509656Z-3f83dd83",
+      "kind": "sesgo",
+      "status": "complete",
+      "historical_manifest": "/home/bastiangl/ipre/resultados/raw/sesgo/20260929T181753.509656Z-3f83dd83/manifest.json",
+      "relocated_manifest": "/home/bastiangl/ipre-sesgo/resultados/raw/sesgo/20260929T181753.509656Z-3f83dd83/manifest.json",
+      "sha256": "a64d21f825a0355b34b85625ada5b889837155d78bd14af2b678f6071fad9f2f"
+    }
+  ],
+  "raw_policy": "Atomic directory rename; historical paths and raw contents are not rewritten.",
+  "evidence_check": "Inode/device/size/mtime for existing evidence; SHA256 for datasets, docs/resultados, manifests and contexts. Not a fresh full hash of every raw/cache file.",
+  "environment": {
+    "lock": "requirements-local.lock",
+    "backup": ".cache/migracion/venv-original",
+    "packages": [
+      "anyio==4.15.1",
+      "click==8.5.0",
+      "et_xmlfile==2.0.0",
+      "filelock==4.0.3",
+      "fsspec==2026.9.0",
+      "h11==0.16.0",
+      "hf-xet==1.6.0",
+      "httpcore2==2.13.1",
+      "httpx2==2.13.1",
+      "huggingface_hub==2.0.0",
+      "idna==3.20",
+      "openpyxl==3.1.5",
+      "packaging==26.3",
+      "pip==24.0",
+      "PyYAML==6.0.3",
+      "tqdm==4.70.1",
+      "truststore==0.10.4",
+      "typing_extensions==4.16.0"
+    ]
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "experiment_name": "reemplazar-con-un-nombre-estable",
+  "protocol_version": "0.1.0",
+  "campaign_phase": "phase-1-pegasus-single-node",
+  "baseline_role": "reference-for-pegasus-plus-octopus",
+  "comparison_group": "pegasus-baseline-v1",
+  "trial_index": 1,
+  "workload": {
+    "kind": "inference",
+    "mode": "serving"
+  },
+  "framework": {
+    "name": "vllm",
+    "requested_version": "reemplazar-con-version-o-commit"
+  },
+  "topology": {
+    "node_count": 1,
+    "hosts": [
+      "reemplazar-con-hostname-observado-de-pegasus"
+    ],
+    "processes_per_node": 1,
+    "world_size": 1
+  },
+  "distributed": {
+    "launcher": null,
+    "backend": null,
+    "nccl_requested_version": null,
+    "environment_allowlist": {}
+  },
+  "runtime": {
+    "dtype": "bfloat16",
+    "quantization": null,
+    "max_model_len": 4096
+  },
+  "parallelism": {
+    "strategy": "single-process",
+    "data_parallel_size": 1,
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1
+  },
+  "generation": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 256,
+    "seed": 20260911,
+    "enable_thinking": false,
+    "prompt_version": "brief-justification-v1"
+  },
+  "measurement": {
+    "warmup_requests": 50,
+    "measurement_duration_seconds": 300,
+    "repetitions": 3,
+    "telemetry_interval_seconds": 1,
+    "percentiles": [
+      50,
+      95,
+      99
+    ]
+  },
+  "notes": "Baseline single-node de Pegasus para rendimiento de Qwen; la fase posterior compara esta base con Pegasus + Octopus. Crear configuraciones específicas para inferencia y SFT."
+}
