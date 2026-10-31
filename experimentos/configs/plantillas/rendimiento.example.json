@@ -1,9 +1,9 @@
 {
   "experiment_name": "reemplazar-con-un-nombre-estable",
   "protocol_version": "0.1.0",
-  "campaign_phase": "phase-1-pegasus-single-node",
+  "campaign_phase": "paired-pegasus-reference",
   "baseline_role": "reference-for-pegasus-plus-octopus",
-  "comparison_group": "pegasus-baseline-v1",
+  "comparison_group": "reemplazar-con-id-estable-de-campana-modelo-y-revision",
   "trial_index": 1,
   "workload": {
     "kind": "inference",
@@ -43,7 +43,6 @@
     "top_p": 1.0,
     "max_tokens": 256,
     "seed": 20260911,
-    "enable_thinking": false,
     "prompt_version": "brief-justification-v1"
   },
   "measurement": {
@@ -57,5 +56,5 @@
       99
     ]
   },
-  "notes": "Baseline single-node de Pegasus para rendimiento de Qwen; la fase posterior compara esta base con Pegasus + Octopus. Crear configuraciones específicas para inferencia y SFT."
+  "notes": "Plantilla de referencia Pegasus-only contemporánea y pareada en una futura campaña Pegasus + Octopus con Qwen o Llama; no representa una corrida observada ni configura la ejecución multi-node. Usar el mismo comparison_group para las corridas del mismo modelo y revisión. Verificar las opciones de generación específicas del modelo y framework. Crear configuraciones específicas para inferencia y SFT."
 }

@@ -2,12 +2,14 @@
 
 La configuración local de `.codex/` rige al abrir este repositorio como proyecto confiable en una **sesión nueva**. No modifica configuración ni reglas globales. `AGENTS.md` define alcance y seguridad; un perfil no amplía autorización experimental.
 
+Los perfiles se orientan a caracterizar rendimiento y capacidad de Pegasus + Octopus con Qwen y Llama, manteniendo Pegasus como referencia contemporánea y pareada. Cubren inferencia/serving, SFT completo y PEFT/LoRA cuando corresponda. La compatibilidad debe verificarse por variante, framework y estrategia; incluir una familia en el alcance no acredita soporte de ejecución.
+
 | Rol | Modelo | Esfuerzo | Función |
 | --- | --- | --- | --- |
 | Principal | `gpt-6-astra` | `high`; plan `xhigh` | Coordina, delega y contrasta evidencia. |
 | `performance_methodologist` | `gpt-6-astra` | `high` | Método, matrices y comparabilidad. |
-| `dgx_architect` | `gpt-6-sol` | `high` | Pegasus, inventario Octopus, topología y confusores. |
-| `pipeline_researcher` | `gpt-6-sol` | `high` | Soporte Qwen y pipelines de inferencia/SFT. |
+| `dgx_architect` | `gpt-6-sol` | `high` | Inventario de Pegasus y Octopus, interconexión y confusores. |
+| `pipeline_researcher` | `gpt-6-sol` | `high` | Soporte Qwen/Llama y pipelines de inferencia/serving, SFT y PEFT/LoRA. |
 | `reproducibility_reviewer` | `gpt-6-astra` | `high` | Trazabilidad y validez de comparaciones. |
 | `experiment_operator` | `gpt-6-sol` | `medium` | Código y automatización asignados. |
 | `explorer` | `gpt-6-luna` | `high` | Lectura acotada del repositorio. |

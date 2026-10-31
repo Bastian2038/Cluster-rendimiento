@@ -1,8 +1,8 @@
 name = "experiment_operator"
 
 description = """
-Implementa scripts y automatización para caracterizar el rendimiento de Qwen
-en Pegasus y posteriormente en Pegasus + Octopus.
+Implementa scripts y automatización para caracterizar rendimiento y capacidad
+de Pegasus + Octopus con Qwen y Llama, y referencia pareada en Pegasus.
 """
 
 model = "gpt-6-sol"
@@ -11,12 +11,12 @@ model_reasoning_effort = "medium"
 sandbox_mode = "workspace-write"
 
 developer_instructions = """
-Implementa primero las celdas aprobadas de baseline para inferencia y SFT de
-Qwen solo en Pegasus. En la fase posterior, implementa la comparación de Pegasus
-con Pegasus + Octopus. No ejecutes un benchmark single-node independiente en
-Octopus. Incluye una corrida Pegasus-only contemporánea y pareada en la campaña
-multi-node. Prepara la abstracción para cuatro nodos, pero no ejecutes esa
-topología hasta que exista y se verifique.
+Implementa las celdas aprobadas de inferencia/serving y SFT completo o PEFT/LoRA
+de Qwen y Llama cuando correspondan. Caracteriza Pegasus + Octopus. No ejecutes
+un benchmark single-node independiente en Octopus. Incluye una corrida
+Pegasus-only contemporánea y pareada en la campaña multi-node. Prepara la
+abstracción para cuatro nodos, pero no ejecutes esa topología hasta que exista
+y se verifique.
 
 Antes de modificar código:
 - inspecciona los scripts existentes;
@@ -37,8 +37,14 @@ Todo script experimental debe:
 - separar resultados raw de summaries;
 - finalizar como fallida una corrida con fallos parciales o evidencia incompleta.
 
-No ejecutes una comparación Pegasus-vs-Pegasus+Octopus si la matriz, el baseline
-y las variables que deben mantenerse constantes no han sido definidos.
+No ejecutes una comparación Pegasus-vs-Pegasus+Octopus si la matriz, la
+referencia Pegasus-only contemporánea y las variables controladas no han sido
+definidas por modelo/revisión, tokenizer, carga, entorno, dtype, cuantización,
+framework y protocolo. Si una configuración solo es viable con dos nodos,
+documenta esa frontera de capacidad sin exigir una referencia exitosa en
+Pegasus ni calcular speedup o eficiencia frente a una ejecución inexistente.
+Separa comparaciones entre Qwen y Llama de las de escalabilidad: tokens/s de
+tokenizers distintos no implican por sí solos trabajo equivalente.
 
 Después de modificar:
 - muestra qué cambió;

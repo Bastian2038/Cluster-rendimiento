@@ -2,9 +2,12 @@
 
 ## Objetivo y alcance
 
-Primera actividad de la fase Pegasus-only: registrar el sistema observado y una
-ventana de reposo sin cargar Qwen. No es un benchmark de inferencia/SFT ni una
-medición de escalabilidad. Octopus y cuatro nodos quedan fuera de esta captura.
+Registrar el sistema observado y una ventana de reposo de Pegasus sin cargar
+modelos, como preparación de su referencia en la campaña Pegasus + Octopus con
+Qwen y Llama. No es un benchmark de inferencia/SFT ni una medición de
+escalabilidad. El recolector implementado captura únicamente Pegasus; el
+inventario de Octopus y la interconexión se deben preparar por separado.
+Cuatro nodos son una extensión futura y quedan fuera de esta captura.
 
 El inventario es pasivo: CPU, memoria, GPU/driver, sistema operativo, toolkit
 CUDA consultable, paquetes NCCL del host, disco, interfaces/rutas, contenedores,
@@ -161,10 +164,12 @@ Python pertenecen al intérprete recolector; un contenedor detenido no permite
 inferir sus paquetes efectivos solo por el tag de imagen. NCCL ausente del
 gestor de paquetes del host tampoco demuestra ausencia dentro de contenedores.
 
-Una vez obtenida y revisada una referencia de reposo, definir una primera prueba
-pequeña de inferencia Qwen con modelo/revisión, entorno, carga, warmup,
-repeticiones y métricas. Esa prueba requiere su propio protocolo; aquí no se
-ejecuta.
+Una vez obtenida y revisada una referencia de reposo, definir una prueba pequeña
+en Pegasus con un modelo de Qwen o Llama y revisión fijada, entorno, carga,
+warmup, repeticiones y métricas, como preparación de la campaña conjunta. La
+comparación con Pegasus + Octopus requiere inventariar ambos nodos y la
+interconexión e incluir una referencia Pegasus-only contemporánea y pareada.
+Cada prueba requiere su propio protocolo y autorización; aquí no se ejecuta.
 
 ## Referencias técnicas
 

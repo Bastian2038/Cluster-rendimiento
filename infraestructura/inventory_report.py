@@ -177,7 +177,7 @@ def render(run, output):
         lines.append("Sin incidencias registradas.")
     lines += ["", "## Alcance y evidencia", "",
               "Referencia exploratoria con umbrales provisionales; no garantiza reposo térmico ni ausencia de procesos entre muestras.",
-              "Esta captura no mide rendimiento de Qwen, SFT ni comunicación entre nodos. Las cifras son observaciones locales.", "",
+              "Esta captura no mide rendimiento de modelos, SFT ni comunicación entre nodos. Las cifras son observaciones locales.", "",
               f"- {link('Protocolo y limitaciones', REPO_ROOT / 'docs/inventario-pegasus.md')}.",
               f"- {link('Manifiesto', source)} · {link('Evidencia raw local', run / 'raw')} (ignorada por Git; requiere respaldo)."]
     for label, relative in (("Contexto técnico", "raw/context.json"),

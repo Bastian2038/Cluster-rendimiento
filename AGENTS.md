@@ -1,14 +1,17 @@
-# Política del proyecto de rendimiento Qwen en DGX Spark
+# Política del proyecto de rendimiento de Pegasus + Octopus
 
-El objetivo es caracterizar rendimiento, capacidad y escalabilidad de NVIDIA DGX Spark con modelos Qwen en inferencia/serving, SFT y PEFT/LoRA cuando corresponda. Leer [metodología](docs/metodologia-rendimiento.md) y [reproducibilidad](docs/reproducibilidad.md) antes de arquitectura, benchmarks, serving, entrenamiento o paralelización. Este repositorio conserva únicamente evidencia del estudio de rendimiento.
+El objetivo es caracterizar el rendimiento y la capacidad de Pegasus + Octopus (NVIDIA DGX Spark) con modelos de las familias Qwen y Llama, y evaluar la escalabilidad frente a Pegasus como referencia comparable. Las cargas incluyen inferencia/serving, ajuste supervisado completo (SFT) y PEFT/LoRA cuando corresponda. Leer [metodología](docs/metodologia-rendimiento.md) y [reproducibilidad](docs/reproducibilidad.md) antes de arquitectura, benchmarks, serving, entrenamiento o paralelización. Este repositorio conserva únicamente evidencia del estudio de rendimiento.
 
 ## Fases
 
-1. Caracterizar Pegasus como único baseline single-node.
-2. Inventariar Octopus y la interconexión para documentar compatibilidad y confusores, sin campaña individual de rendimiento en Octopus. En la campaña de Pegasus + Octopus repetir Pegasus-only de forma contemporánea, pareada por commit, entorno, Qwen/revisión, tokenizer, carga, dtype, cuantización, framework y protocolo.
-3. Preparar formatos extensibles a cuatro DGX Spark. Esa topología es futura, no observada.
+1. Inventariar Pegasus, Octopus y la interconexión para documentar disponibilidad, compatibilidad y confusores, sin campaña individual de rendimiento en Octopus.
+2. Preparar Pegasus como única referencia single-node para las cargas de la campaña conjunta con Qwen y Llama.
+3. Caracterizar Pegasus + Octopus e incluir una corrida Pegasus-only contemporánea, pareada por commit, entorno, modelo/revisión, tokenizer, carga, dtype, cuantización, framework y protocolo. El baseline histórico no sustituye esa referencia. Si una configuración solo es viable con dos nodos, informar su frontera de capacidad sin calcular speedup frente a una ejecución inexistente.
+4. Preparar formatos extensibles a cuatro DGX Spark. Esa topología es futura, no observada.
 
-Registrar disponibilidad y configuración reales en cada campaña. Separar especificaciones oficiales, observaciones e hipótesis. Priorizar documentación oficial NVIDIA, Qwen y framework; luego papers y repositorios oficiales, con fuentes comunitarias como apoyo secundario. Fijar ID/revisión de modelo y tokenizer, variante, dtype, cuantización, parámetros y framework/versión. No afirmar soporte de una estrategia sin fuente aplicable o medición.
+Registrar disponibilidad y configuración reales en cada campaña. Separar especificaciones oficiales, observaciones e hipótesis. Priorizar documentación oficial NVIDIA, Qwen, Meta Llama y del framework; luego papers y repositorios oficiales, con fuentes comunitarias como apoyo secundario. Fijar ID/revisión de modelo y tokenizer, variante, dtype, cuantización, parámetros y framework/versión. No afirmar soporte de una estrategia sin fuente aplicable o medición para la variante y el framework concretos.
+
+Las comparaciones de escalabilidad mantienen el mismo modelo y revisión entre topologías. Comparar Qwen con Llama es un análisis distinto; tokens/s con tokenizers diferentes no implica igual trabajo útil. Incluir ambas familias en el alcance no acredita compatibilidad de todas sus variantes.
 
 ## Agentes
 

@@ -1,15 +1,19 @@
 # Metodología de rendimiento y escalabilidad
 
-Esta guía rige la caracterización del **sistema** al ejecutar Qwen en
-IPRE-Rendimiento. El inventario de Pegasus y Octopus documenta configuración
-observada; no sustituye un benchmark. Las mediciones requieren la autorización
-operacional descrita en [AGENTS.md](../AGENTS.md).
+Esta guía rige la caracterización del rendimiento y la capacidad del sistema
+**Pegasus + Octopus** con modelos Qwen y Llama en IPRE-Rendimiento. Pegasus es la
+referencia de un nodo para evaluar la escalabilidad. Las cargas abarcan
+inferencia/serving, ajuste supervisado completo (SFT) y PEFT/LoRA cuando
+corresponda. El inventario de los nodos documenta configuración observada; no
+sustituye un benchmark. Las mediciones requieren la autorización operacional
+descrita en [AGENTS.md](../AGENTS.md).
 
-## A. Arquitectura y baseline observado
+## A. Inventario y referencia de comparación
 
-En la fase inicial, caracterizar Pegasus como único baseline de un nodo. Antes
-de la fase distribuida, inventariar Octopus y la interconexión para identificar
-confusores, sin campaña independiente de rendimiento single-node en Octopus.
+Preparar la campaña conjunta inventariando Pegasus, Octopus y la interconexión
+para identificar confusores. Preparar Pegasus como única referencia de un nodo
+para las cargas elegidas, sin campaña independiente de rendimiento single-node
+en Octopus.
 Registrar CPU, GPU, memoria, sistema, driver, CUDA, NCCL, topología, mapeo de
 procesos, interfaces, red, latencia/ancho de banda y comunicación GPU-GPU y
 entre nodos. Identificar cuellos de botella de cómputo, memoria, CPU y
@@ -23,6 +27,12 @@ contemporánea, pareada por commit, entorno, modelo y revisión, tokenizer, carg
 distribución de tokens, dtype, cuantización, framework y protocolo. El baseline
 histórico caracteriza Pegasus, pero no reemplaza esa referencia. Registrar
 desviaciones que condicionen o invaliden una comparación.
+
+Cada comparación de escalabilidad mantiene el mismo modelo y revisión entre
+topologías. Las comparaciones entre Qwen y Llama se presentan por separado y
+declaran diferencias de arquitectura, tamaño, tokenizer y parámetros. Tokens/s
+con tokenizers diferentes no representa necesariamente el mismo trabajo útil;
+registrar la carga textual y la distribución de tokens de cada modelo.
 
 | Tipo | Trabajo controlado | Interpretación |
 |---|---|---|
@@ -39,9 +49,16 @@ debe instalarse y verificarse antes de medirla.
 
 ## C. Inferencia y serving
 
-Variar de manera controlada modelo/revisión Qwen, longitudes de entrada/salida,
-batch, concurrencia, tasa de solicitudes, dtype, cuantización, parámetros de
-generación, framework/versión y paralelización soportada y verificada.
+Inferencia es generar respuestas con un modelo; serving es atender consultas de
+usuarios o aplicaciones, incluidas solicitudes simultáneas.
+
+Variar de manera controlada modelo/revisión de Qwen o Llama, longitudes de
+entrada/salida, batch, concurrencia, tasa de solicitudes, dtype, cuantización,
+parámetros de generación, framework/versión y paralelización soportada y
+verificada.
+Las opciones de generación específicas de una variante deben verificarse y
+registrarse para ese modelo y framework; no son parámetros comunes a ambas
+familias.
 
 Medir latencia total y end-to-end, TTFT, TPOT/ITL, throughput de solicitudes,
 tokens de entrada y salida por segundo, percentiles p50/p95/p99, utilización de
@@ -52,10 +69,12 @@ en memoria no implica que cumpla el SLO.
 
 ## D. SFT y PEFT
 
-Caracterizar, cuando estén soportados y sean pertinentes, entrenamiento
-completo, PEFT/LoRA, paralelismo de datos, FSDP/ZeRO, paralelismo tensorial, de
-pipeline e híbrido. Medir step time, tokens/s, samples/s, memoria máxima,
-utilización GPU, loss, epoch, checkpoints y tiempo/volumen de comunicación.
+Caracterizar, cuando estén soportados y sean pertinentes, el ajuste supervisado
+de todos los parámetros (SFT completo) y el ajuste eficiente mediante PEFT/LoRA.
+Evaluar paralelismo de datos, FSDP/ZeRO, paralelismo tensorial, de pipeline e
+híbrido según el soporte de la configuración concreta. Medir step time,
+tokens/s, samples/s, memoria máxima, utilización GPU, loss, epoch, checkpoints
+y tiempo/volumen de comunicación.
 Calcular speedup/eficiencia solo ante un baseline comparable.
 
 Declarar si se fija batch global, batch por dispositivo o carga por nodo.
@@ -70,8 +89,10 @@ Tratar como variables experimentales número e identidad de nodos, world size,
 ranks y dispositivos, data/tensor/pipeline parallelism, FSDP/ZeRO, estrategias
 híbridas, backend, launcher y variables NCCL relevantes. Estimar relación de
 tiempo de comunicación y cómputo y comprobar estabilidad. No afirmar que una
-estrategia funciona en un framework, variante Qwen o DGX Spark sin
-documentación aplicable o validación experimental.
+estrategia funciona en un framework, variante de Qwen o Llama o DGX Spark sin
+documentación aplicable o validación experimental. Priorizar fuentes oficiales
+de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
+demuestra el de otra.
 
 El [flujo de reproducibilidad](reproducibilidad.md) define el registro mínimo y
 la conservación de resultados raw. Los runners principales de inferencia,

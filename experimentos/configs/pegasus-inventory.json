@@ -13,7 +13,7 @@
     "max_sample_lateness_seconds": 0.5
   },
   "notes": [
-    "Referencia exploratoria del sistema, no benchmark de Qwen.",
+    "Referencia exploratoria del sistema, no benchmark de modelos.",
     "No detener servicios ni vaciar caches. VS Code y Codex pueden permanecer activos.",
     "Umbrales operacionales provisionales; no especificaciones NVIDIA.",
     "Sin carga experimental iniciada por este recolector; observar procesos durante la ventana."

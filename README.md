@@ -1,10 +1,11 @@
-# Rendimiento Qwen en NVIDIA DGX Spark
+# Rendimiento en NVIDIA DGX Spark
 
-Este repositorio prepara la caracterización de rendimiento, capacidad y escalabilidad de Qwen. Pegasus es el único baseline single-node. Octopus se inventariará antes de compararlo junto con Pegasus; esa campaña incluirá un Pegasus-only contemporáneo y pareado. Cuatro nodos son una extensión futura sin mediciones observadas.
+Este repositorio prepara la caracterización del rendimiento y la capacidad de **Pegasus + Octopus**, dos NVIDIA DGX Spark, con modelos de las familias **Qwen y Llama**. Pegasus se conserva como referencia de un nodo para evaluar el aporte del segundo nodo mediante corridas contemporáneas y pareadas. Cuatro nodos son una extensión futura sin mediciones observadas.
 
-El estado actual es una base en biblioteca estándar de Python: captura pasiva de inventario de Pegasus, manifiestos de corrida y esquemas JSON, con tres módulos de pruebas CPU (`test_inventory`, `test_inventory_report`, `test_manifest`). Hay una configuración de inventario y una plantilla para rendimiento. Los runners de inferencia/serving, SFT/PEFT y comparación distribuida aún están pendientes. No hay resultados de benchmarks de Qwen en este repositorio.
+Las cargas incluyen generar respuestas (inferencia), atender consultas de aplicaciones o usuarios, incluso simultáneas (serving), y ajustar modelos con datos propios: ajuste supervisado de todos sus parámetros (SFT completo) o ajuste eficiente mediante PEFT/LoRA. Cada campaña fijará modelos, revisiones y herramientas concretas, con soporte verificado para su configuración.
 
-El repositorio local usa la rama `main`, sin remoto ni commit inicial automático.
+El estado actual es una base en biblioteca estándar de Python: captura pasiva de inventario de Pegasus, manifiestos de corrida y esquemas JSON, con tres módulos de pruebas CPU (`test_inventory`, `test_inventory_report`, `test_manifest`). Hay una configuración de inventario y una plantilla para la referencia Pegasus de la campaña conjunta. Los runners de inferencia/serving, SFT/PEFT y comparación distribuida aún están pendientes. No hay resultados de benchmarks de Qwen ni Llama en este repositorio; el alcance propuesto no acredita una ejecución conjunta.
+
 Antes de una captura definitiva, revisar y confirmar su contenido en Git: la
 procedencia estricta exige un commit identificable. El [registro de separación](docs/migracion-repositorios.md)
 identifica el commit de origen y los archivos transferidos.
