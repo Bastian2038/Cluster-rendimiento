@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shlex
 import socket
 import subprocess
@@ -85,7 +86,7 @@ output={"schema_version":"1.0", "node_id":request['node_id'],
       "gpu_driver_cuda":command(['nvidia-smi']),
       "cuda_compiler":command(['nvcc','--version']),
       "nccl_host":command(['ldconfig','-p']),
-      "nccl_packages":command(['dpkg-query','-W','-f=${Package} ${Version}\\n','*nccl*']),
+      "nccl_packages":command(['dpkg-query','-W','-f=${Package} ${Version}\\n','libnccl*','nccl*']),
       "pci":command(['lspci','-nn']),
       "storage_available":command(['df','-B1','-P']),
       "nic_firmware":{name:command(['ethtool','-i',name]) for name in interfaces},
@@ -246,38 +247,51 @@ def _lldp_neighbors(probe: dict) -> list[dict]:
     if not isinstance(document, dict) or not isinstance(document.get("lldp"), dict):
         return []
     interfaces = document.get("lldp", {}).get("interface", {})
-    if isinstance(interfaces, list):
-        flattened = {}
-        for index, item in enumerate(interfaces):
-            if isinstance(item, dict) and len(item) == 1:
-                flattened.update(item)
-            else:
-                flattened[str(index)] = item
-        interfaces = flattened
-    if not isinstance(interfaces, dict):
+    if isinstance(interfaces, dict):
+        entries = interfaces.items()
+    elif isinstance(interfaces, list):
+        entries = ((local, entry) for index, item in enumerate(interfaces)
+                   if isinstance(item, dict)
+                   for local, entry in (item.items() if len(item) == 1 else [(str(index), item)]))
+    else:
         return []
     def unwrap(value):
         if isinstance(value, dict) and "id" not in value and "name" not in value and len(value) == 1:
-            return next(iter(value.values()))
-        return value
+            name, inner = next(iter(value.items()))
+            return inner, name
+        return value, None
     def ident(value):
         if isinstance(value, dict):
             return str(value.get("value") or value.get("name") or "desconocido")
         return str(value or "desconocido")
     neighbors = []
-    for local, entry in interfaces.items():
+    for local, entry in entries:
         if not isinstance(entry, dict):
             continue
-        chassis, port = unwrap(entry.get("chassis", {})), unwrap(entry.get("port", {}))
+        chassis, chassis_key = unwrap(entry.get("chassis", {}))
+        port, _ = unwrap(entry.get("port", {}))
         if not isinstance(chassis, dict) or not isinstance(port, dict):
             continue
         chassis_id = ident(chassis.get("id"))
         if chassis_id == "desconocido":
             continue
         neighbors.append({"interface": str(local), "chassis_id": chassis_id,
-                          "chassis_name": str(chassis.get("name") or "desconocido"),
-                          "remote_port": ident(port.get("id"))})
+                          "chassis_name": str(chassis.get("name") or chassis_key or "desconocido"),
+                          "chassis_descr": str(chassis.get("descr") or "desconocido"),
+                          "mgmt_ips": chassis.get("mgmt-ip") if isinstance(chassis.get("mgmt-ip"), list)
+                                      else ([chassis["mgmt-ip"]] if chassis.get("mgmt-ip") else []),
+                          "remote_port": ident(port.get("id")),
+                          "port_descr": str(port.get("descr") or "desconocido")})
     return neighbors
+
+
+def _nccl_packages(probe: dict) -> str:
+    rows = (probe.get("stdout") or "").replace("\\n", "\n").splitlines()
+    packages = [line.strip() for line in rows if re.match(r"^(?:libnccl|nccl)[a-z0-9+.-]*\s", line)]
+    if probe.get("status") != "ok":
+        return ("consulta parcial (dpkg no completó): " + "; ".join(packages)
+                if packages else "consulta dpkg fallida; paquetes NCCL desconocidos")
+    return "; ".join(packages) or "ningún paquete NCCL registrado por dpkg"
 
 
 def render(run_directory: str | Path, output: str | Path) -> Path:
@@ -296,6 +310,8 @@ def render(run_directory: str | Path, output: str | Path) -> Path:
     nodes = data["requested_config"]["nodes"]
     lines = ["# Inventario distribuido", "", f"- Corrida: `{data['run_id']}`; estado: **{data['status']}**.",
              f"- Commit: `{data['git'].get('commit')}`; dirty: `{data['git'].get('dirty')}`.",
+             f"- Generador del informe: `infraestructura/cluster_inventory.py`; SHA-256: `{manifest.sha256_file(Path(__file__))}`.",
+             "- El commit y la configuración declarada corresponden a la captura; el generador puede ser posterior.",
              "- Las direcciones de configuración son declaradas. El inventario no verifica reposo ni readiness NCCL.",
              "", "| Nodo | Host esperado | Host observado | GPU UUID observado | Estado |", "| --- | --- | --- | --- | --- |"]
     observed = {}
@@ -362,7 +378,7 @@ def render(run_directory: str | Path, output: str | Path) -> Path:
         lines.append(f"| {node['node_id']} | {value(dmi.get('sys_vendor', {}))} | "
                      f"{value(dmi.get('product_name', {}))} | {cpu_model} | {memline} | {gpuline} | {os_name} | {disk_names} |")
     lines += ["", "## Acceso y red", "",
-              "| Nodo | Acceso declarado | Resultado colector observado | Interfaces observadas (velocidad/MTU) | Firmware NIC | RDMA/mapeo | Almacenamiento disponible |",
+              "| Nodo | Acceso declarado | Resultado colector observado | Interfaces observadas (velocidad/MTU/estado) | Firmware NIC | RDMA/mapeo | Almacenamiento disponible |",
               "| --- | --- | --- | --- | --- | --- | --- |"]
     for node in nodes:
         probes = observed.get(node["node_id"], {}).get("probes", {})
@@ -375,7 +391,9 @@ def render(run_directory: str | Path, output: str | Path) -> Path:
             for name, fields in sorted(interfaces.items()):
                 speed = value(fields.get("speed", {})) if isinstance(fields, dict) else "desconocido"
                 mtu = value(fields.get("mtu", {})) if isinstance(fields, dict) else "desconocido"
-                entries.append(f"{name} ({speed} Mb/s; MTU {mtu})")
+                state = value(fields.get("operstate", {})) if isinstance(fields, dict) else "desconocido"
+                speed_text = f"{speed} Mb/s" if speed.isdigit() else "velocidad desconocida"
+                entries.append(f"{name} ({speed_text}; MTU {mtu}; estado {state})")
         rdma = probes.get("rdma_mapping", {})
         rdma_text = rdma.get("stdout", "").strip().replace("\n", "; ") if rdma.get("status") == "ok" else "desconocido"
         firmware = []
@@ -406,10 +424,11 @@ def render(run_directory: str | Path, output: str | Path) -> Path:
         cuda_release = next((line.strip() for line in cuda.get("stdout", "").splitlines()
                              if "release" in line), "desconocido") if cuda.get("status") == "ok" else "desconocido"
         nccl = probes.get("nccl_packages", {})
-        nccl_version = nccl.get("stdout", "").strip().replace("\n", "; ") if nccl.get("status") == "ok" else "desconocido"
+        nccl_version = _nccl_packages(nccl)
         pci = "lspci registrado en raw" if probes.get("pci", {}).get("status") == "ok" else "desconocido"
         lines.append(f"| {node['node_id']} | {value(probes.get('kernel', {}))} | "
-                     f"{cuda_release} | {nccl_version or 'desconocido'} | {pci} |")
+                     f"{cuda_release} | {nccl_version} | {pci} |")
+    lines += ["", "La consulta dpkg no determina si libnccl está instalada fuera de paquetes dpkg."]
     lines += ["", "## Sondas sin resultado", ""]
     missing = []
     def failures(prefix, item):
@@ -433,13 +452,15 @@ def render(run_directory: str | Path, output: str | Path) -> Path:
         probe = observed.get(node["node_id"], {}).get("probes", {}).get("lldp", {})
         neighbors.extend({"node_id": node["node_id"], **entry} for entry in _lldp_neighbors(probe))
     lines += ["", "## Vecinos LLDP observados", "",
-              "| Nodo | Interfaz local | Chassis ID anunciado | Nombre anunciado | Puerto remoto anunciado |",
-              "| --- | --- | --- | --- | --- |"]
+              "| Nodo | Interfaz local | Chassis ID anunciado | Nombre anunciado | Descripción chassis anunciada | Direcciones gestión anunciadas | Puerto remoto anunciado | Descripción puerto anunciada |",
+              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for entry in neighbors:
         lines.append(f"| {entry['node_id']} | {entry['interface']} | {entry['chassis_id']} | "
-                     f"{entry['chassis_name']} | {entry['remote_port']} |")
+                     f"{entry['chassis_name']} | {entry['chassis_descr']} | "
+                     f"{', '.join(map(str, entry['mgmt_ips'])) or 'desconocido'} | "
+                     f"{entry['remote_port']} | {entry['port_descr']} |")
     if not neighbors:
-        lines.append("| desconocido | desconocido | desconocido | desconocido | desconocido |")
+        lines.append("| desconocido | desconocido | desconocido | desconocido | desconocido | desconocido | desconocido | desconocido |")
     lines.append("Los nombres LLDP son anuncios del vecino; no prueban fabricante ni modelo del switch.")
     lines += ["", "## Conexiones", "",
               "Una ruta del kernel indica dónde se enviaría tráfico; no comprueba que el destino responda ni confirma cableado.",

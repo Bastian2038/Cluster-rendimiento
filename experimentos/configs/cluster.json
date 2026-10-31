@@ -2,11 +2,11 @@
   "schema_version": "1.0",
   "cluster_id": "ipre-four-nodes",
   "nodes": [
-    {"node_id":"pegasus","alias":"pegasus","expected_hostname":"spark-cfea","local":true,"ssh":{"host":"146.155.13.132","user":"bastiangl","port":22},"management_address":"146.155.13.132","data_addresses":["10.10.0.10","10.10.1.10","192.168.100.10","192.168.101.10"],"access_status":"local"},
-    {"node_id":"octopus","alias":"octopus","expected_hostname":"spark-60c3","local":false,"ssh":{"host":"192.168.100.11","user":"bastiangl","port":22},"management_address":"146.155.13.133","data_addresses":["10.10.0.11","192.168.100.11"],"access_status":"ssh_previously_confirmed_management_no_route_data_addresses_declared"},
-    {"node_id":"griffin","alias":"griffin","expected_hostname":"gx10-726d","local":false,"ssh":{"host":"146.155.13.134","user":"bastiangl","port":22},"management_address":"146.155.13.134","data_addresses":["10.10.0.12"],"access_status":"host_key_unknown_authentication_pending"},
-    {"node_id":"draggon","alias":"draggon","expected_hostname":"spark-192d","local":false,"ssh":{"host":"146.155.13.135","user":"bastiangl","port":22},"management_address":"146.155.13.135","data_addresses":["10.10.0.13"],"access_status":"host_key_unknown_authentication_pending"}
+    {"node_id":"pegasus","alias":"pegasus","expected_hostname":"spark-cfea","local":true,"ssh":{"host":"146.155.13.132","user":"bastiangl","port":22},"management_address":"146.155.13.132","data_addresses":["10.10.0.10","10.10.1.10","192.168.100.10","192.168.101.10"],"access_status":"local_verified_2026-10-31"},
+    {"node_id":"octopus","alias":"octopus","expected_hostname":"spark-60c3","local":false,"ssh":{"host":"192.168.100.11","user":"bastiangl","port":22},"management_address":null,"data_addresses":["10.10.0.11","10.10.1.11","192.168.100.11","192.168.101.11"],"access_status":"ssh_verified_2026-10-31"},
+    {"node_id":"griffin","alias":"griffin","expected_hostname":"gx10-726d","local":false,"ssh":{"host":"146.155.13.134","user":"bastiangl","port":22},"management_address":"146.155.13.134","data_addresses":["10.10.0.12","10.10.1.12"],"access_status":"ssh_verified_2026-10-31"},
+    {"node_id":"draggon","alias":"draggon","expected_hostname":"spark-192d","local":false,"ssh":{"host":"146.155.13.135","user":"bastiangl","port":22},"management_address":"146.155.13.135","data_addresses":["10.10.0.13","10.10.1.13"],"access_status":"ssh_verified_2026-10-31"}
   ],
   "groups": {"four":["pegasus","octopus","griffin","draggon"],"pair":["pegasus","octopus"],"single":["pegasus"]},
-  "switch": {"status":"unknown","manufacturer":null,"model":null,"management_address":null}
+  "switch": {"status":"reported","manufacturer":"MikroTik","model":"CRS804-4DDQ","management_address":"192.168.88.1"}
 }

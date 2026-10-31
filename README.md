@@ -1,6 +1,6 @@
 # Rendimiento en clúster de cuatro nodos
 
-Este repositorio prepara la caracterización de **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. Los cuatro nodos están **reportados como instalados**; identidad, acceso, hardware e interconexión todavía requieren inventario completo. El switch no está identificado. No hay mediciones NCCL ni benchmarks de modelos de cuatro nodos en este repositorio.
+Este repositorio prepara la caracterización de **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. El [primer inventario pasivo](docs/cluster-cuatro-nodos.md), del 2026-10-31, confirmó identidad, acceso y componentes principales de los cuatro: tres NVIDIA DGX Spark y un ASUS GX10 (Griffin), todos con GPU GB10. LLDP anuncia un switch de datos MikroTik CRS804-4DDQ; su administración y el mapa físico de cables siguen pendientes. No hay mediciones NCCL ni benchmarks de modelos de cuatro nodos en este repositorio.
 
 La primera entrega es infraestructura: inventario de los cuatro nodos y protocolo de diagnóstico NCCL. Después se prepararán inferencia/serving y SFT completo. El orden de cada bloque es **4 → 2 → 1**: cuatro nodos, Pegasus + Octopus y Pegasus. La comparación principal es 4 frente a 2; Pegasus proporciona la referencia contemporánea de un nodo donde la configuración sea viable. PEFT/LoRA queda fuera de la campaña actual. Las variantes concretas de Qwen y Llama se seleccionarán con revisión y compatibilidad verificadas.
 

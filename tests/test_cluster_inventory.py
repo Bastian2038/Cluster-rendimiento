@@ -18,7 +18,7 @@ class ClusterConfigTests(unittest.TestCase):
         self.assertEqual([n["node_id"] for n in cluster.selected_nodes(config, "four")],
                          ["pegasus", "octopus", "griffin", "draggon"])
         self.assertEqual(len(cluster.selected_nodes(config, "pair")), 2)
-        self.assertEqual(config["switch"]["status"], "unknown")
+        self.assertEqual(config["switch"]["status"], "reported")
 
     def test_rejects_injection_duplicates_and_secrets(self):
         original = cluster.load_config(CONFIG)
@@ -67,6 +67,42 @@ class ClusterConfigTests(unittest.TestCase):
                          [("eth0", "aa:bb"), ("eth1", "cc:dd")])
         self.assertEqual(cluster_inventory._lldp_neighbors({"status": "denied"}), [])
         self.assertEqual(cluster_inventory._lldp_neighbors({"status": "missing"}), [])
+
+    def test_lldp_repeated_interface_keeps_all_announcements_and_details(self):
+        payload = {"lldp": {"interface": [
+            {"eth0": {"chassis": {"MikroTik": {
+                "id": {"value": "aa:bb"}, "descr": "RouterOS announced",
+                "mgmt-ip": ["192.0.2.1", "fe80::1"]}},
+                "port": {"id": {"value": "ether1"}, "descr": "QSFP port"}}},
+            {"eth0": {"chassis": {"peer": {
+                "id": {"value": "cc:dd"}, "descr": "Peer announced"}},
+                "port": {"id": {"value": "eth2"}, "descr": "peer port"}}},
+        ]}}
+        neighbors = cluster_inventory._lldp_neighbors({"status": "ok", "stdout": json.dumps(payload)})
+        self.assertEqual(len(neighbors), 2)
+        self.assertEqual([n["interface"] for n in neighbors], ["eth0", "eth0"])
+        self.assertEqual([n["chassis_name"] for n in neighbors], ["MikroTik", "peer"])
+        self.assertEqual(neighbors[0]["chassis_descr"], "RouterOS announced")
+        self.assertEqual(neighbors[0]["mgmt_ips"], ["192.0.2.1", "fe80::1"])
+        self.assertEqual(neighbors[0]["port_descr"], "QSFP port")
+
+    def test_nccl_package_filter_handles_historical_literal_newlines(self):
+        probe = {"status": "ok", "stdout": "libvncclient1 0.9\\nlibnccl2 2.27\\nnccl-tests 2.17\\n"}
+        self.assertEqual(cluster_inventory._nccl_packages(probe),
+                         "libnccl2 2.27; nccl-tests 2.17")
+        self.assertEqual(cluster_inventory._nccl_packages({"status": "ok", "stdout": "libvncclient1 0.9\n"}),
+                         "ningún paquete NCCL registrado por dpkg")
+        self.assertIn("'libnccl*','nccl*'", cluster_inventory.COLLECTOR)
+
+    def test_nccl_partial_dpkg_output_retains_valid_package_and_marks_failure(self):
+        probe = {"status": "error", "returncode": 1,
+                 "stdout": "libnccl2 2.27\\nlibvncclient1 0.9\\n",
+                 "stderr": "dpkg-query: no packages found matching nccl*"}
+        self.assertEqual(cluster_inventory._nccl_packages(probe),
+                         "consulta parcial (dpkg no completó): libnccl2 2.27")
+        self.assertEqual(cluster_inventory._nccl_packages({"status": "error", "returncode": 1,
+                                                              "stdout": ""}),
+                         "consulta dpkg fallida; paquetes NCCL desconocidos")
 
     def test_missing_dmi_is_unknown_without_false_capture_failure(self):
         nodes = cluster.load_config(CONFIG)["nodes"]
@@ -151,6 +187,35 @@ class ClusterLifecycleTests(unittest.TestCase):
         (directory / "raw/nodes/pegasus.json").write_text("{}")
         with self.assertRaises(manifest.ManifestError):
             cluster_inventory.render(directory, self.root / "corrupt.md")
+
+    def test_report_keeps_lldp_announcements_and_unknown_speed(self):
+        original_record = self.record
+        def record_with_network(node, **kwargs):
+            record = original_record(node, **kwargs)
+            record["probes"]["interfaces"]["value"] = {"eth0": {
+                "speed": {"status": "ok", "value": "-1"},
+                "mtu": {"status": "ok", "value": "1500"},
+                "operstate": {"status": "ok", "value": "down"}}}
+            record["probes"]["nccl_packages"] = {"status": "ok", "stdout": "libvncclient1 0.9\\n"}
+            record["probes"]["lldp"]["stdout"] = json.dumps({"lldp": {"interface": [
+                {"eth0": {"chassis": {"MikroTik": {"id": {"value": "aa:bb"},
+                    "descr": "RouterOS announced", "mgmt-ip": ["192.0.2.1"]}},
+                    "port": {"id": {"value": "ether1"}, "descr": "QSFP port"}}},
+                {"eth0": {"chassis": {"peer": {"id": {"value": "cc:dd"}}},
+                    "port": {"id": {"value": "eth2"}}}},
+            ]}})
+            return record
+        with mock.patch.object(self, "record", side_effect=record_with_network):
+            directory = self.capture()
+        output = self.root / "network-report.md"
+        cluster_inventory.render(directory, output)
+        report = output.read_text()
+        self.assertIn("eth0 (velocidad desconocida; MTU 1500; estado down)", report)
+        self.assertNotIn("-1 Mb/s", report)
+        self.assertIn("MikroTik | RouterOS announced | 192.0.2.1 | ether1 | QSFP port", report)
+        self.assertIn("peer | desconocido | desconocido | eth2", report)
+        self.assertIn("ningún paquete NCCL registrado por dpkg", report)
+        self.assertNotIn("libvncclient1", report)
 
     def test_wrong_hostname_fails_without_false_participant(self):
         directory = self.capture(wrong_hostname=True)

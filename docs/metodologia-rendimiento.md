@@ -1,7 +1,7 @@
 # Metodología de rendimiento y escalabilidad
 
 Esta guía rige la caracterización del rendimiento y la capacidad del sistema
-**cuatro nodos reportados** (Pegasus, Octopus, Griffin y Draggon) con modelos Qwen y Llama en IPRE-Rendimiento. La comparación principal es cuatro frente a dos nodos (Pegasus + Octopus); Pegasus es la
+**cuatro nodos** (Pegasus, Octopus, Griffin y Draggon), inventariados de forma pasiva el 2026-10-31, con modelos Qwen y Llama en IPRE-Rendimiento. La comparación principal es cuatro frente a dos nodos (Pegasus + Octopus); Pegasus es la
 referencia contemporánea de un nodo donde exista una configuración viable. Las cargas actuales abarcan
 inferencia/serving y ajuste supervisado completo (SFT). PEFT/LoRA queda fuera de esta campaña. El inventario de los nodos documenta configuración observada; no
 sustituye un benchmark. Las mediciones requieren la autorización operacional
@@ -13,8 +13,10 @@ Preparar la campaña inventariando los cuatro nodos reportados y la interconexi�
 para identificar confusores. Su instalación reportada no valida identidad, acceso,
 hardware ni enlaces. Preparar Pegasus como única referencia de un nodo
 para las cargas elegidas, sin campaña independiente de rendimiento single-node
-en Octopus, Griffin o Draggon. El switch sigue desconocido: verificar LLDP/puertos
-y clasificar el mapa físico como confirmado, inferido o desconocido. No inferir
+en Octopus, Griffin o Draggon. La captura inicial registra tres NVIDIA DGX Spark,
+un ASUS GX10 y versiones distintas de driver, kernel y firmware. LLDP anuncia
+un MikroTik CRS804-4DDQ: contrastar con sus puertos y administración y clasificar
+el mapa físico como confirmado, inferido o desconocido. No inferir
 cableado de direcciones IP ni de una línea de NCCL. Completar primero la entrega
 de infraestructura y el diagnóstico NCCL autorizado.
 Registrar CPU, GPU, memoria, sistema, driver, CUDA, NCCL, topología, mapeo de
