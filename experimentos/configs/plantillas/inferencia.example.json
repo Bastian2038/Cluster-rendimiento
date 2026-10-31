@@ -1,0 +1,41 @@
+{
+  "template_only": true,
+  "workload": "inference-serving",
+  "comparison_group": "reemplazar-con-id-modelo-revision-carga",
+  "campaign_order": ["four", "pair", "single"],
+  "node_groups": {
+    "four": ["pegasus", "octopus", "griffin", "draggon"],
+    "pair": ["pegasus", "octopus"],
+    "single": ["pegasus"]
+  },
+  "model": {
+    "family": "reemplazar-con-qwen-o-llama",
+    "id": "reemplazar-con-id-exacto",
+    "revision": "reemplazar-con-revision-inmutable",
+    "variant": "reemplazar-con-variante",
+    "tokenizer_id": "reemplazar-con-id-exacto",
+    "tokenizer_revision": "reemplazar-con-revision-inmutable"
+  },
+  "framework": {"name": "reemplazar", "version_or_commit": "reemplazar", "strategy_verified_source": "reemplazar"},
+  "runtime": {"dtype": "reemplazar", "quantization": null, "max_model_len": 0, "generation_parameters": {}},
+  "load": {
+    "dataset_id": "reemplazar",
+    "dataset_sha256": "reemplazar",
+    "prompt_version": "reemplazar",
+    "input_token_distribution": "medir-por-tokenizer",
+    "output_token_limit": 0,
+    "batch": 0,
+    "concurrency": 0,
+    "request_rate_per_second": 0,
+    "slo": {"metric": "reemplazar", "threshold": 0, "unit": "reemplazar"}
+  },
+  "measurement": {
+    "blocks": 3,
+    "warmup_requests": 0,
+    "measurement_seconds": 0,
+    "telemetry_interval_seconds": 1,
+    "metrics": ["request_per_second", "input_token_per_second", "output_token_per_second", "ttft_ms", "tpot_ms", "latency_ms", "error_count", "gpu_and_system_memory"]
+  },
+  "capacity_search": {"axes": ["model_revision", "context", "batch", "concurrency", "slo"], "record_largest_tested_viable_and_first_failure_or_budget_limit": true},
+  "notes": "Completar antes de ejecutar; no existe runner de modelos ni compatibilidad verificada por esta plantilla."
+}

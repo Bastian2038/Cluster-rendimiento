@@ -68,7 +68,11 @@ def _hardware(probes, samples):
 
 def render(run, output):
     run, output = Path(run).resolve(), Path(output).resolve()
-    if output.is_relative_to(run):
+    raw_root = next((parent for parent in run.parents if parent.name == "raw"), run)
+    if output.is_relative_to(raw_root) or any(
+        (parent / "manifest.json").exists() or (parent / "COMPLETE").exists()
+        or (parent / "FAILED").exists() for parent in output.parents
+    ):
         raise ValueError("el resumen debe quedar fuera de raw")
     source = run / "manifest.json"
     data = load_run(run)
@@ -151,8 +155,9 @@ def render(run, output):
     system, git = data.get("system", {}), data.get("git", {})
     count = assessment.get("sample_count", len(samples) if samples_path.exists() else None)
     expected = assessment.get("expected_sample_count")
+    alias = data.get("requested_config", {}).get("node", {}).get("alias", "Nodo")
     lines = [
-        "# Pegasus — inventario y referencia de reposo", "",
+        f"# {_text(alias)} — inventario y referencia de reposo", "",
         f"- Corrida: `{data['run_id']}`.",
         f"- Fecha UTC: {_text(data.get('started_at'))} → {_text(data.get('ended_at'))}.",
         f"- Host: `{_text(system.get('hostname'))}`; arquitectura: `{_text(system.get('machine'))}`.",
@@ -180,10 +185,12 @@ def render(run, output):
               "Esta captura no mide rendimiento de modelos, SFT ni comunicación entre nodos. Las cifras son observaciones locales.", "",
               f"- {link('Protocolo y limitaciones', REPO_ROOT / 'docs/inventario-pegasus.md')}.",
               f"- {link('Manifiesto', source)} · {link('Evidencia raw local', run / 'raw')} (ignorada por Git; requiere respaldo)."]
+    configured = data.get("requested_config_file") or {}
+    config_basename = Path(configured.get("path", "pegasus-inventory.json")).name
     for label, relative in (("Contexto técnico", "raw/context.json"),
                             ("Evaluación y umbrales", "raw/assessment.json"),
                             ("Muestras", "metrics/idle.jsonl"),
-                            ("Configuración preservada", "raw/sources/pegasus-inventory.json"),
+                            ("Configuración preservada", f"raw/sources/{config_basename}"),
                             ("Fuentes preservadas", "raw/sources")):
         if (run / relative).exists():
             lines.append(f"- {link(label, run / relative)}.")

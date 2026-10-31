@@ -1,17 +1,16 @@
-# Política del proyecto de rendimiento de Pegasus + Octopus
+# Política del proyecto de rendimiento de cuatro nodos
 
-El objetivo es caracterizar el rendimiento y la capacidad de Pegasus + Octopus (NVIDIA DGX Spark) con modelos de las familias Qwen y Llama, y evaluar la escalabilidad frente a Pegasus como referencia comparable. Las cargas incluyen inferencia/serving, ajuste supervisado completo (SFT) y PEFT/LoRA cuando corresponda. Leer [metodología](docs/metodologia-rendimiento.md) y [reproducibilidad](docs/reproducibilidad.md) antes de arquitectura, benchmarks, serving, entrenamiento o paralelización. Este repositorio conserva únicamente evidencia del estudio de rendimiento.
+El objetivo es caracterizar el rendimiento y la capacidad de cuatro nodos reportados (Pegasus, Octopus, Griffin y Draggon) con modelos de las familias Qwen y Llama. La comparación principal es cuatro frente a dos nodos (Pegasus + Octopus), con Pegasus como referencia de un nodo. Las cargas de la campaña actual son inferencia/serving y ajuste supervisado completo (SFT); PEFT/LoRA queda fuera. Leer [metodología](docs/metodologia-rendimiento.md) y [reproducibilidad](docs/reproducibilidad.md) antes de arquitectura, benchmarks, serving, entrenamiento o paralelización. Este repositorio conserva únicamente evidencia del estudio de rendimiento.
 
 ## Fases
 
-1. Inventariar Pegasus, Octopus y la interconexión para documentar disponibilidad, compatibilidad y confusores, sin campaña individual de rendimiento en Octopus.
-2. Preparar Pegasus como única referencia single-node para las cargas de la campaña conjunta con Qwen y Llama.
-3. Caracterizar Pegasus + Octopus e incluir una corrida Pegasus-only contemporánea, pareada por commit, entorno, modelo/revisión, tokenizer, carga, dtype, cuantización, framework y protocolo. El baseline histórico no sustituye esa referencia. Si una configuración solo es viable con dos nodos, informar su frontera de capacidad sin calcular speedup frente a una ejecución inexistente.
-4. Preparar formatos extensibles a cuatro DGX Spark. Esa topología es futura, no observada.
+1. Inventariar los cuatro nodos reportados y la interconexión; verificar identidad, acceso, hardware y cableado. El switch aún es desconocido. Sin campaña individual de rendimiento en Octopus, Griffin o Draggon.
+2. Preparar un diagnóstico NCCL acotado: primero cuatro nodos, luego Pegasus + Octopus y finalmente Pegasus. Su primera sesión, de hasta 30 minutos, requiere revisión de comandos, recursos y autorización; aún no se ejecuta.
+3. Tras completar la entrega de infraestructura, preparar runners de inferencia/serving y SFT completo con Qwen y Llama. Cada bloque sigue orden 4 → 2 → 1 y repite una referencia Pegasus-only contemporánea y pareada por commit, entorno, modelo/revisión, tokenizer, carga, dtype, cuantización, framework y protocolo. El baseline histórico no sustituye esa referencia. Si una configuración no es viable con menos nodos, informar su frontera de capacidad sin calcular speedup frente a una ejecución inexistente.
 
 Registrar disponibilidad y configuración reales en cada campaña. Separar especificaciones oficiales, observaciones e hipótesis. Priorizar documentación oficial NVIDIA, Qwen, Meta Llama y del framework; luego papers y repositorios oficiales, con fuentes comunitarias como apoyo secundario. Fijar ID/revisión de modelo y tokenizer, variante, dtype, cuantización, parámetros y framework/versión. No afirmar soporte de una estrategia sin fuente aplicable o medición para la variante y el framework concretos.
 
-Las comparaciones de escalabilidad mantienen el mismo modelo y revisión entre topologías. Comparar Qwen con Llama es un análisis distinto; tokens/s con tokenizers diferentes no implica igual trabajo útil. Incluir ambas familias en el alcance no acredita compatibilidad de todas sus variantes.
+Las comparaciones de escalabilidad mantienen el mismo modelo y revisión entre topologías. Comparar Qwen con Llama es un análisis distinto; tokens/s con tokenizers diferentes no implica igual trabajo útil. Incluir ambas familias en el alcance no acredita compatibilidad de todas sus variantes. Que cuatro nodos estén reportados como instalados no verifica su disponibilidad operativa, su equivalencia de hardware ni una corrida de cuatro nodos.
 
 ## Agentes
 

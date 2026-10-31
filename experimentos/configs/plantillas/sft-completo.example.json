@@ -1,0 +1,44 @@
+{
+  "template_only": true,
+  "workload": "full-sft",
+  "comparison_group": "reemplazar-con-id-modelo-revision-dataset",
+  "campaign_order": ["four", "pair", "single"],
+  "node_groups": {
+    "four": ["pegasus", "octopus", "griffin", "draggon"],
+    "pair": ["pegasus", "octopus"],
+    "single": ["pegasus"]
+  },
+  "model": {
+    "family": "reemplazar-con-qwen-o-llama",
+    "id": "reemplazar-con-id-exacto",
+    "revision": "reemplazar-con-revision-inmutable",
+    "variant": "reemplazar-con-variante",
+    "tokenizer_id": "reemplazar-con-id-exacto",
+    "tokenizer_revision": "reemplazar-con-revision-inmutable"
+  },
+  "framework": {"name": "reemplazar", "version_or_commit": "reemplazar", "strategy_verified_source": "reemplazar"},
+  "dataset": {"id": "reemplazar", "revision_or_sha256": "reemplazar", "sequence_length": 0, "packing": "reemplazar", "padding": "reemplazar"},
+  "training": {
+    "dtype": "reemplazar",
+    "quantization": null,
+    "full_parameter_update": true,
+    "strategy": "reemplazar-con-soporte-verificado",
+    "global_batch": 0,
+    "microbatch_by_topology": {"four": 0, "pair": 0, "single": 0},
+    "gradient_accumulation_by_topology": {"four": 0, "pair": 0, "single": 0},
+    "optimizer": "reemplazar",
+    "optimizer_config": {},
+    "activation_checkpointing": "reemplazar",
+    "seed": 0,
+    "fixed_steps": 0,
+    "fixed_total_tokens": 0
+  },
+  "measurement": {
+    "blocks": 3,
+    "warmup_steps": 0,
+    "measured_steps": 0,
+    "metrics": ["step_time_s", "tokens_per_second", "samples_per_second", "peak_unified_memory_bytes", "loss", "communication_time_s", "error_count"]
+  },
+  "capacity_search": {"axes": ["model_revision", "sequence_length", "global_batch"], "record_largest_tested_viable_and_first_failure_or_budget_limit": true},
+  "notes": "SFT completo exige autorización explícita; no iniciar entrenamiento desde esta plantilla. Igualar batch global, pasos y tokens entre topologías para escalamiento fuerte."
+}

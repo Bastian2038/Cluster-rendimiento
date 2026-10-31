@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ipre.local/schemas/run-manifest.schema.json",
-  "title": "Manifiesto compacto IPRE 2.0",
-  "description": "El contexto 2.0 se valida mediante run-context.schema.json; load_run verifica identidad, integridad y restricciones entre ambos documentos.",
+  "title": "Manifiesto compacto IPRE 2.0 / 2.1",
+  "description": "Lectura compatible 2.0; escritura 2.1 con participantes verificados en contexto. load_run valida integridad y relaciones entre documentos.",
   "$defs": {
     "dateTime": {
       "type": "string",
@@ -77,7 +77,10 @@
       ],
       "properties": {
         "schema_version": {
-          "const": "2.0"
+          "enum": [
+            "2.0",
+            "2.1"
+          ]
         },
         "run_id": {
           "type": "string",
@@ -88,7 +91,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
-          "description": "Tipo de pipeline; por ejemplo sesgo, rendimiento, sft, smoke o system-baseline."
+          "description": "Tipo de corrida; system-baseline, cluster-inventory y nccl-test no tienen modelo en 2.1."
         },
         "status": {
           "enum": [
@@ -154,7 +157,7 @@
         },
         "hosts": {
           "type": "array",
-          "minItems": 1,
+          "minItems": 0,
           "uniqueItems": true,
           "items": {
             "type": "string",
@@ -182,11 +185,28 @@
       "allOf": [
         {
           "if": {
-            "properties": {
-              "kind": {
-                "const": "system-baseline"
+            "anyOf": [
+              {
+                "properties": {
+                  "kind": {
+                    "const": "system-baseline"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "schema_version": {
+                    "const": "2.1"
+                  },
+                  "kind": {
+                    "enum": [
+                      "cluster-inventory",
+                      "nccl-test"
+                    ]
+                  }
+                }
               }
-            }
+            ]
           },
           "then": {
             "properties": {
@@ -225,6 +245,28 @@
             "properties": {
               "ended_at": {
                 "$ref": "#/$defs/dateTime"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {
+                "const": "2.1"
+              },
+              "kind": {
+                "enum": [
+                  "cluster-inventory",
+                  "nccl-test"
+                ]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "hosts": {
+                "minItems": 1
               }
             }
           }

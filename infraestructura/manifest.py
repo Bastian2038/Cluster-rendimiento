@@ -24,11 +24,15 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
 
-SCHEMA_VERSION = "2.0"
+SCHEMA_VERSION = "2.1"
+SUPPORTED_VERSIONS = frozenset({"2.0", SCHEMA_VERSION})
+MODEL_FREE_KINDS = frozenset({"system-baseline", "cluster-inventory", "nccl-test"})
+DISTRIBUTED_KINDS = frozenset({"cluster-inventory", "nccl-test"})
 _CONTEXT_PATH = "raw/context.json"
 _CONTEXT_FIELDS = frozenset({
     "policy", "git", "system", "packages", "accelerator", "requested_config",
     "requested_config_file", "inputs", "input_verification", "services", "artifacts",
+    "participants",
 })
 DEFAULT_RESULTS_ROOT = Path("resultados/raw")
 PACKAGE_DISTRIBUTIONS = (
@@ -293,7 +297,7 @@ def start_run(
 
     Por defecto aplica el modo estricto. Las excepciones destinadas a smoke
     tests son explícitas y quedan registradas en ``policy.exceptions``.
-    ``system-baseline`` registra ``model: null`` en el contrato 2.0: sus
+    Los inventarios y ``nccl-test`` registran ``model: null``: sus
     cuatro argumentos de modelo/tokenizer deben ser None. No omite la política
     Git ni requiere una excepción de revisión flotante.
     """
@@ -301,14 +305,14 @@ def start_run(
     _validate_component(kind, "kind")
     selected_run_id = run_id or generate_run_id()
     _validate_component(selected_run_id, "run_id")
-    system_baseline = kind == "system-baseline"
+    system_baseline = kind in MODEL_FREE_KINDS
     if system_baseline:
         if any(value is not None for value in (
             model_id, model_revision, tokenizer_id, tokenizer_revision
         )):
-            raise ManifestError("system-baseline requiere modelo y tokenizer null")
+            raise ManifestError(f"{kind} requiere modelo y tokenizer null")
         if allow_floating_revision:
-            raise ManifestError("floating_revision no aplica a system-baseline")
+            raise ManifestError(f"floating_revision no aplica a {kind}")
     elif not model_id or not tokenizer_id:
         raise ManifestError("model_id y tokenizer_id son obligatorios")
     if not isinstance(requested_config, Mapping):
@@ -384,6 +388,8 @@ def start_run(
         "artifacts": [],
         "errors": [],
     }
+    if kind in DISTRIBUTED_KINDS:
+        manifest["participants"] = []
     try:
         _write_compact_run(run_directory, manifest)
     except BaseException:
@@ -398,24 +404,135 @@ def start_run(
     return run_directory
 
 
+def _observed_hosts(run: Mapping[str, Any]) -> list[str]:
+    if run.get("schema_version") == "2.1" and run.get("kind") in DISTRIBUTED_KINDS:
+        return [item["hostname"] for item in run.get("participants", [])]
+    return [run["system"].get("hostname")]
+
+
+def _internal_file(directory: Path, relative: str) -> Path:
+    """Resuelve evidencia interna sin admitir escapes, enlaces externos ni metadatos."""
+    if not isinstance(relative, str) or not relative:
+        raise ManifestError("ruta de evidencia inválida")
+    candidate = Path(relative)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ManifestError("evidencia fuera del directorio de corrida")
+    if relative in {"manifest.json", _CONTEXT_PATH, *_MARKERS}:
+        raise ManifestError("metadatos reservados no son evidencia de participante")
+    path = directory / candidate
+    if not path.resolve().is_relative_to(directory.resolve()):
+        raise ManifestError("evidencia fuera del directorio de corrida")
+    if not path.is_file():
+        raise ManifestError(f"evidencia ausente: {relative}")
+    return path
+
+
+def _validate_participants(directory: Path, participants: Any, kind: str) -> None:
+    if not isinstance(participants, list):
+        raise ManifestError("participants debe ser una lista")
+    identity = {"node_id", "hostname", "gpu_uuid", "rank"}
+    fields = identity | {"evidence_path", "evidence_sha256"}
+    seen: dict[str, set[Any]] = {key: set() for key in identity}
+    for item in participants:
+        if not isinstance(item, dict) or set(item) != fields:
+            raise ManifestError("campos de participante inválidos")
+        for key in ("node_id", "hostname"):
+            if not isinstance(item[key], str) or not _SAFE_COMPONENT.fullmatch(item[key]):
+                raise ManifestError(f"participante {key} inválido")
+        gpu, rank = item["gpu_uuid"], item["rank"]
+        if gpu is not None and (not isinstance(gpu, str) or not _SAFE_COMPONENT.fullmatch(gpu)):
+            raise ManifestError("gpu_uuid inválido")
+        if rank is not None and (isinstance(rank, bool) or not isinstance(rank, int) or rank < 0):
+            raise ManifestError("rank inválido")
+        if kind == "nccl-test" and (gpu is None or rank is None):
+            raise ManifestError("nccl-test requiere GPU y rank observados")
+        for key in identity:
+            value = item[key]
+            if value is not None:
+                if value in seen[key]:
+                    raise ManifestError(f"participante duplicado: {key}={value}")
+                seen[key].add(value)
+        path = _internal_file(directory, item["evidence_path"])
+        if sha256_file(path) != item["evidence_sha256"]:
+            raise ManifestError("SHA-256 de evidencia de participante no coincide")
+        observed = _load_json_object(path)
+        if any(key not in observed or observed[key] != item[key] for key in identity):
+            raise ManifestError("identidad de participante no coincide con evidencia")
+
+
+def register_participants(
+    run_directory: str | os.PathLike[str], participants: list[dict[str, Any]]
+) -> None:
+    """Registra un roster completo corroborado por evidencia JSON interna.
+
+    Solo modifica manifiestos abiertos 2.1. El coordinador no se convierte en
+    participante por iniciar la corrida. El runner valida identidad esperada y
+    registra por separado cambios de ranks entre trabajos.
+    """
+    directory = Path(run_directory).resolve()
+    run = load_run(directory)
+    if run["status"] != "running":
+        raise ManifestError("no se puede registrar en corrida cerrada")
+    if run["schema_version"] != "2.1" or run["kind"] not in DISTRIBUTED_KINDS:
+        raise ManifestError("participantes requieren corrida distribuida 2.1")
+    if not isinstance(participants, list):
+        raise ManifestError("participants debe ser una lista")
+    records = []
+    for participant in participants:
+        if not isinstance(participant, dict):
+            raise ManifestError("participante debe ser un objeto")
+        item = dict(participant)
+        path = _internal_file(directory, item.get("evidence_path"))
+        item["evidence_sha256"] = sha256_file(path)
+        records.append(item)
+    _validate_participants(directory, records, run["kind"])
+    run["participants"] = records
+    _write_compact_run(directory, run)
+
+
+def verify_artifacts(
+    run_directory: str | os.PathLike[str], run: Mapping[str, Any] | None = None
+) -> None:
+    """Verifica el índice de artefactos antes de derivar informes de un cierre."""
+    directory = Path(run_directory).resolve()
+    # Aunque el llamante tenga un objeto, comprobar siempre el cierre actual.
+    loaded = load_run(directory)
+    if loaded["status"] == "running":
+        raise ManifestError("el informe requiere una corrida cerrada")
+    if run is not None and dict(run) != loaded:
+        raise ManifestError("manifiesto aportado no coincide con la corrida")
+    seen = set()
+    for record in loaded["artifacts"]:
+        relative = record["path"]
+        if relative in seen:
+            raise ManifestError("artefacto duplicado")
+        seen.add(relative)
+        path = _internal_file(directory, relative)
+        if path.stat().st_size != record["size_bytes"] or sha256_file(path) != record["sha256"]:
+            raise ManifestError(f"integridad de artefacto inválida: {relative}")
+    # Detectar también archivos añadidos después del cierre.
+    actual = {item["path"] for item in _artifact_records(directory)}
+    if actual != seen:
+        raise ManifestError("índice de artefactos no coincide con archivos de corrida")
+
+
 def _write_compact_run(directory: Path, run: Mapping[str, Any]) -> None:
     """Publica primero el contexto, luego su referencia; el cierre pone el marcador."""
 
     context = {key: run[key] for key in _CONTEXT_FIELDS if key in run}
-    if run["kind"] == "system-baseline":
+    if run["kind"] in MODEL_FREE_KINDS:
         context.pop("packages", None)
         context.pop("services", None)
     elif not context.get("services"):
         context.pop("services", None)
-    context.update(schema_version=SCHEMA_VERSION, run_id=run["run_id"])
+    context.update(schema_version=run["schema_version"], run_id=run["run_id"])
     _atomic_write_json(directory / _CONTEXT_PATH, context)
     compact = {key: run[key] for key in (
         "schema_version", "run_id", "kind", "status", "started_at", "ended_at",
         "model", "errors",
     )}
     compact["git"] = {key: run["git"][key] for key in ("commit", "dirty")}
-    # Solo el host local ha sido observado. La topología solicitada vive en contexto.
-    compact["hosts"] = [run["system"]["hostname"]]
+    compact["hosts"] = _observed_hosts(run)
     compact["context"] = {
         "path": _CONTEXT_PATH, "sha256": sha256_file(directory / _CONTEXT_PATH)
     }
@@ -423,17 +540,17 @@ def _write_compact_run(directory: Path, run: Mapping[str, Any]) -> None:
 
 
 def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
-    """Lee una corrida 2.0 y combina su manifiesto y contexto técnico.
+    """Lee una corrida 2.0/2.1 sin migrarla ni reescribir evidencia.
 
     Verifica consistencia del cierre, identidad y SHA-256 del contexto.
-    No revalida entradas externas ni artefactos: el consumidor aplica esas
-    comprobaciones según su finalidad (cierre, informe o cliente).
+    Valida evidencia de participantes 2.1; el informe verifica además todos los
+    artefactos mediante ``verify_artifacts``. No revalida entradas externas.
     """
 
     directory = Path(run_directory).resolve()
     core = _load_json_object(directory / "manifest.json")
     version = core.get("schema_version")
-    if version != SCHEMA_VERSION:
+    if version not in SUPPORTED_VERSIONS:
         raise ManifestError(f"schema_version no soportada: {version!r}")
     reference = core.get("context")
     if not isinstance(reference, dict) or reference.get("path") != _CONTEXT_PATH:
@@ -448,22 +565,27 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
     if digest != reference.get("sha256"):
         raise ManifestError("SHA-256 del contexto no coincide con manifest.json")
     context = _load_json_object(context_path)
-    if (context.get("schema_version") != SCHEMA_VERSION
+    if (context.get("schema_version") != version
             or context.get("run_id") != core.get("run_id")):
         raise ManifestError("identidad del contexto no coincide con manifest.json")
-    unexpected = set(context) - _CONTEXT_FIELDS - {"schema_version", "run_id"}
+    allowed = _CONTEXT_FIELDS if version == "2.1" else _CONTEXT_FIELDS - {"participants"}
+    unexpected = set(context) - allowed - {"schema_version", "run_id"}
     if unexpected:
         raise ManifestError(f"campos inesperados en contexto: {sorted(unexpected)}")
-    required = _CONTEXT_FIELDS - {"packages", "services"}
+    required = _CONTEXT_FIELDS - {"packages", "services", "participants"}
+    if version == "2.1" and core.get("kind") in DISTRIBUTED_KINDS:
+        required = required | {"participants"}
     if not required.issubset(context):
         raise ManifestError(f"contexto incompleto: faltan {sorted(required - set(context))}")
     if not isinstance(context["git"], dict) or core.get("git") != {
         key: context["git"].get(key) for key in ("commit", "dirty")
     }:
         raise ManifestError("Git del contexto no coincide con manifest.json")
-    if not isinstance(context["system"], dict) or core.get("hosts") != [
-        context["system"].get("hostname")
-    ]:
+    if "participants" in context:
+        if core.get("kind") not in DISTRIBUTED_KINDS:
+            raise ManifestError("participants solo aplica a corridas distribuidas")
+        _validate_participants(directory, context["participants"], core["kind"])
+    if not isinstance(context["system"], dict) or core.get("hosts") != _observed_hosts({**context, "kind": core.get("kind")}):
         raise ManifestError("hosts observados no coinciden con el contexto")
     policy = context["policy"]
     if not isinstance(policy, dict) or not isinstance(policy.get("exceptions"), list):
@@ -471,9 +593,10 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
     if policy.get("strict") != (not policy["exceptions"]):
         raise ManifestError("política de contexto inconsistente")
     model = core.get("model")
-    if core.get("kind") == "system-baseline":
+    model_free = {"system-baseline"} if version == "2.0" else MODEL_FREE_KINDS
+    if core.get("kind") in model_free:
         if model is not None or "floating_revision" in policy["exceptions"]:
-            raise ManifestError("system-baseline requiere modelo null sin floating_revision")
+            raise ManifestError(f"{core['kind']} requiere modelo null sin floating_revision")
     elif not isinstance(model, dict) or not isinstance(model.get("tokenizer"), dict):
         raise ManifestError("metadatos de modelo/tokenizer inválidos")
     elif "floating_revision" not in policy["exceptions"]:
@@ -516,6 +639,8 @@ def _artifact_records(run_directory: Path) -> list[dict[str, Any]]:
         if (relative == "manifest.json" or relative in _MARKERS
                 or relative == _CONTEXT_PATH):
             continue
+        if not path.resolve().is_relative_to(run_directory.resolve()):
+            raise ManifestError(f"artefacto fuera del directorio de corrida: {relative}")
         if path.is_file():
             records.append(
                 {
@@ -570,6 +695,9 @@ def finalize_run(
         raise ManifestError(
             f"estado inesperado del manifiesto: {manifest.get('status')!r}"
         )
+    if (status == "complete" and manifest.get("schema_version") == "2.1"
+            and manifest.get("kind") in DISTRIBUTED_KINDS and not manifest.get("participants")):
+        raise ManifestError("corrida distribuida sin participantes observados no puede completar")
 
     ended_at = utc_now()
     verification_records = [
@@ -644,9 +772,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     start = subparsers.add_parser("start", help="crear una corrida y su manifiesto")
     start.add_argument("--kind", required=True)
-    start.add_argument("--model-id", help="obligatorio salvo para system-baseline")
+    start.add_argument("--model-id", help="obligatorio salvo inventarios y nccl-test")
     start.add_argument("--model-revision")
-    start.add_argument("--tokenizer-id", help="obligatorio salvo para system-baseline")
+    start.add_argument("--tokenizer-id", help="obligatorio salvo inventarios y nccl-test")
     start.add_argument("--tokenizer-revision")
     start.add_argument("--config", required=True, type=Path, metavar="CONFIG.json")
     start.add_argument(

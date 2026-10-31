@@ -75,7 +75,7 @@ class ManifestTests(unittest.TestCase):
         content = manifest.load_run(run_directory)
 
         self.assertEqual(content["status"], "running")
-        self.assertEqual(content["schema_version"], "2.0")
+        self.assertEqual(content["schema_version"], "2.1")
         self.assertEqual(content["git"]["commit"], "b" * 40)
         self.assertEqual(content["model"]["revision"], PINNED_REVISION)
         self.assertEqual(content["requested_config"], {"temperature": 0})
@@ -103,7 +103,7 @@ class ManifestTests(unittest.TestCase):
     def test_system_baseline_has_null_model_without_revision_exception(self):
         directory = self._start_system()
         content = manifest.load_run(directory)
-        self.assertEqual(content["schema_version"], "2.0")
+        self.assertEqual(content["schema_version"], "2.1")
         self.assertIsNone(content["model"])
         self.assertEqual(content["policy"], {"strict": True, "exceptions": []})
         manifest.finalize_run(directory)

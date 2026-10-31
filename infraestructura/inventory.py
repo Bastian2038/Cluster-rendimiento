@@ -201,8 +201,12 @@ def summarize(samples, config, inventory):
 
 def validate_config(config):
     node = config["node"]
-    if node["node_count"] != 1 or node["alias"] != "Pegasus":
-        raise ValueError("esta fase solo admite Pegasus, un nodo")
+    if node["node_count"] != 1:
+        raise ValueError("inventario de reposo admite exactamente un nodo por captura")
+    if not isinstance(node.get("alias"), str) or not node["alias"].strip():
+        raise ValueError("alias de nodo obligatorio")
+    if not isinstance(node.get("expected_hostname"), str) or not node["expected_hostname"].strip():
+        raise ValueError("expected_hostname obligatorio")
     for key in ("duration_seconds", "interval_seconds"):
         if isinstance(config[key], bool) or not isinstance(config[key], (int, float)) or not math.isfinite(config[key]) or config[key] <= 0:
             raise ValueError(f"{key} debe ser positivo y finito")

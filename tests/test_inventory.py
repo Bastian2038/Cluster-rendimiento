@@ -145,11 +145,15 @@ class InventorySummaryTests(unittest.TestCase):
                 altered = {**self.config, field: value}
                 with self.assertRaises(ValueError):
                     inventory.validate_config(altered)
-        for key, value in (("alias", "Octopus"), ("node_count", 2), ("node_count", 4)):
+        for key, value in (("alias", ""), ("expected_hostname", ""),
+                           ("node_count", 2), ("node_count", 4)):
             altered = copy.deepcopy(self.config)
             altered["node"][key] = value
             with self.assertRaises(ValueError):
                 inventory.validate_config(altered)
+        altered = copy.deepcopy(self.config)
+        altered["node"]["alias"] = "Octopus"
+        inventory.validate_config(altered)
         for value in (-1, True, float("inf")):
             altered = copy.deepcopy(self.config)
             altered["idle_thresholds"]["cpu_busy_p95_pct"] = value
@@ -224,7 +228,7 @@ class InventoryCaptureTests(unittest.TestCase):
         self.assertEqual(len((directory / "metrics/idle.jsonl").read_text().splitlines()), 2)
         self.assertTrue((directory / "raw/sources/inventory.py").is_file())
         self.assertTrue((directory / "raw/sources/run-context.schema.json").is_file())
-        self.assertEqual(document["schema_version"], "2.0")
+        self.assertEqual(document["schema_version"], manifest.SCHEMA_VERSION)
         self.assertEqual(document["hosts"], ["test-pegasus"])
         self.assertTrue((directory / "raw/context.json").is_file())
         self.assertTrue(all(record["matches"] for record in document["input_verification"]))

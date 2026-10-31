@@ -48,9 +48,17 @@ class InventoryReportTests(unittest.TestCase):
                  for path in self.run.rglob("*") if path.is_file()}
         self.assertEqual(before, after)
 
+    def test_title_uses_configured_alias(self):
+        self.document["requested_config"]["node"]["alias"] = "Octopus"
+        self.refresh_manifest()
+        inventory_report.render(self.run, self.output)
+        self.assertIn("# Octopus — inventario", self.output.read_text())
+
     def test_rejects_output_inside_run(self):
         with self.assertRaisesRegex(ValueError, "fuera de raw"):
             inventory_report.render(self.run, self.run / "report.md")
+        with self.assertRaisesRegex(ValueError, "fuera de raw"):
+            inventory_report.render(self.run, self.run.parent / "sibling" / "report.md")
 
     def test_rejects_overwriting_report(self):
         inventory_report.render(self.run, self.output)

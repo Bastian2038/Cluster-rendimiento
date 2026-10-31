@@ -3,11 +3,11 @@
 ## Objetivo y alcance
 
 Registrar el sistema observado y una ventana de reposo de Pegasus sin cargar
-modelos, como preparación de su referencia en la campaña Pegasus + Octopus con
+modelos, como preparación de su referencia de un nodo en una campaña 4 → 2 → 1 con
 Qwen y Llama. No es un benchmark de inferencia/SFT ni una medición de
-escalabilidad. El recolector implementado captura únicamente Pegasus; el
-inventario de Octopus y la interconexión se deben preparar por separado.
-Cuatro nodos son una extensión futura y quedan fuera de esta captura.
+escalabilidad. Este recolector captura únicamente Pegasus; el [inventario del
+clúster](cluster-cuatro-nodos.md) documenta los cuatro nodos reportados y su
+interconexión por separado. La instalación reportada no constituye inventario verificado.
 
 El inventario es pasivo: CPU, memoria, GPU/driver, sistema operativo, toolkit
 CUDA consultable, paquetes NCCL del host, disco, interfaces/rutas, contenedores,
@@ -113,7 +113,7 @@ Cada ejecución crea un directorio nuevo, sin sobrescribir corridas anteriores:
 
 ```text
 resultados/raw/system-baseline/<run_id>/
-  manifest.json        # esquema 2.0, model=null, identidad y estado
+  manifest.json        # esquema vigente, model=null, identidad y estado
   COMPLETE | FAILED
   raw/context.json     # configuración, entorno, entradas y hashes
   raw/inventory.json    # comandos, salidas y estados de inventario
@@ -136,7 +136,7 @@ python3 -m infraestructura.inventory_report \
 
 El generador produce un informe breve con identificación, hardware principal,
 duración, muestras, métricas esenciales y problemas observados. Verifica el
-contexto 2.0 y SHA-256 de todos los artefactos; se niega a sobrescribir un resumen
+contexto y SHA-256 de todos los artefactos; se niega a sobrescribir un resumen
 existente. El hash del manifiesto se conserva en un comentario HTML del informe
 para vincularlo con la evidencia sin ocupar la vista principal.
 
@@ -147,8 +147,9 @@ Los datos esenciales ausentes y los fallos siguen visibles. Una captura fallida
 con evidencia parcial puede resumirse indicando qué faltó; un archivo registrado
 que desapareció o cambió se rechaza por integridad.
 
-El generador admite únicamente capturas con esquema 2.0 y rechaza versiones
-anteriores. Generar otro informe no modifica los raw ni cambia duración,
+El generador de este protocolo valida capturas de esquema compatible; la
+infraestructura común 2.1 conserva lectura de 2.0 sin migrar raw. Generar otro
+informe no modifica los raw ni cambia duración,
 muestreo, sondas o criterios del protocolo.
 
 Los raw están ignorados por Git: un commit del resumen NO los respalda. Conservar
@@ -167,8 +168,9 @@ gestor de paquetes del host tampoco demuestra ausencia dentro de contenedores.
 Una vez obtenida y revisada una referencia de reposo, definir una prueba pequeña
 en Pegasus con un modelo de Qwen o Llama y revisión fijada, entorno, carga,
 warmup, repeticiones y métricas, como preparación de la campaña conjunta. La
-comparación con Pegasus + Octopus requiere inventariar ambos nodos y la
-interconexión e incluir una referencia Pegasus-only contemporánea y pareada.
+comparación 4/2/1 requiere inventariar los nodos participantes y la
+interconexión e incluir una referencia Pegasus-only contemporánea y pareada
+cuando el trabajo de un nodo sea viable.
 Cada prueba requiere su propio protocolo y autorización; aquí no se ejecuta.
 
 ## Referencias técnicas

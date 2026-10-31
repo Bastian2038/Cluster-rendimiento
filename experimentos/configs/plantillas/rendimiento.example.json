@@ -1,60 +1,38 @@
 {
-  "experiment_name": "reemplazar-con-un-nombre-estable",
-  "protocol_version": "0.1.0",
-  "campaign_phase": "paired-pegasus-reference",
-  "baseline_role": "reference-for-pegasus-plus-octopus",
-  "comparison_group": "reemplazar-con-id-estable-de-campana-modelo-y-revision",
-  "trial_index": 1,
-  "workload": {
-    "kind": "inference",
-    "mode": "serving"
+  "template_only": true,
+  "experiment_name": "reemplazar-con-id-de-campana",
+  "protocol_version": "0.2.0",
+  "comparison_group": "reemplazar-con-id-estable-modelo-revision-carga",
+  "campaign_order": ["four", "pair", "single"],
+  "topologies": [
+    {"group": "four", "node_ids": ["pegasus", "octopus", "griffin", "draggon"], "node_count": 4},
+    {"group": "pair", "node_ids": ["pegasus", "octopus"], "node_count": 2},
+    {"group": "single", "node_ids": ["pegasus"], "node_count": 1}
+  ],
+  "model": {
+    "family": "reemplazar-con-qwen-o-llama",
+    "id": "reemplazar-con-id-exacto",
+    "revision": "reemplazar-con-revision-inmutable",
+    "variant": "reemplazar-con-variante",
+    "tokenizer_id": "reemplazar-con-id-exacto",
+    "tokenizer_revision": "reemplazar-con-revision-inmutable"
   },
-  "framework": {
-    "name": "vllm",
-    "requested_version": "reemplazar-con-version-o-commit"
-  },
-  "topology": {
-    "node_count": 1,
-    "hosts": [
-      "reemplazar-con-hostname-observado-de-pegasus"
-    ],
-    "processes_per_node": 1,
-    "world_size": 1
-  },
-  "distributed": {
-    "launcher": null,
-    "backend": null,
-    "nccl_requested_version": null,
-    "environment_allowlist": {}
-  },
-  "runtime": {
-    "dtype": "bfloat16",
+  "controls": {
+    "commit": "reemplazar-con-commit",
+    "environment": "reemplazar-con-digest-o-snapshot",
+    "framework": "reemplazar-con-nombre-y-version",
+    "dtype": "reemplazar-con-dtype",
     "quantization": null,
-    "max_model_len": 4096
+    "workload_hash": "reemplazar-con-sha256",
+    "protocol_hash": "reemplazar-con-sha256"
   },
-  "parallelism": {
-    "strategy": "single-process",
-    "data_parallel_size": 1,
-    "tensor_parallel_size": 1,
-    "pipeline_parallel_size": 1
+  "repetitions": {"blocks": 3, "block_order": ["four", "pair", "single"], "trial_index": 1},
+  "comparison": {
+    "primary": "four-vs-pair",
+    "reference": "single-when-viable",
+    "speedup_4_over_2": "T2/T4-for-fixed-global-work",
+    "efficiency_4_over_2": "(T2/T4)/2",
+    "capacity_only_when_reference_fails": true
   },
-  "generation": {
-    "temperature": 0.0,
-    "top_p": 1.0,
-    "max_tokens": 256,
-    "seed": 20260911,
-    "prompt_version": "brief-justification-v1"
-  },
-  "measurement": {
-    "warmup_requests": 50,
-    "measurement_duration_seconds": 300,
-    "repetitions": 3,
-    "telemetry_interval_seconds": 1,
-    "percentiles": [
-      50,
-      95,
-      99
-    ]
-  },
-  "notes": "Plantilla de referencia Pegasus-only contemporánea y pareada en una futura campaña Pegasus + Octopus con Qwen o Llama; no representa una corrida observada ni configura la ejecución multi-node. Usar el mismo comparison_group para las corridas del mismo modelo y revisión. Verificar las opciones de generación específicas del modelo y framework. Crear configuraciones específicas para inferencia y SFT."
+  "notes": "Plantilla, no corrida ni soporte verificado. Crear una configuración distinta por modelo/revisión y carga; completar los campos y verificar compatibilidad antes de ejecutar."
 }

@@ -1,19 +1,22 @@
 # Metodología de rendimiento y escalabilidad
 
 Esta guía rige la caracterización del rendimiento y la capacidad del sistema
-**Pegasus + Octopus** con modelos Qwen y Llama en IPRE-Rendimiento. Pegasus es la
-referencia de un nodo para evaluar la escalabilidad. Las cargas abarcan
-inferencia/serving, ajuste supervisado completo (SFT) y PEFT/LoRA cuando
-corresponda. El inventario de los nodos documenta configuración observada; no
+**cuatro nodos reportados** (Pegasus, Octopus, Griffin y Draggon) con modelos Qwen y Llama en IPRE-Rendimiento. La comparación principal es cuatro frente a dos nodos (Pegasus + Octopus); Pegasus es la
+referencia contemporánea de un nodo donde exista una configuración viable. Las cargas actuales abarcan
+inferencia/serving y ajuste supervisado completo (SFT). PEFT/LoRA queda fuera de esta campaña. El inventario de los nodos documenta configuración observada; no
 sustituye un benchmark. Las mediciones requieren la autorización operacional
 descrita en [AGENTS.md](../AGENTS.md).
 
 ## A. Inventario y referencia de comparación
 
-Preparar la campaña conjunta inventariando Pegasus, Octopus y la interconexión
-para identificar confusores. Preparar Pegasus como única referencia de un nodo
+Preparar la campaña inventariando los cuatro nodos reportados y la interconexión
+para identificar confusores. Su instalación reportada no valida identidad, acceso,
+hardware ni enlaces. Preparar Pegasus como única referencia de un nodo
 para las cargas elegidas, sin campaña independiente de rendimiento single-node
-en Octopus.
+en Octopus, Griffin o Draggon. El switch sigue desconocido: verificar LLDP/puertos
+y clasificar el mapa físico como confirmado, inferido o desconocido. No inferir
+cableado de direcciones IP ni de una línea de NCCL. Completar primero la entrega
+de infraestructura y el diagnóstico NCCL autorizado.
 Registrar CPU, GPU, memoria, sistema, driver, CUDA, NCCL, topología, mapeo de
 procesos, interfaces, red, latencia/ancho de banda y comunicación GPU-GPU y
 entre nodos. Identificar cuellos de botella de cómputo, memoria, CPU y
@@ -22,8 +25,8 @@ oficiales, mediciones observadas e hipótesis.
 
 ## B. Diseño comparativo
 
-Una campaña Pegasus + Octopus debe incluir una corrida Pegasus-only
-contemporánea, pareada por commit, entorno, modelo y revisión, tokenizer, carga,
+Cada bloque 4 → 2 → 1 debe incluir corridas contemporáneas para cuatro nodos,
+Pegasus + Octopus y Pegasus donde el trabajo sea viable. Parear por commit, entorno, modelo y revisión, tokenizer, carga,
 distribución de tokens, dtype, cuantización, framework y protocolo. El baseline
 histórico caracteriza Pegasus, pero no reemplaza esa referencia. Registrar
 desviaciones que condicionen o invaliden una comparación.
@@ -36,16 +39,29 @@ registrar la carga textual y la distribución de tokens de cada modelo.
 
 | Tipo | Trabajo controlado | Interpretación |
 |---|---|---|
-| Escalamiento fuerte | Trabajo global fijo | Speedup y eficiencia respecto de Pegasus comparable. |
+| Escalamiento fuerte | Trabajo global fijo | Principal: speedup y eficiencia 4/2; referencias 2/1 y 4/1 solo si son viables y pareadas. |
 | Escalamiento débil | Trabajo por nodo fijo | Crecimiento de capacidad/throughput por trabajo adicional; no equivale a speedup fuerte. |
-| Frontera de capacidad | Configuración viable solo al agregar nodos | Sin speedup si no existe referencia de un nodo. |
+| Frontera de capacidad | Configuración viable solo al agregar nodos | Sin speedup frente a una topología menor que no pueda ejecutar la carga; 4/2 sigue siendo válido si ambas son comparables. |
 | Mejor configuración por topología | Ajuste óptimo específico de cada topología | Útil para operación, sin aislar causalmente el número de nodos. |
 
 Definir previamente warmup, ventana de medición, repeticiones, índice y orden de
 trials, criterios de estabilidad, errores/OOM y estadísticos de dispersión.
-Cambiar un factor a la vez o declarar el diseño factorial. Conservar raw y
-telemetría por nodo/rank. No extrapolar dos nodos a cuatro: la topología futura
-debe instalarse y verificarse antes de medirla.
+Cambiar un factor a la vez o declarar el diseño factorial. Repetir al menos tres
+bloques 4 → 2 → 1 cuando el presupuesto lo permita y registrar tiempo entre
+corridas, temperatura, potencia y relojes para evaluar deriva térmica. Conservar raw y
+telemetría por nodo/rank. La topología de cuatro nodos requiere verificación antes
+de atribuirle resultados.
+
+Para escalamiento fuerte comparable calcular `S4/2 = T2/T4` y
+`E4/2 = S4/2 / 2`; informar también `S2/1 = T1/T2` y `S4/1 = T1/T4`
+solo cuando existan corridas de un nodo con el mismo trabajo. En throughput,
+declarar la convención de speedup y la carga ofrecida. Para SFT completo fijar
+batch global, número de pasos y tokens procesados entre topologías; registrar
+microbatch y acumulación efectivas. Si cambia el tamaño de lote global o la
+semántica del optimizador, analizarlo por separado. Reportar además la mayor
+configuración probada viable y el primer fallo o límite de presupuesto, por eje
+de modelo/revisión, contexto, batch, concurrencia y SLO. No presentar como
+frontera absoluta una búsqueda truncada.
 
 ## C. Inferencia y serving
 
@@ -63,14 +79,16 @@ familias.
 Medir latencia total y end-to-end, TTFT, TPOT/ITL, throughput de solicitudes,
 tokens de entrada y salida por segundo, percentiles p50/p95/p99, utilización de
 GPU y memoria, potencia, CPU, errores/OOM y comunicación entre nodos. Reportar
-comportamiento bajo concurrencia. Para serving, medir cargas equivalentes y
+comportamiento bajo concurrencia. Cuando CPU y GPU comparten memoria unificada,
+registrar su uso y presión sin sumar capacidad RAM y GPU como dos reservas
+independientes; `N/A` en nvidia-smi no significa cero. Para serving, medir cargas equivalentes y
 capacidad máxima bajo un SLO definido antes de la prueba. Que un modelo quepa
 en memoria no implica que cumpla el SLO.
 
-## D. SFT y PEFT
+## D. SFT completo
 
-Caracterizar, cuando estén soportados y sean pertinentes, el ajuste supervisado
-de todos los parámetros (SFT completo) y el ajuste eficiente mediante PEFT/LoRA.
+Caracterizar, cuando esté soportado, el ajuste supervisado
+de todos los parámetros (SFT completo).
 Evaluar paralelismo de datos, FSDP/ZeRO, paralelismo tensorial, de pipeline e
 híbrido según el soporte de la configuración concreta. Medir step time,
 tokens/s, samples/s, memoria máxima, utilización GPU, loss, epoch, checkpoints
@@ -95,6 +113,6 @@ de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
 El [flujo de reproducibilidad](reproducibilidad.md) define el registro mínimo y
-la conservación de resultados raw. Los runners principales de inferencia,
-serving, SFT y multi-node aún están pendientes; esta guía es el diseño para
-implementarlos y evaluarlos, no evidencia de ejecución.
+la conservación de resultados raw. Los runners de modelos para inferencia,
+serving y SFT aún están pendientes. Las herramientas de inventario distribuido
+y NCCL son la primera etapa; su implementación no acredita una ejecución real.
