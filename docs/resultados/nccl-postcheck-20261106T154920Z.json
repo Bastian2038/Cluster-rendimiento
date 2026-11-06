@@ -1,0 +1,92 @@
+{
+  "scope": "passive postcheck; session ended; no new NCCL launch",
+  "timestamp_utc": "20261106T154920Z",
+  "nodes": [
+    {
+      "node_id": "pegasus",
+      "command": [
+        "python3",
+        "-c",
+        "import json,os,subprocess\np=subprocess.run(['ps','-u',str(os.getuid()),'-o','pid,ppid,lstart,args'],capture_output=True,text=True,timeout=5)\nids=[str(31797*65536),str(26058*65536)]\nrows=[l for l in p.stdout.splitlines() if (any(j in l for j in ids) or '/.local/share/ipre/nccl/' in l) and 'python3 -c' not in l and 'ssh -o' not in l]\ng=subprocess.run(['nvidia-smi','--query-compute-apps=pid,gpu_uuid,used_gpu_memory','--format=csv,noheader,nounits'],capture_output=True,text=True,timeout=8)\nprint(json.dumps({'hostname':subprocess.check_output(['hostname'],text=True).strip(),'remaining_matching_processes':rows,'compute_apps':{'returncode':g.returncode,'stdout':g.stdout,'stderr':g.stderr}}))\n"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-cfea\", \"remaining_matching_processes\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "octopus",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@192.168.100.11",
+        "python3 -c 'import json,os,subprocess\np=subprocess.run(['\"'\"'ps'\"'\"','\"'\"'-u'\"'\"',str(os.getuid()),'\"'\"'-o'\"'\"','\"'\"'pid,ppid,lstart,args'\"'\"'],capture_output=True,text=True,timeout=5)\nids=[str(31797*65536),str(26058*65536)]\nrows=[l for l in p.stdout.splitlines() if (any(j in l for j in ids) or '\"'\"'/.local/share/ipre/nccl/'\"'\"' in l) and '\"'\"'python3 -c'\"'\"' not in l and '\"'\"'ssh -o'\"'\"' not in l]\ng=subprocess.run(['\"'\"'nvidia-smi'\"'\"','\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"','\"'\"'--format=csv,noheader,nounits'\"'\"'],capture_output=True,text=True,timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"':subprocess.check_output(['\"'\"'hostname'\"'\"'],text=True).strip(),'\"'\"'remaining_matching_processes'\"'\"':rows,'\"'\"'compute_apps'\"'\"':{'\"'\"'returncode'\"'\"':g.returncode,'\"'\"'stdout'\"'\"':g.stdout,'\"'\"'stderr'\"'\"':g.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-60c3\", \"remaining_matching_processes\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.134",
+        "python3 -c 'import json,os,subprocess\np=subprocess.run(['\"'\"'ps'\"'\"','\"'\"'-u'\"'\"',str(os.getuid()),'\"'\"'-o'\"'\"','\"'\"'pid,ppid,lstart,args'\"'\"'],capture_output=True,text=True,timeout=5)\nids=[str(31797*65536),str(26058*65536)]\nrows=[l for l in p.stdout.splitlines() if (any(j in l for j in ids) or '\"'\"'/.local/share/ipre/nccl/'\"'\"' in l) and '\"'\"'python3 -c'\"'\"' not in l and '\"'\"'ssh -o'\"'\"' not in l]\ng=subprocess.run(['\"'\"'nvidia-smi'\"'\"','\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"','\"'\"'--format=csv,noheader,nounits'\"'\"'],capture_output=True,text=True,timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"':subprocess.check_output(['\"'\"'hostname'\"'\"'],text=True).strip(),'\"'\"'remaining_matching_processes'\"'\"':rows,'\"'\"'compute_apps'\"'\"':{'\"'\"'returncode'\"'\"':g.returncode,'\"'\"'stdout'\"'\"':g.stdout,'\"'\"'stderr'\"'\"':g.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"gx10-726d\", \"remaining_matching_processes\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.135",
+        "python3 -c 'import json,os,subprocess\np=subprocess.run(['\"'\"'ps'\"'\"','\"'\"'-u'\"'\"',str(os.getuid()),'\"'\"'-o'\"'\"','\"'\"'pid,ppid,lstart,args'\"'\"'],capture_output=True,text=True,timeout=5)\nids=[str(31797*65536),str(26058*65536)]\nrows=[l for l in p.stdout.splitlines() if (any(j in l for j in ids) or '\"'\"'/.local/share/ipre/nccl/'\"'\"' in l) and '\"'\"'python3 -c'\"'\"' not in l and '\"'\"'ssh -o'\"'\"' not in l]\ng=subprocess.run(['\"'\"'nvidia-smi'\"'\"','\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"','\"'\"'--format=csv,noheader,nounits'\"'\"'],capture_output=True,text=True,timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"':subprocess.check_output(['\"'\"'hostname'\"'\"'],text=True).strip(),'\"'\"'remaining_matching_processes'\"'\"':rows,'\"'\"'compute_apps'\"'\"':{'\"'\"'returncode'\"'\"':g.returncode,'\"'\"'stdout'\"'\"':g.stdout,'\"'\"'stderr'\"'\"':g.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-192d\", \"remaining_matching_processes\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    }
+  ]
+}
