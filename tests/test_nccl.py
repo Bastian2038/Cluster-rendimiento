@@ -58,6 +58,23 @@ class NcclTests(unittest.TestCase):
                 with self.assertRaises(nccl.NcclError):
                     nccl._validate_protocol(config, cluster)
 
+    def test_exact_ib_hca_selector(self):
+        cluster = json.loads(CLUSTER.read_text())
+        config = json.loads(PROTOCOL.read_text())
+        config["environment"] = {"NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH",
+                                  "NCCL_IB_HCA": "=rocep1s0f0:1,roceP2p1s0f0:1"}
+        nccl._validate_protocol(config, cluster)
+        command = nccl._command(next(nccl._jobs(cluster)), cluster, config)
+        self.assertIn("NCCL_IB_HCA==rocep1s0f0:1,roceP2p1s0f0:1", command)
+        for value in ("rocep1s0f0:1", "=", "=rocep1s0f0", "=rocep1s0f0:0", "=rocep1s0f0:1,", "=rocep1s0f0:1;bad", None):
+            with self.subTest(value=value):
+                config["environment"]["NCCL_IB_HCA"] = value
+                with self.assertRaises(nccl.NcclError):
+                    nccl._validate_protocol(config, cluster)
+        config["environment"].pop("NCCL_IB_HCA")
+        nccl._validate_protocol(config, cluster)
+        self.assertFalse(any("NCCL_IB_HCA=" in word for word in nccl._command(next(nccl._jobs(cluster)), cluster, config)))
+
     def test_split_merged_mpi_tags_without_repairing_missing_data(self):
         sample = ("[1,0]<stdout>:IPRE_TELEMETRY=before|[1,3]<stdout>:IPRE_RANK_IDENTITY={}\n"
                   "[1,1]<stdout>:IPRE_TELEMETRY=after|GPU-aaa, 0, 1, 2\n")

@@ -62,7 +62,8 @@
   "environment": {
     "NCCL_DEBUG": "INFO",
     "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH",
-    "NCCL_SOCKET_IFNAME": "=enp1s0f0np0"
+    "NCCL_SOCKET_IFNAME": "=enp1s0f0np0",
+    "NCCL_IB_HCA": "=rocep1s0f0:1,roceP2p1s0f0:1"
   },
   "library_paths": {
     "pegasus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib",

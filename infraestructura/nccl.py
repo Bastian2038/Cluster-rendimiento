@@ -64,6 +64,12 @@ def _validate_protocol(config, cluster):
         raise NcclError("NCCL_SOCKET_IFNAME requiere nombre exacto =interfaz")
     if selector is not None:
         expected_environment["NCCL_SOCKET_IFNAME"] = selector
+    hcas = environment.get("NCCL_IB_HCA")
+    if hcas is not None and (not isinstance(hcas, str) or not re.fullmatch(
+            r"=[A-Za-z0-9_.-]+:[1-9][0-9]*(?:,[A-Za-z0-9_.-]+:[1-9][0-9]*)*", hcas)):
+        raise NcclError("NCCL_IB_HCA requiere lista exacta =nombre:puerto,nombre:puerto")
+    if hcas is not None:
+        expected_environment["NCCL_IB_HCA"] = hcas
     if environment != expected_environment:
         raise NcclError("entorno NCCL no permitido")
     if config.get("mpi_launcher") != "mpirun":
@@ -186,6 +192,8 @@ def _command(job, cluster, config):
            if "mpi_btl_tcp_if_include" in config else [])
     socket_ifname = (["-x", "NCCL_SOCKET_IFNAME=" + config["environment"]["NCCL_SOCKET_IFNAME"]]
                      if "NCCL_SOCKET_IFNAME" in config["environment"] else [])
+    ib_hca = (["-x", "NCCL_IB_HCA=" + config["environment"]["NCCL_IB_HCA"]]
+              if "NCCL_IB_HCA" in config["environment"] else [])
     return ["mpirun", "--tag-output", "--host", hosts, "--map-by", "ppr:1:node", *oob, *btl,
             "--launch-agent", "timeout -k 3s 34s orted", "--timeout", "35",
             "--mca", "orte_leave_session_attached", "1",
@@ -194,7 +202,7 @@ def _command(job, cluster, config):
             "-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no "
             "-o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8",
             "-np", str(len(nodes)), "-x", "NCCL_DEBUG=INFO",
-            "-x", "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH", *socket_ifname,
+            "-x", "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH", *socket_ifname, *ib_hca,
             "timeout", "-k", "5s", "34s", "/bin/sh", "-c", _rank_script(job, nodes, config)]
 
 

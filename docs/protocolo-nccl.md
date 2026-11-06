@@ -59,6 +59,16 @@ red `10.10.0.0/24` están comprobadas en los cuatro nodos. La selección afecta 
 sockets NCCL, incluido bootstrap y un eventual fallback Socket; no fuerza HCA
 ni acredita RDMA. Se conserva el intento fallido y se repite en una corrida nueva.
 
+El intento `20261106T152823.615394Z-82f7fef1` superó bootstrap pero agotó el
+timeout interno durante conexiones RDMA: los logs muestran GID `10.10.0.12/13`
+intentando conectar con `192.168.100.11` del HCA f1 de Octopus. Para la siguiente
+ejecución se limita `NCCL_IB_HCA` a `=rocep1s0f0:1,roceP2p1s0f0:1`, los dos
+dispositivos del puerto f0 común a los cuatro nodos, excluyendo los enlaces f1
+adicionales del par. Esta selección se aplica en todos los grupos 4/2/1 y solo
+en sus procesos. Las velocidades reportadas por las dos interfaces no se suman
+como si fueran dos cables independientes. La evidencia de canales efectivos
+sigue siendo necesaria para acreditar RoCE.
+
 ## Criterios de aceptación
 
 El éxito completo exige las 31 invocaciones previstas, salida cero, sin timeouts,

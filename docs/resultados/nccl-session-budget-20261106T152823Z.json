@@ -1,0 +1,23 @@
+{
+  "deadline_utc": "2026-11-06T15:38:25+00:00",
+  "started_at": "2026-11-06T15:28:23.577573+00:00",
+  "ended_at": "2026-11-06T15:29:31.721630+00:00",
+  "budget_seconds": 591,
+  "command": [
+    "timeout",
+    "--signal=INT",
+    "--kill-after=10s",
+    "591s",
+    "python3",
+    "-B",
+    "-m",
+    "infraestructura.nccl",
+    "run",
+    "--cluster",
+    "experimentos/configs/cluster.json",
+    "--config",
+    "experimentos/configs/nccl-diagnostic.json",
+    "--execute"
+  ],
+  "returncode": 2
+}
