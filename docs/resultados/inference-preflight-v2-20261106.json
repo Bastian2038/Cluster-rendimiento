@@ -1,0 +1,621 @@
+{
+  "container_probe": true,
+  "ended_at": "2026-11-06T19:33:34.493171+00:00",
+  "errors": [],
+  "limitations": [
+    "No inicia Ray/vLLM ni asigna GPU; no acredita inferencia.",
+    "Verifica metadatos y existencia de shards, no rehashea sus pesos."
+  ],
+  "nodes": [
+    {
+      "architecture": "aarch64",
+      "container_probe": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"python\": \"3.12.3\", \"packages\": {\"ray\": \"2.48.0\", \"vllm\": \"0.24.0+092c4842.nv26.7.59534043\", \"torch\": \"2.13.0a0+9186a08b2c.nv26.7.59513937\", \"transformers\": \"5.6.1\", \"tokenizers\": \"0.22.2\", \"huggingface-hub\": \"1.24.0\", \"apache-tvm-ffi\": \"0.1.9\"}}\n"
+      },
+      "disk_free_bytes": 2878916349952,
+      "docker_running": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "gid": 1002,
+      "gpu": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "GPU-d2718ffa-1726-8960-32fb-0a5941e62a39, NVIDIA GB10, 580.173.02\n"
+      },
+      "gpu_apps": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "groups": [
+        4,
+        24,
+        27,
+        30,
+        46,
+        100,
+        122,
+        987,
+        988,
+        1002
+      ],
+      "hostname": "spark-cfea",
+      "image": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "\"sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c\" \"arm64\"\n"
+      },
+      "memory_bytes": {
+        "MemAvailable": 121988349952,
+        "MemTotal": 130663165952,
+        "SwapFree": 16059002880,
+        "SwapTotal": 17179865088
+      },
+      "models": {
+        "llama31-8b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "29e4c210b0d6ac178b16b2a255a568bdb23b581e50ca1ef6a6d071dd85704e6e",
+            "model.safetensors.index.json": "146776fce3f6db1103aa6f249e65ee5544c5923ce6f971b092eee79aa6e5d37b",
+            "tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+            "tokenizer_config.json": "177c7b61e616fecb84c17ce0591acb92c6c4d60e9ac5ababfb940ff23bbcd424"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "2b1879f356aed350030bb40eb45ad362c89d9891096f79a3ab323d3ba5607668",
+              "name": "model-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4976698672
+            },
+            {
+              "blob_name": "09d433f650646834a83c580877bd60c6d1f88f7755305c12576b5c7058f9af15",
+              "name": "model-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4999802720
+            },
+            {
+              "blob_name": "fc1cdddd6bfa91128d6e94ee73d0ce62bfcdb7af29e978ddcab30c66ae9ea7fa",
+              "name": "model-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4915916176
+            },
+            {
+              "blob_name": "92ecfe1a2414458b4821ac8c13cf8cb70aed66b5eea8dc5ad9eeb4ff309d6d7b",
+              "name": "model-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 1168138808
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+          "weights_content_rehashed": false
+        },
+        "qwen35-9b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+            "model.safetensors.index.json": "26d3539b516be613f39563617cb9d33b3f83d401298125be392c80cefb8f7fe5",
+            "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+            "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "db6f444b43d318c92f360a13a25561a6a65b10c0631b8ed305a426dbaa6c380e",
+              "name": "model.safetensors-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5276436216
+            },
+            {
+              "blob_name": "31c7d7e2dd5d207840b31cc59083c8f4c4718959149e0358c0364052bb9a0330",
+              "name": "model.safetensors-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5335161512
+            },
+            {
+              "blob_name": "7ec36ba3a4176a44c3c0876ad80c56a2f70c84bf008d82e9501df642f17dadec",
+              "name": "model.safetensors-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5368717440
+            },
+            {
+              "blob_name": "b62b0c4cd7e44edee103ee8f4fe225f246d5e768e07bfd5f25b63a8aa1fdd0c6",
+              "name": "model.safetensors-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 3325995712
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+          "weights_content_rehashed": false
+        }
+      },
+      "network": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "[{\"ifindex\":3,\"ifname\":\"enp1s0f0np0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":9000,\"qdisc\":\"mq\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"4c:bb:47:29:cf:eb\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.10.0.10\",\"prefixlen\":24,\"broadcast\":\"10.10.0.255\",\"scope\":\"global\",\"noprefixroute\":true,\"label\":\"enp1s0f0np0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n"
+      },
+      "node_id": "pegasus",
+      "occupied_ports": [],
+      "ray_pids": [],
+      "rdma_devices": [
+        "by-ibdev",
+        "by-path",
+        "rdma_cm",
+        "umad0",
+        "umad1",
+        "umad2",
+        "umad3",
+        "uverbs0",
+        "uverbs1",
+        "uverbs2",
+        "uverbs3"
+      ],
+      "uid": 1002,
+      "user": "bastiangl"
+    },
+    {
+      "architecture": "aarch64",
+      "container_probe": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"python\": \"3.12.3\", \"packages\": {\"ray\": \"2.48.0\", \"vllm\": \"0.24.0+092c4842.nv26.7.59534043\", \"torch\": \"2.13.0a0+9186a08b2c.nv26.7.59513937\", \"transformers\": \"5.6.1\", \"tokenizers\": \"0.22.2\", \"huggingface-hub\": \"1.24.0\", \"apache-tvm-ffi\": \"0.1.9\"}}\n"
+      },
+      "disk_free_bytes": 3202059325440,
+      "docker_running": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "gid": 1002,
+      "gpu": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "GPU-3e910dc4-733f-1f24-8432-b3dc495bb57f, NVIDIA GB10, 580.173.02\n"
+      },
+      "gpu_apps": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "groups": [
+        4,
+        24,
+        27,
+        30,
+        46,
+        100,
+        122,
+        987,
+        988,
+        1002
+      ],
+      "hostname": "spark-60c3",
+      "image": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "\"sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c\" \"arm64\"\n"
+      },
+      "memory_bytes": {
+        "MemAvailable": 122966597632,
+        "MemTotal": 128495218688,
+        "SwapFree": 16572530688,
+        "SwapTotal": 17179865088
+      },
+      "models": {
+        "llama31-8b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "29e4c210b0d6ac178b16b2a255a568bdb23b581e50ca1ef6a6d071dd85704e6e",
+            "model.safetensors.index.json": "146776fce3f6db1103aa6f249e65ee5544c5923ce6f971b092eee79aa6e5d37b",
+            "tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+            "tokenizer_config.json": "177c7b61e616fecb84c17ce0591acb92c6c4d60e9ac5ababfb940ff23bbcd424"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "2b1879f356aed350030bb40eb45ad362c89d9891096f79a3ab323d3ba5607668",
+              "name": "model-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4976698672
+            },
+            {
+              "blob_name": "09d433f650646834a83c580877bd60c6d1f88f7755305c12576b5c7058f9af15",
+              "name": "model-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4999802720
+            },
+            {
+              "blob_name": "fc1cdddd6bfa91128d6e94ee73d0ce62bfcdb7af29e978ddcab30c66ae9ea7fa",
+              "name": "model-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4915916176
+            },
+            {
+              "blob_name": "92ecfe1a2414458b4821ac8c13cf8cb70aed66b5eea8dc5ad9eeb4ff309d6d7b",
+              "name": "model-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 1168138808
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+          "weights_content_rehashed": false
+        },
+        "qwen35-9b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+            "model.safetensors.index.json": "26d3539b516be613f39563617cb9d33b3f83d401298125be392c80cefb8f7fe5",
+            "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+            "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "db6f444b43d318c92f360a13a25561a6a65b10c0631b8ed305a426dbaa6c380e",
+              "name": "model.safetensors-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5276436216
+            },
+            {
+              "blob_name": "31c7d7e2dd5d207840b31cc59083c8f4c4718959149e0358c0364052bb9a0330",
+              "name": "model.safetensors-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5335161512
+            },
+            {
+              "blob_name": "7ec36ba3a4176a44c3c0876ad80c56a2f70c84bf008d82e9501df642f17dadec",
+              "name": "model.safetensors-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5368717440
+            },
+            {
+              "blob_name": "b62b0c4cd7e44edee103ee8f4fe225f246d5e768e07bfd5f25b63a8aa1fdd0c6",
+              "name": "model.safetensors-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 3325995712
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+          "weights_content_rehashed": false
+        }
+      },
+      "network": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "[{\"ifindex\":3,\"ifname\":\"enp1s0f0np0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":9000,\"qdisc\":\"mq\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"4c:bb:47:2f:60:c4\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.10.0.11\",\"prefixlen\":24,\"broadcast\":\"10.10.0.255\",\"scope\":\"global\",\"noprefixroute\":true,\"label\":\"enp1s0f0np0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n"
+      },
+      "node_id": "octopus",
+      "occupied_ports": [],
+      "ray_pids": [],
+      "rdma_devices": [
+        "by-ibdev",
+        "by-path",
+        "rdma_cm",
+        "umad0",
+        "umad1",
+        "umad2",
+        "umad3",
+        "uverbs0",
+        "uverbs1",
+        "uverbs2",
+        "uverbs3"
+      ],
+      "uid": 1002,
+      "user": "bastiangl"
+    },
+    {
+      "architecture": "aarch64",
+      "container_probe": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"python\": \"3.12.3\", \"packages\": {\"ray\": \"2.48.0\", \"vllm\": \"0.24.0+092c4842.nv26.7.59534043\", \"torch\": \"2.13.0a0+9186a08b2c.nv26.7.59513937\", \"transformers\": \"5.6.1\", \"tokenizers\": \"0.22.2\", \"huggingface-hub\": \"1.24.0\", \"apache-tvm-ffi\": \"0.1.9\"}}\n"
+      },
+      "disk_free_bytes": 571015585792,
+      "docker_running": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "gid": 1002,
+      "gpu": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "GPU-9db8883f-ccef-fc02-2bd3-8e2faf0689af, NVIDIA GB10, 580.178.04\n"
+      },
+      "gpu_apps": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "groups": [
+        4,
+        24,
+        27,
+        30,
+        46,
+        100,
+        122,
+        987,
+        988,
+        1002
+      ],
+      "hostname": "gx10-726d",
+      "image": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "\"sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c\" \"arm64\"\n"
+      },
+      "memory_bytes": {
+        "MemAvailable": 125364613120,
+        "MemTotal": 130593964032,
+        "SwapFree": 16662732800,
+        "SwapTotal": 17179865088
+      },
+      "models": {
+        "llama31-8b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "29e4c210b0d6ac178b16b2a255a568bdb23b581e50ca1ef6a6d071dd85704e6e",
+            "model.safetensors.index.json": "146776fce3f6db1103aa6f249e65ee5544c5923ce6f971b092eee79aa6e5d37b",
+            "tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+            "tokenizer_config.json": "177c7b61e616fecb84c17ce0591acb92c6c4d60e9ac5ababfb940ff23bbcd424"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "2b1879f356aed350030bb40eb45ad362c89d9891096f79a3ab323d3ba5607668",
+              "name": "model-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4976698672
+            },
+            {
+              "blob_name": "09d433f650646834a83c580877bd60c6d1f88f7755305c12576b5c7058f9af15",
+              "name": "model-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4999802720
+            },
+            {
+              "blob_name": "fc1cdddd6bfa91128d6e94ee73d0ce62bfcdb7af29e978ddcab30c66ae9ea7fa",
+              "name": "model-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4915916176
+            },
+            {
+              "blob_name": "92ecfe1a2414458b4821ac8c13cf8cb70aed66b5eea8dc5ad9eeb4ff309d6d7b",
+              "name": "model-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 1168138808
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+          "weights_content_rehashed": false
+        },
+        "qwen35-9b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+            "model.safetensors.index.json": "26d3539b516be613f39563617cb9d33b3f83d401298125be392c80cefb8f7fe5",
+            "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+            "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "db6f444b43d318c92f360a13a25561a6a65b10c0631b8ed305a426dbaa6c380e",
+              "name": "model.safetensors-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5276436216
+            },
+            {
+              "blob_name": "31c7d7e2dd5d207840b31cc59083c8f4c4718959149e0358c0364052bb9a0330",
+              "name": "model.safetensors-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5335161512
+            },
+            {
+              "blob_name": "7ec36ba3a4176a44c3c0876ad80c56a2f70c84bf008d82e9501df642f17dadec",
+              "name": "model.safetensors-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5368717440
+            },
+            {
+              "blob_name": "b62b0c4cd7e44edee103ee8f4fe225f246d5e768e07bfd5f25b63a8aa1fdd0c6",
+              "name": "model.safetensors-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 3325995712
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+          "weights_content_rehashed": false
+        }
+      },
+      "network": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "[{\"ifindex\":13,\"ifname\":\"enp1s0f0np0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":9000,\"qdisc\":\"mq\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"30:c5:99:be:72:6e\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.10.0.12\",\"prefixlen\":24,\"broadcast\":\"10.10.0.255\",\"scope\":\"global\",\"noprefixroute\":true,\"label\":\"enp1s0f0np0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n"
+      },
+      "node_id": "griffin",
+      "occupied_ports": [],
+      "ray_pids": [],
+      "rdma_devices": [
+        "by-ibdev",
+        "by-path",
+        "rdma_cm",
+        "umad0",
+        "umad1",
+        "umad2",
+        "umad3",
+        "uverbs0",
+        "uverbs1",
+        "uverbs2",
+        "uverbs3"
+      ],
+      "uid": 1002,
+      "user": "bastiangl"
+    },
+    {
+      "architecture": "aarch64",
+      "container_probe": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "{\"python\": \"3.12.3\", \"packages\": {\"ray\": \"2.48.0\", \"vllm\": \"0.24.0+092c4842.nv26.7.59534043\", \"torch\": \"2.13.0a0+9186a08b2c.nv26.7.59513937\", \"transformers\": \"5.6.1\", \"tokenizers\": \"0.22.2\", \"huggingface-hub\": \"1.24.0\", \"apache-tvm-ffi\": \"0.1.9\"}}\n"
+      },
+      "disk_free_bytes": 3423839318016,
+      "docker_running": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "gid": 1002,
+      "gpu": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "GPU-6c8dd3e3-3431-28c9-8643-ae76add329b0, NVIDIA GB10, 580.178.04\n"
+      },
+      "gpu_apps": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": ""
+      },
+      "groups": [
+        4,
+        24,
+        27,
+        30,
+        46,
+        100,
+        122,
+        987,
+        988,
+        1002
+      ],
+      "hostname": "spark-192d",
+      "image": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "\"sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c\" \"arm64\"\n"
+      },
+      "memory_bytes": {
+        "MemAvailable": 125572804608,
+        "MemTotal": 130660909056,
+        "SwapFree": 16595652608,
+        "SwapTotal": 17179865088
+      },
+      "models": {
+        "llama31-8b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "29e4c210b0d6ac178b16b2a255a568bdb23b581e50ca1ef6a6d071dd85704e6e",
+            "model.safetensors.index.json": "146776fce3f6db1103aa6f249e65ee5544c5923ce6f971b092eee79aa6e5d37b",
+            "tokenizer.json": "79e3e522635f3171300913bb421464a87de6222182a0570b9b2ccba2a964b2b4",
+            "tokenizer_config.json": "177c7b61e616fecb84c17ce0591acb92c6c4d60e9ac5ababfb940ff23bbcd424"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "2b1879f356aed350030bb40eb45ad362c89d9891096f79a3ab323d3ba5607668",
+              "name": "model-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4976698672
+            },
+            {
+              "blob_name": "09d433f650646834a83c580877bd60c6d1f88f7755305c12576b5c7058f9af15",
+              "name": "model-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4999802720
+            },
+            {
+              "blob_name": "fc1cdddd6bfa91128d6e94ee73d0ce62bfcdb7af29e978ddcab30c66ae9ea7fa",
+              "name": "model-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 4915916176
+            },
+            {
+              "blob_name": "92ecfe1a2414458b4821ac8c13cf8cb70aed66b5eea8dc5ad9eeb4ff309d6d7b",
+              "name": "model-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 1168138808
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+          "weights_content_rehashed": false
+        },
+        "qwen35-9b": {
+          "complete": true,
+          "metadata_sha256": {
+            "config.json": "d0883072e01861ed0b2d47be3c16c36a8e81c224c7ffaa310c6558fb3f932b05",
+            "model.safetensors.index.json": "26d3539b516be613f39563617cb9d33b3f83d401298125be392c80cefb8f7fe5",
+            "tokenizer.json": "5f9e4d4901a92b997e463c1f46055088b6cca5ca61a6522d1b9f64c4bb81cb42",
+            "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8"
+          },
+          "missing": [],
+          "present": true,
+          "shards": [
+            {
+              "blob_name": "db6f444b43d318c92f360a13a25561a6a65b10c0631b8ed305a426dbaa6c380e",
+              "name": "model.safetensors-00001-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5276436216
+            },
+            {
+              "blob_name": "31c7d7e2dd5d207840b31cc59083c8f4c4718959149e0358c0364052bb9a0330",
+              "name": "model.safetensors-00002-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5335161512
+            },
+            {
+              "blob_name": "7ec36ba3a4176a44c3c0876ad80c56a2f70c84bf008d82e9501df642f17dadec",
+              "name": "model.safetensors-00003-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 5368717440
+            },
+            {
+              "blob_name": "b62b0c4cd7e44edee103ee8f4fe225f246d5e768e07bfd5f25b63a8aa1fdd0c6",
+              "name": "model.safetensors-00004-of-00004.safetensors",
+              "present": true,
+              "size_bytes": 3325995712
+            }
+          ],
+          "snapshot": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+          "weights_content_rehashed": false
+        }
+      },
+      "network": {
+        "returncode": 0,
+        "stderr": "",
+        "stdout": "[{\"ifindex\":3,\"ifname\":\"enp1s0f0np0\",\"flags\":[\"BROADCAST\",\"MULTICAST\",\"UP\",\"LOWER_UP\"],\"mtu\":9000,\"qdisc\":\"mq\",\"operstate\":\"UP\",\"group\":\"default\",\"txqlen\":1000,\"link_type\":\"ether\",\"address\":\"4c:bb:47:2e:19:2e\",\"broadcast\":\"ff:ff:ff:ff:ff:ff\",\"addr_info\":[{\"family\":\"inet\",\"local\":\"10.10.0.13\",\"prefixlen\":24,\"broadcast\":\"10.10.0.255\",\"scope\":\"global\",\"noprefixroute\":true,\"label\":\"enp1s0f0np0\",\"valid_life_time\":4294967295,\"preferred_life_time\":4294967295}]}]\n"
+      },
+      "node_id": "draggon",
+      "occupied_ports": [],
+      "ray_pids": [],
+      "rdma_devices": [
+        "by-ibdev",
+        "by-path",
+        "rdma_cm",
+        "umad0",
+        "umad1",
+        "umad2",
+        "umad3",
+        "uverbs0",
+        "uverbs1",
+        "uverbs2",
+        "uverbs3"
+      ],
+      "uid": 1002,
+      "user": "bastiangl"
+    }
+  ],
+  "started_at": "2026-11-06T19:33:32.449247+00:00",
+  "status": "ready_for_smoke"
+}

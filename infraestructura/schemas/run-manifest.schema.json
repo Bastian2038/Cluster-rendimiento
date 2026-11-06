@@ -59,6 +59,21 @@
         }
       }
     },
+    "pinnedModel": {
+      "allOf": [
+        {"$ref": "#/$defs/model"},
+        {
+          "properties": {
+            "revision": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"},
+            "tokenizer": {
+              "properties": {
+                "revision": {"type": "string", "pattern": "^[0-9a-fA-F]{40}$"}
+              }
+            }
+          }
+        }
+      ]
+    },
     "compact": {
       "type": "object",
       "additionalProperties": false,
@@ -91,7 +106,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
-          "description": "Tipo de corrida; system-baseline, cluster-inventory y nccl-test no tienen modelo en 2.1."
+          "description": "Tipo de corrida; system-baseline, cluster-inventory y nccl-test no tienen modelo en 2.1. inference-serving requiere modelo y tokenizer con revisiones SHA completas."
         },
         "status": {
           "enum": [
@@ -185,6 +200,29 @@
       "allOf": [
         {
           "if": {
+            "properties": {
+              "schema_version": {"const": "2.1"},
+              "kind": {"const": "inference-serving"}
+            },
+            "required": ["schema_version", "kind"]
+          },
+          "then": {
+            "properties": {"model": {"$ref": "#/$defs/pinnedModel"}}
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "schema_version": {"const": "2.1"},
+              "kind": {"const": "inference-serving"},
+              "status": {"const": "complete"}
+            },
+            "required": ["schema_version", "kind", "status"]
+          },
+          "then": {"properties": {"hosts": {"minItems": 1}}}
+        },
+        {
+          "if": {
             "anyOf": [
               {
                 "properties": {
@@ -258,7 +296,8 @@
               "kind": {
                 "enum": [
                   "cluster-inventory",
-                  "nccl-test"
+                  "nccl-test",
+                  "inference-serving"
                 ]
               }
             }

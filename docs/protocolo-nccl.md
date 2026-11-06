@@ -2,7 +2,7 @@
 
 ## Objetivo y autorización
 
-Caracterizar comunicación entre los cuatro nodos reportados y aislar la comparación **4 frente a 2** (Pegasus + Octopus), con Pegasus como control de un nodo. Esta prueba no demuestra rendimiento de Qwen, Llama, inferencia o SFT. **La primera sesión, del 2026-11-06, falló durante el arranque MPI del smoke de cuatro nodos, sin ranks ni métricas NCCL observados.** Ver [análisis y pendientes](resultados/nccl-20261106-analysis.md). Antes de cada sesión, revisar los comandos generados, recursos, duración máxima de 30 minutos y archivos de salida, y obtener autorización operacional para GPU/benchmark. Sin autorización específica no instalar dependencias, modificar red, persistir variables NCCL ni alterar Docker para facilitar la prueba.
+Caracterizar comunicación entre los cuatro nodos reportados y aislar la comparación **4 frente a 2** (Pegasus + Octopus), con Pegasus como control de un nodo. Esta prueba no demuestra rendimiento de Qwen, Llama, inferencia o SFT. **La sesión del 2026-11-06 a las 16:10 UTC completó las 31 pruebas con corrección y RoCE al seleccionar f0.** Ver [resultado y límites](resultados/nccl-20261106-f0-analysis.md). Los [intentos previos fallidos](resultados/nccl-20261106-analysis.md) se conservan. Antes de cada sesión, revisar los comandos generados, recursos, duración máxima de 30 minutos y archivos de salida, y obtener autorización operacional para GPU/benchmark. Sin autorización específica no instalar dependencias, modificar red, persistir variables NCCL ni alterar Docker para facilitar la prueba.
 
 El [protocolo](../experimentos/configs/nccl-diagnostic.json) especifica operaciones y límites; las versiones efectivas se registran al ejecutar. Inspeccionarlo sin conectar a los nodos:
 
@@ -68,6 +68,12 @@ adicionales del par. Esta selección se aplica en todos los grupos 4/2/1 y solo
 en sus procesos. Las velocidades reportadas por las dos interfaces no se suman
 como si fueran dos cables independientes. La evidencia de canales efectivos
 sigue siendo necesaria para acreditar RoCE.
+
+La corrida `20261106T161001.483328Z-8c004a35` ejecutó esta selección desde árbol
+limpio y completó los 31 trabajos. Se verificaron canales RoCE por rank en
+todos los trabajos multinodo y ninguna HCA f1 seleccionada. El filtro resuelve
+el bloqueo observado para esta matriz, sin acreditar reparación de f1 ni
+rendimiento óptimo; ver [análisis](resultados/nccl-20261106-f0-analysis.md).
 
 ## Criterios de aceptación
 

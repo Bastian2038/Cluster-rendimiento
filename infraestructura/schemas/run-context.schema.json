@@ -93,7 +93,7 @@
       "items": {
         "$ref": "#/$defs/participant"
       },
-      "description": "Roster observado, nunca deducido de configuración. Ausente en 2.0; obligatorio para inventario distribuido y NCCL 2.1."
+      "description": "Roster observado, nunca deducido de configuración. Ausente en 2.0; obligatorio para inventario distribuido, NCCL e inferencia distribuida 2.1."
     }
   },
   "allOf": [

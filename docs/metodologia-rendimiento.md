@@ -115,6 +115,8 @@ de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
 El [flujo de reproducibilidad](reproducibilidad.md) define el registro mínimo y
-la conservación de resultados raw. Los runners de modelos para inferencia,
-serving y SFT aún están pendientes. Las herramientas de inventario distribuido
-y NCCL son la primera etapa; su implementación no acredita una ejecución real.
+la conservación de resultados raw. El [runner de inferencia/serving](protocolo-inferencia.md)
+implementa la primera campaña solicitada 4 → 2 con Qwen3.5-9B y
+Llama-3.1-8B-Instruct. Esta campaña aplaza explícitamente Pegasus-only y no
+permite calcular 4/1 o 2/1. SFT completo sigue pendiente. La validación CPU de
+los runners y la prueba NCCL no acreditan ejecución ni rendimiento de modelos.

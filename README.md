@@ -1,19 +1,22 @@
 # Rendimiento en clúster de cuatro nodos
 
-Este repositorio prepara la caracterización de **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. El [primer inventario pasivo](docs/cluster-cuatro-nodos.md), del 2026-10-31, confirmó identidad, acceso y componentes principales de los cuatro: tres NVIDIA DGX Spark y un ASUS GX10 (Griffin), todos con GPU GB10. LLDP anuncia un switch de datos MikroTik CRS804-4DDQ; su administración y el mapa físico de cables siguen pendientes. No hay mediciones NCCL ni benchmarks de modelos de cuatro nodos en este repositorio.
+Este repositorio caracteriza **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. El [primer inventario pasivo](docs/cluster-cuatro-nodos.md), del 2026-10-31, confirmó identidad, acceso y componentes principales de los cuatro: tres NVIDIA DGX Spark y un ASUS GX10 (Griffin), todos con GPU GB10. LLDP anuncia un switch de datos MikroTik CRS804-4DDQ; su administración y el mapa físico de cables siguen pendientes. Hay mediciones NCCL; la ejecución de modelos en cuatro nodos sigue pendiente.
 
-La primera entrega es infraestructura: inventario de los cuatro nodos y protocolo de diagnóstico NCCL. Después se prepararán inferencia/serving y SFT completo. El orden de cada bloque es **4 → 2 → 1**: cuatro nodos, Pegasus + Octopus y Pegasus. La comparación principal es 4 frente a 2; Pegasus proporciona la referencia contemporánea de un nodo donde la configuración sea viable. PEFT/LoRA queda fuera de la campaña actual. Las variantes concretas de Qwen y Llama se seleccionarán con revisión y compatibilidad verificadas.
+El runner de [inferencia/serving 4/2](docs/protocolo-inferencia.md) prepara Qwen3.5-9B y Llama-3.1-8B-Instruct con revisiones fijadas, datos sintéticos deterministas y tres bloques. La campaña solicitada aplaza la referencia Pegasus-only: no calcula 4/1 ni 2/1. El diseño general del estudio conserva el orden **4 → 2 → 1** y una referencia contemporánea de Pegasus donde sea viable. SFT completo sigue pendiente y PEFT/LoRA queda fuera.
 
-Estado más reciente: la [sesión posterior a la corrección MPI](docs/resultados/nccl-20261106-session2.md)
-alcanzó la preparación de canales RDMA, pero no completó el smoke. Se preparó
-un filtro para los dispositivos del puerto común a los cuatro nodos; quedó sin
-ejecutar al agotarse el presupuesto. Todavía no hay tablas NCCL válidas.
+Estado más reciente: la [sesión con el filtro f0](docs/resultados/nccl-20261106-f0-analysis.md)
+completó las 31 pruebas NCCL en orden 4 → 2 → 1, con 666 filas válidas, cero
+errores en las comprobaciones soportadas y RoCE verificado en todos los
+trabajos multinodo. La selección de las interfaces comunes evita el bloqueo
+anterior. El rendimiento observado difiere entre cuatro y dos nodos y queda
+pendiente de análisis; todavía no se midieron modelos Qwen/Llama.
 
-La primera sesión NCCL se intentó el 2026-11-06: el preflight pasó, pero el smoke de cuatro nodos falló por timeout de arranque MPI sin ranks ni métricas NCCL; quedaron 30 trabajos pendientes. El [informe del intento](docs/resultados/nccl-20261106-analysis.md) conserva evidencia, diagnóstico CPU y limpieza. Un [diagnóstico CPU posterior](docs/resultados/mpi-20261106-analysis.md) completó la coordinación y una suma entre cuatro nodos seleccionando la red común de MPI; NCCL/RoCE todavía no están validados. Cada nueva sesión mantiene el máximo de 30 minutos y requiere revisar objetivo, comandos, recursos y salidas. Los comandos `plan` de inventario y NCCL preparan la ejecución sin acceso a nodos ni GPU. Una captura o prueba real requiere autorización operacional según [AGENTS.md](AGENTS.md).
+La primera sesión NCCL se intentó el 2026-11-06: el preflight pasó, pero el smoke de cuatro nodos falló por timeout de arranque MPI sin ranks ni métricas NCCL; quedaron 30 trabajos pendientes. El [informe del intento](docs/resultados/nccl-20261106-analysis.md) conserva evidencia, diagnóstico CPU y limpieza. Un [diagnóstico CPU posterior](docs/resultados/mpi-20261106-analysis.md) completó la coordinación y una suma entre cuatro nodos seleccionando la red común de MPI; esa prueba aislada no validaba NCCL/RoCE. La validación posterior está documentada arriba. Cada nueva sesión mantiene el máximo de 30 minutos y requiere revisar objetivo, comandos, recursos y salidas. Los comandos `plan` de inventario y NCCL preparan la ejecución sin acceso a nodos ni GPU. Una captura o prueba real requiere autorización operacional según [AGENTS.md](AGENTS.md).
 
 ```bash
 python3 -m infraestructura.cluster_inventory plan --config experimentos/configs/cluster.json
 python3 -m infraestructura.nccl plan --cluster experimentos/configs/cluster.json --config experimentos/configs/nccl-diagnostic.json
+python3 -m infraestructura.inference plan
 ```
 
 Guías: [estructura](docs/estructura.md), [clúster de cuatro nodos](docs/cluster-cuatro-nodos.md), [protocolo NCCL](docs/protocolo-nccl.md), [metodología](docs/metodologia-rendimiento.md), [reproducibilidad](docs/reproducibilidad.md), [inventario de Pegasus](docs/inventario-pegasus.md) e [índice de resultados](docs/resultados/README.md). El [registro de separación](docs/migracion-repositorios.md) identifica la procedencia histórica del repositorio.

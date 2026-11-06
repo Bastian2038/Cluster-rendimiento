@@ -1,0 +1,2 @@
+# Ray2.48.0 cp312 manylinux2014 aarch64 wheel, PyPI.
+ray==2.48.0 --hash=sha256:f1cf33d260316f92f77558185f1c36fc35506d76ee7fdfed9f5b70f9c4bdba7f

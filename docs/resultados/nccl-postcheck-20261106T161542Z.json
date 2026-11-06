@@ -1,0 +1,95 @@
+{
+  "run_id": "20261106T161001.483328Z-8c004a35",
+  "timestamp_utc": "20261106T161542Z",
+  "scope": "passive process and compute-app checks; no GPU workload or process termination",
+  "limitations": "Candidates belong to the user, not necessarily this run. No complete auxiliary SSH-client census. GPU apps are reported separately without ownership attribution.",
+  "query_source": "\nimport json, os, subprocess, time\nfrom pathlib import Path\nnames = {'mpirun', 'mpiexec', 'orterun', 'orted', 'all_reduce_perf',\n         'all_gather_perf', 'reduce_scatter_perf', 'sendrecv_perf'}\ncandidates = []\nscan_errors = []\nfor proc in Path('/proc').iterdir():\n    if not proc.name.isdigit():\n        continue\n    try:\n        if proc.stat().st_uid != os.getuid():\n            continue\n        args = [x.decode(errors='replace') for x in (proc/'cmdline').read_bytes().split(b'\\0') if x]\n        if not args:\n            continue\n        name = Path(args[0]).name\n        is_wrapper = name in {'timeout', 'sh', 'bash'} and any(\n            a.startswith('/home/bastiangl/.local/share/ipre/nccl/') for a in args[1:])\n        if name not in names and not is_wrapper:\n            continue\n        fields = (proc/'stat').read_text().rsplit(')', 1)[1].split()\n        candidates.append({'pid': int(proc.name), 'ppid': int(fields[1]),\n                           'start_ticks': fields[19], 'argv': args})\n    except FileNotFoundError:\n        pass\n    except (PermissionError, OSError, IndexError) as exc:\n        scan_errors.append({'pid': int(proc.name), 'error': type(exc).__name__})\ngpu = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory',\n                      '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=8)\nprint(json.dumps({'hostname': subprocess.check_output(['hostname'], text=True).strip(),\n                  'uid': os.getuid(), 'timestamp_epoch': time.time(),\n                  'mpi_or_nccl_process_candidates': candidates, 'process_scan_errors': scan_errors,\n                  'compute_apps': {'returncode': gpu.returncode, 'stdout': gpu.stdout,\n                                   'stderr': gpu.stderr}}))\n",
+  "nodes": [
+    {
+      "node_id": "pegasus",
+      "command": [
+        "python3",
+        "-c",
+        "\nimport json, os, subprocess, time\nfrom pathlib import Path\nnames = {'mpirun', 'mpiexec', 'orterun', 'orted', 'all_reduce_perf',\n         'all_gather_perf', 'reduce_scatter_perf', 'sendrecv_perf'}\ncandidates = []\nscan_errors = []\nfor proc in Path('/proc').iterdir():\n    if not proc.name.isdigit():\n        continue\n    try:\n        if proc.stat().st_uid != os.getuid():\n            continue\n        args = [x.decode(errors='replace') for x in (proc/'cmdline').read_bytes().split(b'\\0') if x]\n        if not args:\n            continue\n        name = Path(args[0]).name\n        is_wrapper = name in {'timeout', 'sh', 'bash'} and any(\n            a.startswith('/home/bastiangl/.local/share/ipre/nccl/') for a in args[1:])\n        if name not in names and not is_wrapper:\n            continue\n        fields = (proc/'stat').read_text().rsplit(')', 1)[1].split()\n        candidates.append({'pid': int(proc.name), 'ppid': int(fields[1]),\n                           'start_ticks': fields[19], 'argv': args})\n    except FileNotFoundError:\n        pass\n    except (PermissionError, OSError, IndexError) as exc:\n        scan_errors.append({'pid': int(proc.name), 'error': type(exc).__name__})\ngpu = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,gpu_uuid,used_gpu_memory',\n                      '--format=csv,noheader,nounits'], capture_output=True, text=True, timeout=8)\nprint(json.dumps({'hostname': subprocess.check_output(['hostname'], text=True).strip(),\n                  'uid': os.getuid(), 'timestamp_epoch': time.time(),\n                  'mpi_or_nccl_process_candidates': candidates, 'process_scan_errors': scan_errors,\n                  'compute_apps': {'returncode': gpu.returncode, 'stdout': gpu.stdout,\n                                   'stderr': gpu.stderr}}))\n"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-cfea\", \"uid\": 1002, \"timestamp_epoch\": 1793981742.001369, \"mpi_or_nccl_process_candidates\": [], \"process_scan_errors\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "octopus",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@192.168.100.11",
+        "python3 -c '\nimport json, os, subprocess, time\nfrom pathlib import Path\nnames = {'\"'\"'mpirun'\"'\"', '\"'\"'mpiexec'\"'\"', '\"'\"'orterun'\"'\"', '\"'\"'orted'\"'\"', '\"'\"'all_reduce_perf'\"'\"',\n         '\"'\"'all_gather_perf'\"'\"', '\"'\"'reduce_scatter_perf'\"'\"', '\"'\"'sendrecv_perf'\"'\"'}\ncandidates = []\nscan_errors = []\nfor proc in Path('\"'\"'/proc'\"'\"').iterdir():\n    if not proc.name.isdigit():\n        continue\n    try:\n        if proc.stat().st_uid != os.getuid():\n            continue\n        args = [x.decode(errors='\"'\"'replace'\"'\"') for x in (proc/'\"'\"'cmdline'\"'\"').read_bytes().split(b'\"'\"'\\0'\"'\"') if x]\n        if not args:\n            continue\n        name = Path(args[0]).name\n        is_wrapper = name in {'\"'\"'timeout'\"'\"', '\"'\"'sh'\"'\"', '\"'\"'bash'\"'\"'} and any(\n            a.startswith('\"'\"'/home/bastiangl/.local/share/ipre/nccl/'\"'\"') for a in args[1:])\n        if name not in names and not is_wrapper:\n            continue\n        fields = (proc/'\"'\"'stat'\"'\"').read_text().rsplit('\"'\"')'\"'\"', 1)[1].split()\n        candidates.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'ppid'\"'\"': int(fields[1]),\n                           '\"'\"'start_ticks'\"'\"': fields[19], '\"'\"'argv'\"'\"': args})\n    except FileNotFoundError:\n        pass\n    except (PermissionError, OSError, IndexError) as exc:\n        scan_errors.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'error'\"'\"': type(exc).__name__})\ngpu = subprocess.run(['\"'\"'nvidia-smi'\"'\"', '\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"',\n                      '\"'\"'--format=csv,noheader,nounits'\"'\"'], capture_output=True, text=True, timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"': subprocess.check_output(['\"'\"'hostname'\"'\"'], text=True).strip(),\n                  '\"'\"'uid'\"'\"': os.getuid(), '\"'\"'timestamp_epoch'\"'\"': time.time(),\n                  '\"'\"'mpi_or_nccl_process_candidates'\"'\"': candidates, '\"'\"'process_scan_errors'\"'\"': scan_errors,\n                  '\"'\"'compute_apps'\"'\"': {'\"'\"'returncode'\"'\"': gpu.returncode, '\"'\"'stdout'\"'\"': gpu.stdout,\n                                   '\"'\"'stderr'\"'\"': gpu.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-60c3\", \"uid\": 1002, \"timestamp_epoch\": 1793981744.116468, \"mpi_or_nccl_process_candidates\": [], \"process_scan_errors\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.134",
+        "python3 -c '\nimport json, os, subprocess, time\nfrom pathlib import Path\nnames = {'\"'\"'mpirun'\"'\"', '\"'\"'mpiexec'\"'\"', '\"'\"'orterun'\"'\"', '\"'\"'orted'\"'\"', '\"'\"'all_reduce_perf'\"'\"',\n         '\"'\"'all_gather_perf'\"'\"', '\"'\"'reduce_scatter_perf'\"'\"', '\"'\"'sendrecv_perf'\"'\"'}\ncandidates = []\nscan_errors = []\nfor proc in Path('\"'\"'/proc'\"'\"').iterdir():\n    if not proc.name.isdigit():\n        continue\n    try:\n        if proc.stat().st_uid != os.getuid():\n            continue\n        args = [x.decode(errors='\"'\"'replace'\"'\"') for x in (proc/'\"'\"'cmdline'\"'\"').read_bytes().split(b'\"'\"'\\0'\"'\"') if x]\n        if not args:\n            continue\n        name = Path(args[0]).name\n        is_wrapper = name in {'\"'\"'timeout'\"'\"', '\"'\"'sh'\"'\"', '\"'\"'bash'\"'\"'} and any(\n            a.startswith('\"'\"'/home/bastiangl/.local/share/ipre/nccl/'\"'\"') for a in args[1:])\n        if name not in names and not is_wrapper:\n            continue\n        fields = (proc/'\"'\"'stat'\"'\"').read_text().rsplit('\"'\"')'\"'\"', 1)[1].split()\n        candidates.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'ppid'\"'\"': int(fields[1]),\n                           '\"'\"'start_ticks'\"'\"': fields[19], '\"'\"'argv'\"'\"': args})\n    except FileNotFoundError:\n        pass\n    except (PermissionError, OSError, IndexError) as exc:\n        scan_errors.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'error'\"'\"': type(exc).__name__})\ngpu = subprocess.run(['\"'\"'nvidia-smi'\"'\"', '\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"',\n                      '\"'\"'--format=csv,noheader,nounits'\"'\"'], capture_output=True, text=True, timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"': subprocess.check_output(['\"'\"'hostname'\"'\"'], text=True).strip(),\n                  '\"'\"'uid'\"'\"': os.getuid(), '\"'\"'timestamp_epoch'\"'\"': time.time(),\n                  '\"'\"'mpi_or_nccl_process_candidates'\"'\"': candidates, '\"'\"'process_scan_errors'\"'\"': scan_errors,\n                  '\"'\"'compute_apps'\"'\"': {'\"'\"'returncode'\"'\"': gpu.returncode, '\"'\"'stdout'\"'\"': gpu.stdout,\n                                   '\"'\"'stderr'\"'\"': gpu.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"gx10-726d\", \"uid\": 1002, \"timestamp_epoch\": 1793981742.7008977, \"mpi_or_nccl_process_candidates\": [], \"process_scan_errors\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.135",
+        "python3 -c '\nimport json, os, subprocess, time\nfrom pathlib import Path\nnames = {'\"'\"'mpirun'\"'\"', '\"'\"'mpiexec'\"'\"', '\"'\"'orterun'\"'\"', '\"'\"'orted'\"'\"', '\"'\"'all_reduce_perf'\"'\"',\n         '\"'\"'all_gather_perf'\"'\"', '\"'\"'reduce_scatter_perf'\"'\"', '\"'\"'sendrecv_perf'\"'\"'}\ncandidates = []\nscan_errors = []\nfor proc in Path('\"'\"'/proc'\"'\"').iterdir():\n    if not proc.name.isdigit():\n        continue\n    try:\n        if proc.stat().st_uid != os.getuid():\n            continue\n        args = [x.decode(errors='\"'\"'replace'\"'\"') for x in (proc/'\"'\"'cmdline'\"'\"').read_bytes().split(b'\"'\"'\\0'\"'\"') if x]\n        if not args:\n            continue\n        name = Path(args[0]).name\n        is_wrapper = name in {'\"'\"'timeout'\"'\"', '\"'\"'sh'\"'\"', '\"'\"'bash'\"'\"'} and any(\n            a.startswith('\"'\"'/home/bastiangl/.local/share/ipre/nccl/'\"'\"') for a in args[1:])\n        if name not in names and not is_wrapper:\n            continue\n        fields = (proc/'\"'\"'stat'\"'\"').read_text().rsplit('\"'\"')'\"'\"', 1)[1].split()\n        candidates.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'ppid'\"'\"': int(fields[1]),\n                           '\"'\"'start_ticks'\"'\"': fields[19], '\"'\"'argv'\"'\"': args})\n    except FileNotFoundError:\n        pass\n    except (PermissionError, OSError, IndexError) as exc:\n        scan_errors.append({'\"'\"'pid'\"'\"': int(proc.name), '\"'\"'error'\"'\"': type(exc).__name__})\ngpu = subprocess.run(['\"'\"'nvidia-smi'\"'\"', '\"'\"'--query-compute-apps=pid,gpu_uuid,used_gpu_memory'\"'\"',\n                      '\"'\"'--format=csv,noheader,nounits'\"'\"'], capture_output=True, text=True, timeout=8)\nprint(json.dumps({'\"'\"'hostname'\"'\"': subprocess.check_output(['\"'\"'hostname'\"'\"'], text=True).strip(),\n                  '\"'\"'uid'\"'\"': os.getuid(), '\"'\"'timestamp_epoch'\"'\"': time.time(),\n                  '\"'\"'mpi_or_nccl_process_candidates'\"'\"': candidates, '\"'\"'process_scan_errors'\"'\"': scan_errors,\n                  '\"'\"'compute_apps'\"'\"': {'\"'\"'returncode'\"'\"': gpu.returncode, '\"'\"'stdout'\"'\"': gpu.stdout,\n                                   '\"'\"'stderr'\"'\"': gpu.stderr}}))\n'"
+      ],
+      "returncode": 0,
+      "stdout": "{\"hostname\": \"spark-192d\", \"uid\": 1002, \"timestamp_epoch\": 1793981742.6131237, \"mpi_or_nccl_process_candidates\": [], \"process_scan_errors\": [], \"compute_apps\": {\"returncode\": 0, \"stdout\": \"\", \"stderr\": \"\"}}\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -27,7 +27,7 @@ from typing import Any, Iterable, Mapping, Sequence
 SCHEMA_VERSION = "2.1"
 SUPPORTED_VERSIONS = frozenset({"2.0", SCHEMA_VERSION})
 MODEL_FREE_KINDS = frozenset({"system-baseline", "cluster-inventory", "nccl-test"})
-DISTRIBUTED_KINDS = frozenset({"cluster-inventory", "nccl-test"})
+DISTRIBUTED_KINDS = frozenset({"cluster-inventory", "nccl-test", "inference-serving"})
 _CONTEXT_PATH = "raw/context.json"
 _CONTEXT_FIELDS = frozenset({
     "policy", "git", "system", "packages", "accelerator", "requested_config",
@@ -331,7 +331,7 @@ def start_run(
         raise ManifestError(
             "el worktree está dirty; confirme los cambios o use --allow-dirty solo para smoke"
         )
-    if not system_baseline and not allow_floating_revision:
+    if not system_baseline and (not allow_floating_revision or kind == "inference-serving"):
         _validate_revision(model_revision, "model_revision")
         _validate_revision(tokenizer_revision, "tokenizer_revision")
 
@@ -444,8 +444,8 @@ def _validate_participants(directory: Path, participants: Any, kind: str) -> Non
             raise ManifestError("gpu_uuid inválido")
         if rank is not None and (isinstance(rank, bool) or not isinstance(rank, int) or rank < 0):
             raise ManifestError("rank inválido")
-        if kind == "nccl-test" and (gpu is None or rank is None):
-            raise ManifestError("nccl-test requiere GPU y rank observados")
+        if kind in {"nccl-test", "inference-serving"} and (gpu is None or rank is None):
+            raise ManifestError(f"{kind} requiere GPU y rank observados")
         for key in identity:
             value = item[key]
             if value is not None:
@@ -599,9 +599,17 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
             raise ManifestError(f"{core['kind']} requiere modelo null sin floating_revision")
     elif not isinstance(model, dict) or not isinstance(model.get("tokenizer"), dict):
         raise ManifestError("metadatos de modelo/tokenizer inválidos")
-    elif "floating_revision" not in policy["exceptions"]:
+    elif (version == "2.1" and core.get("kind") == "inference-serving") or "floating_revision" not in policy["exceptions"]:
         _validate_revision(model.get("revision"), "model_revision")
         _validate_revision(model["tokenizer"].get("revision"), "tokenizer_revision")
+    if (version == "2.1" and core.get("kind") == "inference-serving"
+            and (not isinstance(model.get("id"), str) or not model["id"]
+                 or not isinstance(model["tokenizer"].get("id"), str)
+                 or not model["tokenizer"]["id"])):
+        raise ManifestError("model_id y tokenizer_id son obligatorios")
+    if (version == "2.1" and core.get("kind") in DISTRIBUTED_KINDS
+            and core.get("status") == "complete" and not context.get("participants")):
+        raise ManifestError("corrida distribuida sin participantes observados no puede completar")
     _validate_completion(directory, core)
     normalized = dict(core)
     normalized.update({key: context[key] for key in _CONTEXT_FIELDS if key in context})

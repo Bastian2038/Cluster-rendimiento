@@ -39,10 +39,12 @@ La interfaz de gestión `enP7s7` está UP a 1000 Mb/s en Pegasus, Griffin y Drag
 ## Diferencias y pendientes para NCCL
 
 Actualización del 2026-11-06: se preparó un paquete aislado idéntico de NCCL 2.30.7
-y nccl-tests en los cuatro nodos. El preflight verificó bibliotecas y Open MPI
-4.1.6, pero el primer smoke falló durante el arranque distribuido de MPI. Ver
-[evidencia del intento](resultados/nccl-20261106-analysis.md). Las observaciones
-históricas siguientes conservan su fecha y no sustituyen este preflight.
+y nccl-tests en los cuatro nodos, con Open MPI 4.1.6. Tras los intentos fallidos,
+la [sesión con selección f0](resultados/nccl-20261106-f0-analysis.md) completó
+31/31 pruebas y verificó RoCE en todos los trabajos multinodo. Esto valida la
+comunicación probada; la corroboración administrativa/física del switch sigue
+pendiente. Las observaciones históricas siguientes conservan su fecha y no
+sustituyen los preflights contemporáneos.
 
 | Entorno observado | Pegasus y Octopus | Griffin | Draggon |
 | --- | --- | --- | --- |

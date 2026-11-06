@@ -1,0 +1,193 @@
+{
+  "created_at": "2026-11-06T19:24:07.537115+00:00",
+  "scope": "CPU and local preparation; no GPU inference",
+  "git_commit": "8e3bf409b8e14d14517c9a5f2a46e7dd2d1e338b",
+  "git_dirty": true,
+  "environment": {
+    "image_id": "sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c",
+    "python": "3.12.3",
+    "architecture": "aarch64",
+    "packages": {
+      "vllm": "0.24.0+092c4842.nv26.7.59534043",
+      "torch": "2.13.0a0+9186a08b2c.nv26.7.59513937",
+      "ray": "2.48.0",
+      "apache-tvm-ffi": "0.1.9",
+      "transformers": "5.6.1",
+      "tokenizers": "0.22.2",
+      "huggingface-hub": "1.24.0"
+    },
+    "pip_check": {
+      "returncode": 0,
+      "stdout": "No broken requirements found.\n",
+      "stderr": "WARNING: The directory '/.cache/pip' or its parent directory is not owned or is not writable by the current user. The cache has been disabled. Check the permissions and owner of that directory. If executing pip with sudo, you should use sudo's -H flag.\n"
+    },
+    "source_sha256": {
+      "vllm_v1_executor_multiproc_executor.py": "80bde58c8336427848f87df053d756dafc88e5df6ef80df661ecf6f85d8de7e2",
+      "vllm_v1_worker_gpu_worker.py": "271c3e2eaab7f1ca36fcd7c8e1620db9db4705f46ba5b3257dd6a3937f56b7df",
+      "vllm_benchmarks_serve.py": "b09e85eed6f5f7a9075b40a19fc1dd8e94a1c449665c2c6510f349e0409e77b7"
+    }
+  },
+  "environment_record_sha256": "e4dee8e58812485618301f1f94141a649dd3174aea3b17e3c601140df4e80594",
+  "tokenizers": [
+    {
+      "chat_template_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+      "files_sha256": {
+        "measured": "ea037683e1aed3b5b5e7479ace2cdce571c9e18a25d5b4c8d6071d1d7b3615a9",
+        "warmup": "6c8c9a4f71350faf71d1e0797cf6ee5048a8d47b1e436de12f95e01a015c03bf"
+      },
+      "generator_sha256": "33beaddcc4a574212a9d67af73109c3b2e3ba3096a1601d9d3049f7553040e84",
+      "input_tokens": 512,
+      "model_id": "Qwen/Qwen3.5-9B",
+      "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "output_tokens": 128,
+      "schema_version": 1,
+      "seed": 20261106,
+      "template_mode": "pre_rendered_user_generation_prompt",
+      "thinking_enabled": false,
+      "tokenizer_id": "Qwen/Qwen3.5-9B",
+      "tokenizer_local_path": "/models/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "vllm_flags": [
+        "--skip-chat-template",
+        "--disable-shuffle",
+        "--no-oversample",
+        "--custom-output-len",
+        "-1",
+        "--num-warmups",
+        "0"
+      ],
+      "source": "resultados/tmp/inference-tokenizer-check-20261106/512/metadata.json",
+      "metadata_sha256": "bd02e04429ac80fa7d50e3f7c2a86cc83883ff03c638e8d5cdd64a29b0576447",
+      "image_id": "sha256:e30b26eee2e55ceadd9277910c923613e1cdf4197c1976ff9b33d28a3d214474",
+      "row_count": 48,
+      "phase_counts": {
+        "warmup": 16,
+        "measured": 32
+      },
+      "exact_input_lengths": true
+    },
+    {
+      "chat_template_sha256": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+      "files_sha256": {
+        "measured": "306c928cf282127d259d0d603fa890385289266ca144b99e712a1b76ef2aec32",
+        "warmup": "c32cb5fc67def49c30bc9fe76b2cda5c3a37beebe9d45f7b83a89c15382344bb"
+      },
+      "generator_sha256": "33beaddcc4a574212a9d67af73109c3b2e3ba3096a1601d9d3049f7553040e84",
+      "input_tokens": 2048,
+      "model_id": "Qwen/Qwen3.5-9B",
+      "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "output_tokens": 128,
+      "schema_version": 1,
+      "seed": 20261106,
+      "template_mode": "pre_rendered_user_generation_prompt",
+      "thinking_enabled": false,
+      "tokenizer_id": "Qwen/Qwen3.5-9B",
+      "tokenizer_local_path": "/models/models--Qwen--Qwen3.5-9B/snapshots/c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "vllm_flags": [
+        "--skip-chat-template",
+        "--disable-shuffle",
+        "--no-oversample",
+        "--custom-output-len",
+        "-1",
+        "--num-warmups",
+        "0"
+      ],
+      "source": "resultados/tmp/inference-tokenizer-check-20261106/2048/metadata.json",
+      "metadata_sha256": "91c65ff1c7ef25db9eae69381eb9dde9a0dae5e6ad2016c2cdd6b131d2606272",
+      "image_id": "sha256:e30b26eee2e55ceadd9277910c923613e1cdf4197c1976ff9b33d28a3d214474",
+      "row_count": 48,
+      "phase_counts": {
+        "warmup": 16,
+        "measured": 32
+      },
+      "exact_input_lengths": true
+    },
+    {
+      "chat_template_sha256": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+      "files_sha256": {
+        "measured": "e5df1befb590655531c7e7d553994e4f2e98ddcaf09f4cb6113a5ce65c5e40d4",
+        "warmup": "299746f50c8fa2ce3178d1aca46657fa101c2bbf091f2b8545f3b79ca82cb8ba"
+      },
+      "generator_sha256": "33beaddcc4a574212a9d67af73109c3b2e3ba3096a1601d9d3049f7553040e84",
+      "input_tokens": 512,
+      "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "output_tokens": 128,
+      "schema_version": 1,
+      "seed": 20261106,
+      "template_mode": "pre_rendered_user_generation_prompt",
+      "thinking_enabled": false,
+      "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "tokenizer_local_path": "/models/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+      "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "vllm_flags": [
+        "--skip-chat-template",
+        "--disable-shuffle",
+        "--no-oversample",
+        "--custom-output-len",
+        "-1",
+        "--num-warmups",
+        "0"
+      ],
+      "source": "resultados/tmp/inference-tokenizer-llama-20261106/512/metadata.json",
+      "metadata_sha256": "9ae0c589640a0d364849d6a501924c48a0e3ef7365c329fc4be7f82caa8b566c",
+      "image_id": "sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c",
+      "row_count": 48,
+      "phase_counts": {
+        "warmup": 16,
+        "measured": 32
+      },
+      "exact_input_lengths": true
+    },
+    {
+      "chat_template_sha256": "e10ca381b1ccc5cf9db52e371f3b6651576caee0a630b452e2816b2d404d4b65",
+      "files_sha256": {
+        "measured": "ff9338800d9d74949cd3b3bb2b97081d544e08884dbb19b7e08f749c8cca1d03",
+        "warmup": "fdf5bff82a9d1219f24f6ca0684daf7e35e4c0d98a7d120a2279ac68d72ce3b8"
+      },
+      "generator_sha256": "33beaddcc4a574212a9d67af73109c3b2e3ba3096a1601d9d3049f7553040e84",
+      "input_tokens": 2048,
+      "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "model_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "output_tokens": 128,
+      "schema_version": 1,
+      "seed": 20261106,
+      "template_mode": "pre_rendered_user_generation_prompt",
+      "thinking_enabled": false,
+      "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "tokenizer_local_path": "/models/models--meta-llama--Llama-3.1-8B-Instruct/snapshots/0e9e39f249a16976918f6564b8830bc894c89659",
+      "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "vllm_flags": [
+        "--skip-chat-template",
+        "--disable-shuffle",
+        "--no-oversample",
+        "--custom-output-len",
+        "-1",
+        "--num-warmups",
+        "0"
+      ],
+      "source": "resultados/tmp/inference-tokenizer-llama-20261106/2048/metadata.json",
+      "metadata_sha256": "2000de7799a02fa1521f7df1c87f20b929934d65d0d269410bd4aba5c56460e9",
+      "image_id": "sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c",
+      "row_count": 48,
+      "phase_counts": {
+        "warmup": 16,
+        "measured": 32
+      },
+      "exact_input_lengths": true
+    }
+  ],
+  "tests": {
+    "command": "timeout 60s python3 -m unittest discover",
+    "tests": 140,
+    "passed": 139,
+    "skipped": 1,
+    "duration_seconds": 1.59,
+    "skipped_reason": "Matplotlib absent; SVG rendering not exercised"
+  },
+  "limitations": [
+    "Static runtime source checks and tokenization do not validate GPU inference or multi-node Ray.",
+    "Weight shards checked by metadata, size and blob identity; full weights not rehashed."
+  ]
+}
