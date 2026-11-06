@@ -20,9 +20,17 @@ y registra el límite efectivo; nunca permite superar ocho horas. El servidor
 se supervisa durante el arranque: si termina, se cierra la corrida inmediatamente.
 La caché de FlashInfer se fija con `FLASHINFER_WORKSPACE_BASE=/work/cache`.
 La sonda CPU comprueba su importación y escritura sin GPU antes de la campaña.
+También comprueba pandas. Después de generar los JSONL, la preparación los lee
+con el `CustomDataset` de la imagen y compara orden, texto y longitudes; conserva
+`reader-validation.json` antes de iniciar GPU.
 
 Cada corrida tiene manifiesto `inference-serving` y participantes observados con GPU UUID, rank y evidencia; los hosts solicitados no cuentan. El índice de campaña referencia cierres por hash y marca `COMPLETE` o `PARTIAL`. Solo celdas válidas y pares 4/2 completos de la misma campaña, bloque, modelo, carga y entorno producen `S4/2` y `E4/2`; fallos y fronteras se informan sin speedup ficticio. Raw es inmutable tras cierre. El detalle conserva TTFT individual e intervalos ITL; TPOT y E2E p50/p95 proceden del resumen vLLM. No conserva E2E individual. Registrar throughput, errores y telemetría por nodo/rank. Con 32 solicitudes, los percentiles son descriptivos; `p99` no estima bien la cola poblacional. En memoria unificada, `N/A` de NVML no equivale a cero ni se suman RAM y memoria GPU como reservas separadas. [NVIDIA 26.07](https://docs.nvidia.com/deeplearning/frameworks/vllm-release-notes/rel-26-07.html) advierte sobre asignación vLLM en DGX Spark; se fija `gpu_memory_utilization=0.70`.
 
 ## Estado observado al 2026-11-06
 
 En Pegasus se construyó `ipre/vllm:26.07-ray2.48.0` (`sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c`), con Ray 2.48.0, `apache-tvm-ffi` 0.1.9, versiones protegidas preservadas y `pip check` limpio. La base traía TVM 0.1.7: el primer build detectó la contradicción; el segundo la corrigió. Ambos tokenizers pasaron la generación real en CPU para 512/2048 tokens y 16+32 prompts. Qwen y Llama están en `resultados/tmp/model-cache`; el índice de Llama referencia cuatro shards presentes (16.060.556.376 bytes). No se rehashearon los pesos completos. El acceso HF fue comprobado sin exponer credenciales. Docker fue habilitado por el usuario en Griffin y Draggon. La distribución concluyó y el [preflight final](resultados/inference-preflight-v2-20261106.json) verificó imagen, modelos, paquetes y disponibilidad en los cuatro nodos sin errores. Este estado precede a la ejecución GPU; ver [preparación y comandos](resultados/inference-preparacion-20261106.md).
+
+Tras los dos intentos registrados, la configuración actual usa la derivada
+`ipre/vllm:26.07-ray2.48.0-bench`, ID `sha256:4df9ac0696275f800e4c70fa2d459a2b77473014d3654f98c2714ae3954c42ac`.
+Incluye pandas para el cliente custom y tiene preflight CPU completo en los
+cuatro nodos. Ver [correcciones y validación del cliente](resultados/inference-20261106-client-analysis.md).

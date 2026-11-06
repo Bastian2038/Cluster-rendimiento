@@ -1,6 +1,7 @@
 """CPU fixtures for orchestration, fail-closed readiness and paired reports."""
 
 import copy
+import ast
 import json
 import tempfile
 import unittest
@@ -21,7 +22,7 @@ def command_result(stdout='', stderr='', returncode=0):
 def ready_probe(config, cluster_config, node):
     index=cluster_config['groups']['four'].index(node['node_id'])
     packages={'vllm':'0.24.0+nv','ray':'2.48.0','torch':'2.13.0','transformers':'5.6.1',
-              'tokenizers':'0.22.2','huggingface-hub':'1.24.0','apache-tvm-ffi':'0.1.9'}
+              'tokenizers':'0.22.2','huggingface-hub':'1.24.0','apache-tvm-ffi':'0.1.9','pandas':'2.3.3'}
     return {'node_id':node['node_id'],'hostname':node['expected_hostname'],'architecture':'aarch64',
         'uid':1002,'gid':1002,'groups':[1002,100],'user':'bastiangl',
         'image':command_result(json.dumps(config['image']['id'])+' "arm64"'),
@@ -73,6 +74,9 @@ class InferencePlanTests(unittest.TestCase):
     def test_embedded_remote_scripts_compile_without_execution(self):
         for code in (rt.PROBE_SOURCE,inf.STAGE,inf.COLLECT,inf.WORKER_LOGS):
             compile(code,'embedded','exec')
+        for node in ast.walk(ast.parse(rt.PROBE_SOURCE)):
+            if isinstance(node,ast.Assign) and any(isinstance(t,ast.Name) and t.id=='code' for t in node.targets):
+                compile(ast.literal_eval(node.value),'nested-container-probe','exec')
 
     def test_docker_pins_image_user_and_read_only_models(self):
         node=self.cluster['nodes'][0]

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.metadata
 import json
 import random
 from pathlib import Path
@@ -176,6 +177,83 @@ def write_workload(workload: dict[str, Any], directory: str | Path) -> dict[str,
     return {name: str(path) for name, path in paths.items()}
 
 
+def validate_vllm_reader(
+    workload: dict[str, Any], directory: str | Path, tokenizer: Any, *,
+    reader_cls: Any = None, package_versions: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Read both JSONL files with vLLM CustomDataset and persist proof.
+
+    The import is deliberately lazy. A reader or dependency failure raises
+    before any benchmark can be launched by the caller. ``reader_cls`` and
+    ``package_versions`` support small CPU fixtures without vLLM installed.
+    """
+    if reader_cls is None:
+        from vllm.benchmarks.datasets.datasets import CustomDataset
+        reader_cls = CustomDataset
+    if package_versions is None:
+        package_versions = {
+            name: importlib.metadata.version(name)
+            for name in ("vllm", "pandas", "transformers")
+        }
+    if str(package_versions.get("vllm", "")).split("+", 1)[0] != "0.24.0":
+        raise ValueError(f"CustomDataset contract requires vLLM 0.24.0, got {package_versions.get('vllm')!r}")
+    directory = Path(directory)
+    metadata_path = directory / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if metadata.get("input_tokens") != workload["input_tokens"] or metadata.get("output_tokens") != workload["output_tokens"]:
+        raise ValueError("written metadata does not match workload")
+    checked: dict[str, Any] = {}
+    for phase in ("warmup", "measured"):
+        path = directory / f"{phase}.jsonl"
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if metadata.get("files_sha256", {}).get(phase) != digest:
+            raise ValueError(f"{phase} JSONL hash differs from metadata")
+        expected = [row for row in workload["rows"] if row["phase"] == phase]
+        metadata_rows = [row for row in metadata["rows"] if row["phase"] == phase]
+        if len(expected) != len(metadata_rows):
+            raise ValueError(f"{phase} metadata count differs")
+        for row, recorded in zip(expected, metadata_rows):
+            if recorded.get("id") != row["id"] or recorded.get("token_ids") != row["token_ids"] or recorded.get("prompt_sha256") != row["prompt_sha256"]:
+                raise ValueError(f"{phase} metadata row differs")
+        jsonl_rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+        if len(jsonl_rows) != len(expected):
+            raise ValueError(f"{phase} JSONL count differs")
+        for index, (row, item) in enumerate(zip(expected, jsonl_rows)):
+            if item != {"prompt": row["prompt"], "output_tokens": row["output_tokens"]}:
+                raise ValueError(f"{phase} JSONL row {index} differs")
+        dataset = reader_cls(dataset_path=str(path), random_seed=workload["seed"], disable_shuffle=True)
+        samples = dataset.sample(
+            tokenizer=tokenizer, num_requests=len(expected), output_len=-1,
+            skip_chat_template=True, no_oversample=True,
+        )
+        if len(samples) != len(expected):
+            raise ValueError(f"{phase} vLLM returned {len(samples)} samples, expected {len(expected)}")
+        checked_rows = []
+        for index, (row, sample) in enumerate(zip(expected, samples)):
+            if sample.prompt != row["prompt"]:
+                raise ValueError(f"{phase} vLLM changed prompt order/text at {index}")
+            if sample.prompt_len != workload["input_tokens"] or sample.prompt_len != row["prompt_tokens"]:
+                raise ValueError(f"{phase} vLLM prompt length differs at {index}")
+            if sample.expected_output_len != workload["output_tokens"] or sample.expected_output_len != row["output_tokens"]:
+                raise ValueError(f"{phase} vLLM output length differs at {index}")
+            checked_rows.append({"id": row["id"], "prompt_sha256": row["prompt_sha256"],
+                                 "prompt_len": sample.prompt_len,
+                                 "expected_output_len": sample.expected_output_len})
+        checked[phase] = {"count": len(samples), "jsonl_sha256": digest, "samples": checked_rows}
+    report = {
+        "status": "validated", "reader": "vllm.benchmarks.datasets.datasets.CustomDataset",
+        "package_versions": package_versions, "seed": workload["seed"],
+        "reader_arguments": {"disable_shuffle": True, "output_len": -1,
+                             "skip_chat_template": True, "no_oversample": True},
+        "phases": checked,
+    }
+    report_path = directory / "reader-validation.json"
+    with report_path.open("x", encoding="utf-8") as stream:
+        json.dump(report, stream, indent=2, ensure_ascii=False, sort_keys=True)
+        stream.write("\n")
+    return report
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-path", required=True, help="local tokenizer snapshot")
@@ -197,7 +275,10 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(chat_template, str) or not chat_template:
         raise ValueError("tokenizer has no auditable chat_template string")
     workload["chat_template_sha256"] = hashlib.sha256(chat_template.encode("utf-8")).hexdigest()
-    print(json.dumps(write_workload(workload, args.output), sort_keys=True))
+    paths = write_workload(workload, args.output)
+    validate_vllm_reader(workload, args.output, tokenizer)
+    paths["reader_validation"] = str(Path(args.output) / "reader-validation.json")
+    print(json.dumps(paths, sort_keys=True))
     return 0
 
 

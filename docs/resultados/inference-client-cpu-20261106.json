@@ -1,0 +1,147 @@
+{
+  "scope": "CPU functional validation; no model performance metrics",
+  "readers": [
+    {
+      "profile": "llama31-8b/2048",
+      "source": "resultados/tmp/inference-client-check-20261106/workloads/llama31-8b/2048/reader-validation.json",
+      "source_sha256": "bc40ac53d51b299a9b1d363972458e75ca565dea74300bca7a121222eb14f558",
+      "status": "validated",
+      "package_versions": {
+        "pandas": "2.3.3",
+        "transformers": "5.6.1",
+        "vllm": "0.24.0+092c4842.nv26.7.59534043"
+      },
+      "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "files_sha256": {
+        "measured": "ff9338800d9d74949cd3b3bb2b97081d544e08884dbb19b7e08f749c8cca1d03",
+        "warmup": "fdf5bff82a9d1219f24f6ca0684daf7e35e4c0d98a7d120a2279ac68d72ce3b8"
+      },
+      "phases": {
+        "measured": {
+          "count": 32,
+          "jsonl_sha256": "ff9338800d9d74949cd3b3bb2b97081d544e08884dbb19b7e08f749c8cca1d03"
+        },
+        "warmup": {
+          "count": 16,
+          "jsonl_sha256": "fdf5bff82a9d1219f24f6ca0684daf7e35e4c0d98a7d120a2279ac68d72ce3b8"
+        }
+      }
+    },
+    {
+      "profile": "llama31-8b/512",
+      "source": "resultados/tmp/inference-client-check-20261106/workloads/llama31-8b/512/reader-validation.json",
+      "source_sha256": "48c0273414aef894ea6c6309b9f4421237a7c164bb48a22485dbdb6c93a00a73",
+      "status": "validated",
+      "package_versions": {
+        "pandas": "2.3.3",
+        "transformers": "5.6.1",
+        "vllm": "0.24.0+092c4842.nv26.7.59534043"
+      },
+      "model_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "files_sha256": {
+        "measured": "e5df1befb590655531c7e7d553994e4f2e98ddcaf09f4cb6113a5ce65c5e40d4",
+        "warmup": "299746f50c8fa2ce3178d1aca46657fa101c2bbf091f2b8545f3b79ca82cb8ba"
+      },
+      "phases": {
+        "measured": {
+          "count": 32,
+          "jsonl_sha256": "e5df1befb590655531c7e7d553994e4f2e98ddcaf09f4cb6113a5ce65c5e40d4"
+        },
+        "warmup": {
+          "count": 16,
+          "jsonl_sha256": "299746f50c8fa2ce3178d1aca46657fa101c2bbf091f2b8545f3b79ca82cb8ba"
+        }
+      }
+    },
+    {
+      "profile": "qwen35-9b/2048",
+      "source": "resultados/tmp/inference-client-check-20261106/workloads/qwen35-9b/2048/reader-validation.json",
+      "source_sha256": "a27a7ca842f02e2c46cc7d0374b671e29b7ea58fe8ea17901c785ab457f068d5",
+      "status": "validated",
+      "package_versions": {
+        "pandas": "2.3.3",
+        "transformers": "5.6.1",
+        "vllm": "0.24.0+092c4842.nv26.7.59534043"
+      },
+      "model_id": "Qwen/Qwen3.5-9B",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "input_tokens": 2048,
+      "output_tokens": 128,
+      "files_sha256": {
+        "measured": "306c928cf282127d259d0d603fa890385289266ca144b99e712a1b76ef2aec32",
+        "warmup": "c32cb5fc67def49c30bc9fe76b2cda5c3a37beebe9d45f7b83a89c15382344bb"
+      },
+      "phases": {
+        "measured": {
+          "count": 32,
+          "jsonl_sha256": "306c928cf282127d259d0d603fa890385289266ca144b99e712a1b76ef2aec32"
+        },
+        "warmup": {
+          "count": 16,
+          "jsonl_sha256": "c32cb5fc67def49c30bc9fe76b2cda5c3a37beebe9d45f7b83a89c15382344bb"
+        }
+      }
+    },
+    {
+      "profile": "qwen35-9b/512",
+      "source": "resultados/tmp/inference-client-check-20261106/workloads/qwen35-9b/512/reader-validation.json",
+      "source_sha256": "39fcedc25f2a19b67448c26c84807577367f5457db242f8de602882adf2d06b8",
+      "status": "validated",
+      "package_versions": {
+        "pandas": "2.3.3",
+        "transformers": "5.6.1",
+        "vllm": "0.24.0+092c4842.nv26.7.59534043"
+      },
+      "model_id": "Qwen/Qwen3.5-9B",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "input_tokens": 512,
+      "output_tokens": 128,
+      "files_sha256": {
+        "measured": "ea037683e1aed3b5b5e7479ace2cdce571c9e18a25d5b4c8d6071d1d7b3615a9",
+        "warmup": "6c8c9a4f71350faf71d1e0797cf6ee5048a8d47b1e436de12f95e01a015c03bf"
+      },
+      "phases": {
+        "measured": {
+          "count": 32,
+          "jsonl_sha256": "ea037683e1aed3b5b5e7479ace2cdce571c9e18a25d5b4c8d6071d1d7b3615a9"
+        },
+        "warmup": {
+          "count": 16,
+          "jsonl_sha256": "6c8c9a4f71350faf71d1e0797cf6ee5048a8d47b1e436de12f95e01a015c03bf"
+        }
+      }
+    }
+  ],
+  "http_fixture": {
+    "scope": "CPU loopback HTTP fixture; not GPU inference or performance evidence",
+    "checks": [
+      {
+        "model_key": "qwen35-9b",
+        "input_tokens": 512,
+        "requests": 2,
+        "output_tokens": 128,
+        "real_client_and_parser": "passed"
+      },
+      {
+        "model_key": "llama31-8b",
+        "input_tokens": 2048,
+        "requests": 2,
+        "output_tokens": 128,
+        "real_client_and_parser": "passed"
+      }
+    ],
+    "counts": {
+      "generation_requests": 4,
+      "tokenize_requests": 0
+    },
+    "image_id": "sha256:4df9ac0696275f800e4c70fa2d459a2b77473014d3654f98c2714ae3954c42ac"
+  },
+  "http_fixture_sha256": "93b9b95223f99e73001a8f19cc32dc0c3fed91be0798b64a2fa3476a7878ff32",
+  "script_sha256": "739288dcc733c3d93aea1f257d0c2022c1ae5096e99d19d4c704277cb67ef3b7"
+}

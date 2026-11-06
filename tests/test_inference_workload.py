@@ -2,8 +2,10 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
-from infraestructura.inference_workload import generate_workload, write_workload
+from infraestructura.inference_workload import (generate_workload, validate_vllm_reader,
+                                               write_workload)
 
 
 class FakeTokenizer:
@@ -21,6 +23,61 @@ class FakeTokenizer:
 
 
 class WorkloadTests(unittest.TestCase):
+    def test_reader_validation_checks_both_phases_and_fails_closed(self):
+        tok = FakeTokenizer()
+        workload = generate_workload(
+            tok, model_id="Qwen/Qwen3.5-9B", model_revision="a" * 40,
+            tokenizer_id="Qwen/Qwen3.5-9B", tokenizer_revision="a" * 40,
+            input_tokens=90, count=6, warmup_count=2,
+        )
+        calls = []
+
+        class Reader:
+            corrupt = False
+
+            def __init__(self, **kwargs):
+                calls.append(("init", kwargs))
+                self.rows = [json.loads(line) for line in Path(kwargs["dataset_path"]).read_text().splitlines()]
+
+            def sample(self, **kwargs):
+                calls.append(("sample", {k: v for k, v in kwargs.items() if k != "tokenizer"}))
+                samples = [SimpleNamespace(
+                    prompt=row["prompt"], prompt_len=len(tok(row["prompt"]).input_ids),
+                    expected_output_len=row["output_tokens"],
+                ) for row in self.rows]
+                if self.corrupt:
+                    samples[0].prompt_len -= 1
+                return samples
+
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "profile"
+            write_workload(workload, destination)
+            report = validate_vllm_reader(
+                workload, destination, tok, reader_cls=Reader,
+                package_versions={"vllm": "0.24.0+092c4842.nv26.7.59534043", "pandas": "fixture", "transformers": "fixture"},
+            )
+            self.assertEqual(report["package_versions"]["vllm"], "0.24.0+092c4842.nv26.7.59534043")
+            self.assertEqual(report["phases"]["warmup"]["count"], 2)
+            self.assertEqual(report["phases"]["measured"]["count"], 4)
+            self.assertEqual(len([item for item in calls if item[0] == "sample"]), 2)
+            self.assertTrue(all(item[1]["output_len"] == -1 and item[1]["skip_chat_template"]
+                                and item[1]["no_oversample"] for item in calls if item[0] == "sample"))
+            self.assertTrue((destination / "reader-validation.json").exists())
+            with self.assertRaises(FileExistsError):
+                validate_vllm_reader(workload, destination, tok, reader_cls=Reader,
+                                     package_versions={"vllm": "0.24.0"})
+            with self.assertRaisesRegex(ValueError, "requires vLLM 0.24.0"):
+                validate_vllm_reader(workload, destination, tok, reader_cls=Reader,
+                                     package_versions={"vllm": "0.25.0"})
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "profile"
+            write_workload(workload, destination)
+            Reader.corrupt = True
+            with self.assertRaisesRegex(ValueError, "prompt length differs"):
+                validate_vllm_reader(workload, destination, tok, reader_cls=Reader,
+                                     package_versions={"vllm": "0.24.0"})
+            self.assertFalse((destination / "reader-validation.json").exists())
+
     def test_reproducible_disjoint_and_exact(self):
         tok = FakeTokenizer()
         kwargs = dict(model_id="Qwen/Qwen3.5-9B", model_revision="a" * 40,

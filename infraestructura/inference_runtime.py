@@ -61,7 +61,23 @@ image = command(['docker','inspect','--type','image',request['image_id'],
                  '--format','{{json .Id}} {{json .Architecture}}'])
 packages = None
 if request.get('container_probe') and image['returncode'] == 0:
-    code = "import importlib.metadata as m,json,platform; names=['ray','vllm','torch','transformers','tokenizers','huggingface-hub','apache-tvm-ffi']; d={};\nfor name in names:\n try:d[name]=m.version(name)\n except m.PackageNotFoundError:d[name]=None\nimport flashinfer.comm\nfrom flashinfer.jit import env\nfrom pathlib import Path\np=env.FLASHINFER_WORKSPACE_DIR\nassert p.is_relative_to(Path('/tmp/ipre-cache'))\n(p/'ipre-write-check').write_text('CPU import passed')\nprint(json.dumps({'python':platform.python_version(),'packages':d,'cpu_imports':{'flashinfer.comm':'passed','cache_write':'passed','cuda_arch_override':'12.1; not hardware validation'}}))"
+    code = """import importlib.metadata as m,json,platform,io
+from pathlib import Path
+names=['ray','vllm','torch','transformers','tokenizers','huggingface-hub','apache-tvm-ffi','pandas']
+d={}
+for name in names:
+ try:d[name]=m.version(name)
+ except m.PackageNotFoundError:d[name]=None
+import flashinfer.comm
+from flashinfer.jit import env
+p=env.FLASHINFER_WORKSPACE_DIR
+assert p.is_relative_to(Path('/tmp/ipre-cache'))
+(p/'ipre-write-check').write_text('CPU import passed')
+import pandas
+row={'prompt':'CPU fixture','output_tokens':128}
+assert pandas.read_json(io.StringIO(json.dumps(row)+chr(10)),lines=True).to_dict('records')==[row]
+print(json.dumps({'python':platform.python_version(),'packages':d,'cpu_imports':{'flashinfer.comm':'passed','cache_write':'passed','pandas_jsonl':'passed','cuda_arch_override':'12.1; not hardware validation'}}))
+"""
     packages = command(['docker','run','--rm','--pull=never','--network','none','--read-only',
                         '--tmpfs','/tmp:rw,nosuid,size=256m','--user',str(os.getuid())+':'+str(os.getgid()),
                         '--env','USER='+pwd.getpwuid(os.getuid()).pw_name,
@@ -212,6 +228,8 @@ def preflight(cluster_config, config, *, container_probe=False):
         package_probe = record.get('container_probe')
         if container_probe and package_probe:
             try:
+                if package_probe['returncode']!=0:
+                    raise ValueError('sonda de paquetes/importación falló')
                 env = json.loads(package_probe['stdout'].splitlines()[-1])
                 envs.append(env)
                 versions = env['packages']
@@ -221,6 +239,8 @@ def preflight(cluster_config, config, *, container_probe=False):
                     errors.append(f"{name}: versión Ray fuera del protocolo")
                 if versions.get('apache-tvm-ffi')!=config['image']['tvm_ffi_version']:
                     errors.append(f"{name}: versión apache-tvm-ffi fuera del protocolo")
+                if versions.get('pandas')!=config['image']['pandas_version']:
+                    errors.append(f"{name}: pandas para benchmark ausente o fuera del protocolo")
                 if not str(versions.get('vllm', '')).startswith(config['image']['vllm_version_prefix']):
                     errors.append(f"{name}: versión vLLM fuera del protocolo")
             except (ValueError, IndexError, KeyError):

@@ -1,0 +1,7 @@
+# CustomDataset JSONL support; preserve the existing NVIDIA NumPy/Torch stack.
+pandas==2.3.3
+python-dateutil==2.9.0.post0
+pytz==2025.2
+tzdata==2025.2
+# NVIDIA's constraint keeps six in [1.16,1.17).
+six==1.16.0

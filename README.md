@@ -16,6 +16,11 @@ reconoció cuatro GPU en Ray y falló antes de medir por la caché de FlashInfer
 Se conserva el cierre fallido y la corrección de ruta comprobada en CPU en los
 cuatro nodos.
 
+El [segundo intento](docs/resultados/inference-20261106-client-analysis.md)
+completó el arranque y tokenización Qwen TP4; el cliente se detuvo por pandas
+ausente. La imagen actual incorpora esa dependencia y el lector y cliente
+reales pasaron pruebas CPU antes de una nueva campaña.
+
 La primera sesión NCCL se intentó el 2026-11-06: el preflight pasó, pero el smoke de cuatro nodos falló por timeout de arranque MPI sin ranks ni métricas NCCL; quedaron 30 trabajos pendientes. El [informe del intento](docs/resultados/nccl-20261106-analysis.md) conserva evidencia, diagnóstico CPU y limpieza. Un [diagnóstico CPU posterior](docs/resultados/mpi-20261106-analysis.md) completó la coordinación y una suma entre cuatro nodos seleccionando la red común de MPI; esa prueba aislada no validaba NCCL/RoCE. La validación posterior está documentada arriba. Cada nueva sesión mantiene el máximo de 30 minutos y requiere revisar objetivo, comandos, recursos y salidas. Los comandos `plan` de inventario y NCCL preparan la ejecución sin acceso a nodos ni GPU. Una captura o prueba real requiere autorización operacional según [AGENTS.md](AGENTS.md).
 
 ```bash

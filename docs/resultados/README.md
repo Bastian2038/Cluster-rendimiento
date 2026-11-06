@@ -14,6 +14,11 @@ reconoció cuatro nodos en Ray y falló antes de medir por la ruta de caché de
 FlashInfer. La campaña cerró `PARTIAL`, conservó evidencia y retiró sus cuatro
 contenedores. La corrección de ruta está comprobada en CPU.
 
+El [segundo intento](inference-20261106-client-analysis.md) completó el arranque
+Qwen TP4 y la tokenización del servidor, pero el cliente carecía de pandas.
+La imagen posterior y el cliente completo ya pasaron comprobaciones CPU; esos
+resultados funcionales no se usan como mediciones de inferencia.
+
 Actualización posterior del 2026-11-06: [MPI completó una suma CPU entre cuatro nodos](mpi-20261106-analysis.md)
 al seleccionar explícitamente la red común para control y datos TCP. Es un
 diagnóstico funcional pequeño, no una corrida NCCL ni una medición de rendimiento.
