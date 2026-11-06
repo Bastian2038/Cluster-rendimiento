@@ -1,0 +1,167 @@
+{
+  "scope": "CPU MPI_Init + MPI_Allreduce integers + MPI_Finalize; no NCCL/GPU; only OOB subnet specified",
+  "source": "#include <mpi.h>\n#include <stdio.h>\n#include <unistd.h>\n\nint main(int argc, char **argv) {\n    char host[MPI_MAX_PROCESSOR_NAME];\n    int rank = -1, size = 0, length = 0, sum = 0;\n    puts(\"IPRE_MPI_STAGE=before_init\"); fflush(stdout);\n    MPI_Init(&argc, &argv);\n    MPI_Comm_rank(MPI_COMM_WORLD, &rank);\n    MPI_Comm_size(MPI_COMM_WORLD, &size);\n    MPI_Get_processor_name(host, &length);\n    printf(\"IPRE_MPI_STAGE=after_init rank=%d\\n\", rank); fflush(stdout);\n    int input = rank + 1;\n    MPI_Allreduce(&input, &sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);\n    printf(\"IPRE_MPI_RESULT={\\\"rank\\\":%d,\\\"size\\\":%d,\\\"hostname\\\":\\\"%s\\\",\\\"sum\\\":%d}\\n\",\n           rank, size, host, sum); fflush(stdout);\n    int failed = size != 4 || sum != 10;\n    MPI_Finalize();\n    return failed;\n}\n",
+  "source_sha256": "2a97ef1ad2b6d546c5947ab93606e5c786a1ae93f3499ab72290d558bff46f67",
+  "compile_command": [
+    "mpicc",
+    "-O2",
+    "-Wall",
+    "-Wextra",
+    "-o",
+    "/tmp/ipre-mpi-cpu-20261106T145807Z",
+    "/tmp/ipre_mpi_cpu_check.c"
+  ],
+  "binary": "/tmp/ipre-mpi-cpu-20261106T145807Z",
+  "binary_sha256": "88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb",
+  "copies": [
+    {
+      "node_id": "octopus",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@192.168.100.11",
+        "python3 -c 'import hashlib,os,pathlib,sys\np=pathlib.Path(sys.argv[1]); data=sys.stdin.buffer.read()\nassert hashlib.sha256(data).hexdigest()==sys.argv[2]\nwith p.open('\"'\"'xb'\"'\"') as f:f.write(data)\np.chmod(0o700)\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\n' /tmp/ipre-mpi-cpu-20261106T145807Z 88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb"
+      ],
+      "returncode": 0,
+      "stdout": "88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.134",
+        "python3 -c 'import hashlib,os,pathlib,sys\np=pathlib.Path(sys.argv[1]); data=sys.stdin.buffer.read()\nassert hashlib.sha256(data).hexdigest()==sys.argv[2]\nwith p.open('\"'\"'xb'\"'\"') as f:f.write(data)\np.chmod(0o700)\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\n' /tmp/ipre-mpi-cpu-20261106T145807Z 88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb"
+      ],
+      "returncode": 0,
+      "stdout": "88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "command": [
+        "ssh",
+        "-o",
+        "BatchMode=yes",
+        "-o",
+        "StrictHostKeyChecking=yes",
+        "-o",
+        "UpdateHostKeys=no",
+        "-o",
+        "ControlMaster=no",
+        "-o",
+        "ControlPath=none",
+        "-o",
+        "ConnectTimeout=8",
+        "-p",
+        "22",
+        "bastiangl@146.155.13.135",
+        "python3 -c 'import hashlib,os,pathlib,sys\np=pathlib.Path(sys.argv[1]); data=sys.stdin.buffer.read()\nassert hashlib.sha256(data).hexdigest()==sys.argv[2]\nwith p.open('\"'\"'xb'\"'\"') as f:f.write(data)\np.chmod(0o700)\nprint(hashlib.sha256(p.read_bytes()).hexdigest())\n' /tmp/ipre-mpi-cpu-20261106T145807Z 88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb"
+      ],
+      "returncode": 0,
+      "stdout": "88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb\n",
+      "stderr": ""
+    }
+  ],
+  "command": [
+    "mpirun",
+    "--mca",
+    "oob_tcp_if_include",
+    "10.10.0.0/24",
+    "--mca",
+    "plm_base_verbose",
+    "5",
+    "--tag-output",
+    "--host",
+    "spark-cfea:1,192.168.100.11:1,146.155.13.134:1,146.155.13.135:1",
+    "--map-by",
+    "ppr:1:node",
+    "--launch-agent",
+    "timeout -k 3s 34s orted",
+    "--timeout",
+    "35",
+    "--mca",
+    "orte_leave_session_attached",
+    "1",
+    "--mca",
+    "plm_rsh_no_tree_spawn",
+    "1",
+    "--mca",
+    "plm_rsh_agent",
+    "ssh",
+    "--mca",
+    "plm_rsh_args",
+    "-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8",
+    "-np",
+    "4",
+    "-x",
+    "NCCL_DEBUG=INFO",
+    "-x",
+    "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH",
+    "/tmp/ipre-mpi-cpu-20261106T145807Z"
+  ],
+  "result": {
+    "returncode": 110,
+    "stdout": "[1,0]<stdout>:IPRE_MPI_STAGE=before_init\n[1,3]<stdout>:IPRE_MPI_STAGE=before_init\n[1,1]<stdout>:IPRE_MPI_STAGE=before_init\n[1,2]<stdout>:IPRE_MPI_STAGE=before_init\n[1,0]<stdout>:IPRE_MPI_STAGE=after_init rank=0\n[1,1]<stdout>:IPRE_MPI_STAGE=after_init rank=1\n[1,2]<stdout>:IPRE_MPI_STAGE=after_init rank=2\n[1,3]<stdout>:IPRE_MPI_STAGE=after_init rank=3\n",
+    "stderr": "[spark-cfea:564180] [[33103,0],0] plm:rsh: final template argv:\n\t/usr/bin/ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8 <template> timeout -k 3s 34s orted -mca orte_leave_session_attached \"1\" -mca ess \"env\" -mca ess_base_jobid \"2169438208\" -mca ess_base_vpid \"<template>\" -mca ess_base_num_procs \"4\" -mca orte_node_regex \"spark-cfea,[3:192].168.100.11,[3:146].155.13.134,[3:146].155.13.135@0(4)\" -mca orte_hnp_uri \"2169438208.0;tcp://10.10.0.10:37041\" --mca oob_tcp_if_include \"10.10.0.0/24\" --mca plm_base_verbose \"5\" --mca plm_rsh_no_tree_spawn \"1\" --mca plm_rsh_agent \"ssh\" -mca plm \"rsh\" -mca plm_rsh_args \"-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8\" -mca orte_tag_output \"1\" -mca rmaps_base_mapping_policy \"ppr:1:node\" -mca orte_launch_agent \"timeout -k 3s 34s orted\" -mca pmix \"^s1,s2,cray,isolated\"\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\n[spark-cfea:564180] [[33103,0],0] complete_setup on job [33103,1]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive update proc state command from [[33103,0],1]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive got update_proc_state for job [33103,1]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive update proc state command from [[33103,0],3]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive got update_proc_state for job [33103,1]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive update proc state command from [[33103,0],2]\n[spark-cfea:564180] [[33103,0],0] plm:base:receive got update_proc_state for job [33103,1]\n[1,3]<stderr>:Authorization required, but no authorization protocol specified\n[1,3]<stderr>:\n[1,2]<stderr>:Authorization required, but no authorization protocol specified\n[1,2]<stderr>:\n--------------------------------------------------------------------------\nWARNING: Open MPI accepted a TCP connection from what appears to be a\nanother Open MPI process but cannot find a corresponding process\nentry for that peer.\n\nThis attempted connection will be ignored; your MPI job may or may not\ncontinue properly.\n\n  Local host: spark-cfea\n  PID:        564189\n--------------------------------------------------------------------------\n(null): Forwarding signal 18 to job\n(null): Forwarding signal 18 to job\n(null): Forwarding signal 18 to job\n--------------------------------------------------------------------------\nThe user-provided time limit for job execution has been reached:\n\n  Timeout: 35 seconds\n\nThe job will now be aborted.  Please check your code and/or\nadjust/remove the job execution time limit (as specified by --timeout\ncommand line option or MPIEXEC_TIMEOUT environment variable).\n--------------------------------------------------------------------------\n",
+    "timed_out": false,
+    "duration_seconds": 35.67024150211364,
+    "started_at": "2026-11-06T14:58:09.799138Z",
+    "ended_at": "2026-11-06T14:58:45.469381Z"
+  },
+  "observed_results": [],
+  "success": false,
+  "postcheck": [
+    {
+      "node_id": "pegasus",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "octopus",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    }
+  ]
+}

@@ -7,6 +7,7 @@ la autorización operacional externa sigue siendo necesaria.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import getpass
 import itertools
 import json
@@ -57,6 +58,22 @@ def _validate_protocol(config, cluster):
         raise NcclError("entorno NCCL no permitido")
     if config.get("mpi_launcher") != "mpirun":
         raise NcclError("solo mpirun soportado")
+    for selector in ("mpi_oob_tcp_if_include", "mpi_btl_tcp_if_include"):
+        if selector not in config:
+            continue
+        value = config[selector]
+        if not isinstance(value, str) or not value:
+            raise NcclError(f"{selector} requiere CIDR IPv4")
+        try:
+            network = ipaddress.ip_network(value, strict=True)
+        except ValueError as exc:
+            raise NcclError(f"{selector} requiere CIDR IPv4 estricto") from exc
+        if not isinstance(network, ipaddress.IPv4Network):
+            raise NcclError(f"{selector} requiere IPv4")
+        for node in cluster.get("nodes", []):
+            if not any(ipaddress.ip_address(address) in network
+                       for address in node.get("data_addresses", [])):
+                raise NcclError(f"{selector} no cubre {node['node_id']}")
     expected_cells = {
         "smoke": {"operation": "all_reduce", "group": "four", "minimum_bytes": 8,
                   "maximum_bytes": 1048576, "factor": 2},
@@ -153,7 +170,11 @@ def _command(job, cluster, config):
     nodes = [by_id[node_id] for node_id in job["group"]]
     hosts = ",".join((node["expected_hostname"] if node["local"] else node["ssh"]["host"]) + ":1"
                      for node in nodes)
-    return ["mpirun", "--tag-output", "--host", hosts, "--map-by", "ppr:1:node",
+    oob = (["--mca", "oob_tcp_if_include", config["mpi_oob_tcp_if_include"]]
+           if "mpi_oob_tcp_if_include" in config else [])
+    btl = (["--mca", "btl_tcp_if_include", config["mpi_btl_tcp_if_include"]]
+           if "mpi_btl_tcp_if_include" in config else [])
+    return ["mpirun", "--tag-output", "--host", hosts, "--map-by", "ppr:1:node", *oob, *btl,
             "--launch-agent", "timeout -k 3s 34s orted", "--timeout", "35",
             "--mca", "orte_leave_session_attached", "1",
             "--mca", "plm_rsh_no_tree_spawn", "1",

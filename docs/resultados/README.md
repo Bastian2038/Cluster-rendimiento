@@ -4,6 +4,10 @@ Este repositorio contiene un inventario pasivo y el primer intento NCCL, cerrado
 
 Orden previsto: 4 → 2 → 1, con comparación principal cuatro frente a Pegasus + Octopus. Pegasus será el único baseline single-node, contemporáneo y pareado cuando el trabajo sea viable. El acceso desde Pegasus y los componentes principales están observados; el switch se identifica por anuncios LLDP y su mapa físico/administración sigue pendiente. Ver [metodología](../metodologia-rendimiento.md), [inventario del clúster](../cluster-cuatro-nodos.md), [NCCL](../protocolo-nccl.md) y [reproducibilidad](../reproducibilidad.md).
 
+Actualización posterior del 2026-11-06: [MPI completó una suma CPU entre cuatro nodos](mpi-20261106-analysis.md)
+al seleccionar explícitamente la red común para control y datos TCP. Es un
+diagnóstico funcional pequeño, no una corrida NCCL ni una medición de rendimiento.
+
 | Corrida | Fecha UTC | Participantes observados | Commit de captura | Alcance y resultado |
 | --- | --- | --- | --- | --- |
 | [20261031T224804.348141Z-af026390, reporte v2](cluster-20261031T224804.348141Z-af026390-v2.md) | 2026-10-31 22:48 | Pegasus, Octopus, Griffin, Draggon; rank=null | `a73350a5b335774e3463284a3565ec8bb264ba8d` | Inventario pasivo COMPLETE; model=null; acceso, hardware y anuncios LLDP. Sin métricas de rendimiento. |

@@ -1,0 +1,108 @@
+{
+  "scope": "CPU MPI collective; same binary as previous attempt; add only btl_tcp_if_include to align MPI TCP payload network with OOB",
+  "previous_evidence": "/home/bastiangl/ipre-rendimiento/docs/resultados/mpi-cpu-collective-20261106T145807Z.json",
+  "binary": "/tmp/ipre-mpi-cpu-20261106T145807Z",
+  "binary_sha256": "88e7e8c3e51d3521a019b8161d78ec3a645ea79af7bf969debdc1cb97351f5eb",
+  "command": [
+    "mpirun",
+    "--mca",
+    "btl_tcp_if_include",
+    "10.10.0.0/24",
+    "--mca",
+    "oob_tcp_if_include",
+    "10.10.0.0/24",
+    "--mca",
+    "plm_base_verbose",
+    "5",
+    "--tag-output",
+    "--host",
+    "spark-cfea:1,192.168.100.11:1,146.155.13.134:1,146.155.13.135:1",
+    "--map-by",
+    "ppr:1:node",
+    "--launch-agent",
+    "timeout -k 3s 34s orted",
+    "--timeout",
+    "35",
+    "--mca",
+    "orte_leave_session_attached",
+    "1",
+    "--mca",
+    "plm_rsh_no_tree_spawn",
+    "1",
+    "--mca",
+    "plm_rsh_agent",
+    "ssh",
+    "--mca",
+    "plm_rsh_args",
+    "-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8",
+    "-np",
+    "4",
+    "-x",
+    "NCCL_DEBUG=INFO",
+    "-x",
+    "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH",
+    "/tmp/ipre-mpi-cpu-20261106T145807Z"
+  ],
+  "result": {
+    "returncode": 0,
+    "stdout": "[1,0]<stdout>:IPRE_MPI_STAGE=before_init\n[1,1]<stdout>:IPRE_MPI_STAGE=before_init\n[1,3]<stdout>:IPRE_MPI_STAGE=before_init\n[1,2]<stdout>:IPRE_MPI_STAGE=before_init\n[1,0]<stdout>:IPRE_MPI_STAGE=after_init rank=0\n[1,1]<stdout>:IPRE_MPI_STAGE=after_init rank=1\n[1,3]<stdout>:IPRE_MPI_STAGE=after_init rank=3\n[1,2]<stdout>:IPRE_MPI_STAGE=after_init rank=2\n[1,0]<stdout>:IPRE_MPI_RESULT={\"rank\":0,\"size\":4,\"hostname\":\"spark-cfea\",\"sum\":10}\n[1,2]<stdout>:IPRE_MPI_RESULT={\"rank\":2,\"size\":4,\"hostname\":\"gx10-726d\",\"sum\":10}\n[1,3]<stdout>:IPRE_MPI_RESULT={\"rank\":3,\"size\":4,\"hostname\":\"spark-192d\",\"sum\":10}\n[1,1]<stdout>:IPRE_MPI_RESULT={\"rank\":1,\"size\":4,\"hostname\":\"spark-60c3\",\"sum\":10}\n",
+    "stderr": "[spark-cfea:612606] [[16996,0],0] plm:rsh: final template argv:\n\t/usr/bin/ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8 <template> timeout -k 3s 34s orted -mca orte_leave_session_attached \"1\" -mca ess \"env\" -mca ess_base_jobid \"1113849856\" -mca ess_base_vpid \"<template>\" -mca ess_base_num_procs \"4\" -mca orte_node_regex \"spark-cfea,[3:192].168.100.11,[3:146].155.13.134,[3:146].155.13.135@0(4)\" -mca orte_hnp_uri \"1113849856.0;tcp://10.10.0.10:48967\" --mca btl_tcp_if_include \"10.10.0.0/24\" --mca oob_tcp_if_include \"10.10.0.0/24\" --mca plm_base_verbose \"5\" --mca plm_rsh_no_tree_spawn \"1\" --mca plm_rsh_agent \"ssh\" -mca plm \"rsh\" -mca plm_rsh_args \"-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8\" -mca orte_tag_output \"1\" -mca rmaps_base_mapping_policy \"ppr:1:node\" -mca orte_launch_agent \"timeout -k 3s 34s orted\" -mca pmix \"^s1,s2,cray,isolated\"\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\nAuthorization required, but no authorization protocol specified\n\n[spark-cfea:612606] [[16996,0],0] complete_setup on job [16996,1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],3]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],2]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n[1,3]<stderr>:Authorization required, but no authorization protocol specified\n[1,3]<stderr>:\n[1,2]<stderr>:Authorization required, but no authorization protocol specified\n[1,2]<stderr>:\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],2]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive update proc state command from [[16996,0],3]\n[spark-cfea:612606] [[16996,0],0] plm:base:receive got update_proc_state for job [16996,1]\n",
+    "timed_out": false,
+    "duration_seconds": 1.2955234348773956,
+    "started_at": "2026-11-06T15:00:36.206587Z",
+    "ended_at": "2026-11-06T15:00:37.502113Z"
+  },
+  "observed_results": [
+    {
+      "rank": 0,
+      "size": 4,
+      "hostname": "spark-cfea",
+      "sum": 10
+    },
+    {
+      "rank": 2,
+      "size": 4,
+      "hostname": "gx10-726d",
+      "sum": 10
+    },
+    {
+      "rank": 3,
+      "size": 4,
+      "hostname": "spark-192d",
+      "sum": 10
+    },
+    {
+      "rank": 1,
+      "size": 4,
+      "hostname": "spark-60c3",
+      "sum": 10
+    }
+  ],
+  "success": true,
+  "postcheck": [
+    {
+      "node_id": "pegasus",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "octopus",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "returncode": 0,
+      "stdout": "{\"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    }
+  ]
+}

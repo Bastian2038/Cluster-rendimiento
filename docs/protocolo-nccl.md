@@ -41,6 +41,15 @@ a sus consultas y procesos, registra su valor y no modifica perfiles de usuario,
 configuración del linker, CUDA, drivers ni red. El preflight de cada corrida debe
 revalidar estos datos y el estado dinámico de los nodos.
 
+El diagnóstico CPU posterior resolvió la coordinación básica de MPI seleccionando
+`10.10.0.0/24` tanto para el control ORTE como para los datos TCP MPI; ver
+[evidencia y límites](resultados/mpi-20261106-analysis.md). El protocolo fija ahora
+`mpi_oob_tcp_if_include` y `mpi_btl_tcp_if_include` con ese CIDR. El runner los
+valida contra las direcciones declaradas y los convierte en parámetros `--mca`
+del launcher. Son opcionales para conservar compatibilidad con configuraciones
+anteriores. Esta selección no cambia rutas, interfaces ni firewall del sistema,
+no fuerza un componente PML/BTL y no selecciona el transporte de datos NCCL.
+
 ## Criterios de aceptación
 
 El éxito completo exige las 31 invocaciones previstas, salida cero, sin timeouts,

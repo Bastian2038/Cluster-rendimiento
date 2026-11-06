@@ -5,6 +5,8 @@
   "invocation_limit_seconds": 45,
   "cleanup_grace_seconds": 5,
   "mpi_launcher": "mpirun",
+  "mpi_oob_tcp_if_include": "10.10.0.0/24",
+  "mpi_btl_tcp_if_include": "10.10.0.0/24",
   "binary_paths": {
     "pegasus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin",
     "octopus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin",

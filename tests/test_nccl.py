@@ -42,6 +42,38 @@ def fake_outputs(plan, cluster):
 
 
 class NcclTests(unittest.TestCase):
+    def test_optional_mpi_bootstrap_cidr(self):
+        cluster = json.loads(CLUSTER.read_text())
+        config = json.loads(PROTOCOL.read_text())
+        baseline = dict(config)
+        baseline.pop("mpi_oob_tcp_if_include", None)
+        baseline.pop("mpi_btl_tcp_if_include", None)
+        nccl._validate_protocol(baseline, cluster)
+        default_command = nccl._command(next(nccl._jobs(cluster)), cluster, baseline)
+        self.assertNotIn("oob_tcp_if_include", default_command)
+        self.assertNotIn("btl_tcp_if_include", default_command)
+        config["mpi_oob_tcp_if_include"] = "10.10.0.0/24"
+        nccl._validate_protocol(config, cluster)
+        command = nccl._command(next(nccl._jobs(cluster)), cluster, config)
+        self.assertIn(["--mca", "oob_tcp_if_include", "10.10.0.0/24"],
+                      [command[i:i + 3] for i in range(len(command) - 2)])
+        config["mpi_btl_tcp_if_include"] = "10.10.0.0/24"
+        nccl._validate_protocol(config, cluster)
+        command = nccl._command(next(nccl._jobs(cluster)), cluster, config)
+        self.assertIn(["--mca", "btl_tcp_if_include", "10.10.0.0/24"],
+                      [command[i:i + 3] for i in range(len(command) - 2)])
+        for value in ("", "10.10.0.4/24", "10.10.2.0/24", "::1/128", "garbage", None):
+            with self.subTest(value=value):
+                config["mpi_oob_tcp_if_include"] = value
+                with self.assertRaises(nccl.NcclError):
+                    nccl._validate_protocol(config, cluster)
+        config["mpi_oob_tcp_if_include"] = "10.10.0.0/24"
+        for value in ("", "10.10.0.4/24", "10.10.2.0/24", "::1/128", "garbage", None):
+            with self.subTest(btl_value=value):
+                config["mpi_btl_tcp_if_include"] = value
+                with self.assertRaises(nccl.NcclError):
+                    nccl._validate_protocol(config, cluster)
+
     def test_rdma_requires_used_ethernet_hca_in_either_log_stream(self):
         stdout = ("NET/IB : Using [0]rocep1s0f0:1/Ethernet [1]rocep1s0f1:1/Ethernet; OOB eth0:1\n"
                   "NET/IB : Made virtual device [0] name=rocep1s0f0 speed=200 ndevs=1 rail=-1 plane=-1\n"
