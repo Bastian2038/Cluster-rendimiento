@@ -50,6 +50,15 @@ del launcher. Son opcionales para conservar compatibilidad con configuraciones
 anteriores. Esta selección no cambia rutas, interfaces ni firewall del sistema,
 no fuerza un componente PML/BTL y no selecciona el transporte de datos NCCL.
 
+El siguiente intento, `20261106T150825.443182Z-0fbee512`, sí inició nccl-tests en
+los cuatro nodos, pero falló en bootstrap: Octopus no pudo alcanzar la dirección
+de gestión `146.155.13.132` anunciada por Pegasus (`Network is unreachable`).
+La configuración selecciona ahora `NCCL_SOCKET_IFNAME==enp1s0f0np0` en el entorno
+del proceso (valor literal `=enp1s0f0np0`, coincidencia exacta). Esa interfaz y su
+red `10.10.0.0/24` están comprobadas en los cuatro nodos. La selección afecta a
+sockets NCCL, incluido bootstrap y un eventual fallback Socket; no fuerza HCA
+ni acredita RDMA. Se conserva el intento fallido y se repite en una corrida nueva.
+
 ## Criterios de aceptación
 
 El éxito completo exige las 31 invocaciones previstas, salida cero, sin timeouts,

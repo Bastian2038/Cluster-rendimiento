@@ -42,6 +42,30 @@ def fake_outputs(plan, cluster):
 
 
 class NcclTests(unittest.TestCase):
+    def test_socket_interface_selector_and_atomic_telemetry(self):
+        cluster = json.loads(CLUSTER.read_text())
+        config = json.loads(PROTOCOL.read_text())
+        config["environment"] = {"NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH",
+                                  "NCCL_SOCKET_IFNAME": "=enp1s0f0np0"}
+        nccl._validate_protocol(config, cluster)
+        command = nccl._command(next(nccl._jobs(cluster)), cluster, config)
+        self.assertIn("NCCL_SOCKET_IFNAME==enp1s0f0np0", command)
+        self.assertIn("gpu_metrics=$(nvidia-smi", command[-1])
+        self.assertIn("IPRE_TELEMETRY=%s|%s\\n", command[-1])
+        for value in ("eth0", "=", "=eth0,eth1", "=eth0:1", "=eth0\nX", None):
+            with self.subTest(value=value):
+                config["environment"]["NCCL_SOCKET_IFNAME"] = value
+                with self.assertRaises(nccl.NcclError):
+                    nccl._validate_protocol(config, cluster)
+
+    def test_split_merged_mpi_tags_without_repairing_missing_data(self):
+        sample = ("[1,0]<stdout>:IPRE_TELEMETRY=before|[1,3]<stdout>:IPRE_RANK_IDENTITY={}\n"
+                  "[1,1]<stdout>:IPRE_TELEMETRY=after|GPU-aaa, 0, 1, 2\n")
+        normalized = nccl._normalize_tagged_output(sample)
+        self.assertEqual(normalized.splitlines()[0], "[1,0]<stdout>:IPRE_TELEMETRY=before|")
+        self.assertEqual(normalized.splitlines()[1], "[1,3]<stdout>:IPRE_RANK_IDENTITY={}")
+        self.assertEqual(len(normalized.splitlines()), 3)
+
     def test_optional_mpi_bootstrap_cidr(self):
         cluster = json.loads(CLUSTER.read_text())
         config = json.loads(PROTOCOL.read_text())
@@ -83,6 +107,9 @@ class NcclTests(unittest.TestCase):
         links = ("IPRE_RDMA_LINK=/sys/class/infiniband/rocep1s0f0/ports/1|Ethernet\n"
                  "IPRE_RDMA_LINK=/sys/class/infiniband/rocep1s0f1/ports/1|Ethernet\n")
         self.assertTrue(nccl._rank_rdma_verified(stdout + links, ""))
+        roce_stdout = stdout.replace("/Ethernet", "/RoCE")
+        self.assertTrue(nccl._rank_rdma_verified(roce_stdout + links, ""))
+        self.assertFalse(nccl._rank_rdma_verified(roce_stdout.replace("rocep1s0f1:1/RoCE", "rocep1s0f1:1/InfiniBand") + links, ""))
         self.assertFalse(nccl._rank_rdma_verified(stdout + links.replace("rocep1s0f1/ports/1|Ethernet", "rocep1s0f1/ports/1|InfiniBand"), ""))
         self.assertFalse(nccl._rank_rdma_verified(stdout.replace("via NET/IB/1", "via NET/Socket/1") + links, ""))
         self.assertFalse(nccl._rank_rdma_verified(stdout.replace("via NET/IB/1", "via NET/IB/2") + links, ""))

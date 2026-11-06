@@ -35,6 +35,7 @@ OPERATIONS = {"all_reduce": "all_reduce_perf", "all_gather": "all_gather_perf",
 IDENTITY = "IPRE_RANK_IDENTITY="
 SAFE_NAME = re.compile(r"^[A-Za-z0-9_.-]+$")
 RANK_LINE = re.compile(r"^\[(?:\d+,)?(\d+)\]<(?:stdout|stderr)>:(.*)$")
+EMBEDDED_TAG = re.compile(r"(?=\[(?:\d+,)?\d+\]<(?:stdout|stderr)>:)")
 
 
 def _json(path):
@@ -54,7 +55,16 @@ def _validate_protocol(config, cluster):
     if (config.get("dtype"), config.get("warmup_iterations"), config.get("measured_iterations"),
         config.get("check"), config.get("repetitions")) != ("float", 5, 20, 1, 3):
         raise NcclError("parámetros de protocolo inválidos")
-    if config.get("environment") != {"NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH"}:
+    environment = config.get("environment")
+    expected_environment = {"NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH"}
+    if not isinstance(environment, dict):
+        raise NcclError("entorno NCCL no permitido")
+    selector = environment.get("NCCL_SOCKET_IFNAME")
+    if selector is not None and (not isinstance(selector, str) or not re.fullmatch(r"=[A-Za-z0-9_.-]+", selector)):
+        raise NcclError("NCCL_SOCKET_IFNAME requiere nombre exacto =interfaz")
+    if selector is not None:
+        expected_environment["NCCL_SOCKET_IFNAME"] = selector
+    if environment != expected_environment:
         raise NcclError("entorno NCCL no permitido")
     if config.get("mpi_launcher") != "mpirun":
         raise NcclError("solo mpirun soportado")
@@ -146,8 +156,8 @@ def _rank_script(job, nodes, config):
             "printf 'IPRE_REJECTED_ENV=split/device/debug_file/cuda_visible_devices\\n' >&2; exit 87; fi; "
             "gpu=$(nvidia-smi --query-gpu=uuid --format=csv,noheader,nounits | head -n 1); "
             "printf 'IPRE_RANK_IDENTITY={\"rank\":%s,\"hostname\":\"%s\",\"gpu_uuid\":\"%s\"}\\n' \"$rank\" \"$host\" \"$gpu\"; "
-            "telemetry() { printf 'IPRE_TELEMETRY=%s|' \"$1\"; "
-            "nvidia-smi --query-gpu=uuid,utilization.gpu,memory.used,power.draw --format=csv,noheader,nounits | head -n 1; "
+            "telemetry() { gpu_metrics=$(nvidia-smi --query-gpu=uuid,utilization.gpu,memory.used,power.draw --format=csv,noheader,nounits | head -n 1); "
+            "printf 'IPRE_TELEMETRY=%s|%s\\n' \"$1\" \"$gpu_metrics\"; "
             "for dev in /sys/class/net/*; do [ -d \"$dev\" ] || continue; "
             "printf 'IPRE_NIC=%s|%s|%s|%s\\n' \"$1\" \"${dev##*/}\" "
             "\"$(cat \"$dev/statistics/rx_bytes\")\" \"$(cat \"$dev/statistics/tx_bytes\")\"; done; }; "
@@ -174,6 +184,8 @@ def _command(job, cluster, config):
            if "mpi_oob_tcp_if_include" in config else [])
     btl = (["--mca", "btl_tcp_if_include", config["mpi_btl_tcp_if_include"]]
            if "mpi_btl_tcp_if_include" in config else [])
+    socket_ifname = (["-x", "NCCL_SOCKET_IFNAME=" + config["environment"]["NCCL_SOCKET_IFNAME"]]
+                     if "NCCL_SOCKET_IFNAME" in config["environment"] else [])
     return ["mpirun", "--tag-output", "--host", hosts, "--map-by", "ppr:1:node", *oob, *btl,
             "--launch-agent", "timeout -k 3s 34s orted", "--timeout", "35",
             "--mca", "orte_leave_session_attached", "1",
@@ -182,7 +194,7 @@ def _command(job, cluster, config):
             "-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no "
             "-o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8",
             "-np", str(len(nodes)), "-x", "NCCL_DEBUG=INFO",
-            "-x", "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH",
+            "-x", "NCCL_DEBUG_SUBSYS=INIT,BOOTSTRAP,NET,GRAPH", *socket_ifname,
             "timeout", "-k", "5s", "34s", "/bin/sh", "-c", _rank_script(job, nodes, config)]
 
 
@@ -275,7 +287,7 @@ def _rank_rdma_verified(stdout, stderr):
     if not channels or any(mode != "IB" for mode, _ in channels):
         return False
     physical = {}
-    for hca, port, layer in re.findall(r"\[\d+\]([A-Za-z0-9_]+):(\d+)(?:[:\d]*)/(Ethernet|InfiniBand)", log):
+    for hca, port, layer in re.findall(r"\[\d+\]([A-Za-z0-9_]+):(\d+)(?:[:\d]*)/(Ethernet|RoCE|InfiniBand)", log):
         physical[(hca, port)] = layer
     virtual = {number: name for number, name in
                re.findall(r"NET/IB : Made virtual device \[(\d+)\] name=([A-Za-z0-9_+]+)", log)}
@@ -283,7 +295,7 @@ def _rank_rdma_verified(stdout, stderr):
         r"IPRE_RDMA_LINK=/sys/class/infiniband/([A-Za-z0-9_]+)/ports/(\d+)\|(Ethernet|InfiniBand)", log)}
     for _, number in channels:
         names = virtual.get(number, "").split("+")
-        if not names or not all(any(physical.get((name, port)) == "Ethernet" and
+        if not names or not all(any(physical.get((name, port)) in ("Ethernet", "RoCE") and
                                     observed.get((name, port)) == "Ethernet"
                                     for _, port in observed if _ == name)
                                 for name in names):
@@ -298,6 +310,12 @@ def _expected_sizes(job):
         sizes.append(value)
         value *= 2
     return sizes
+
+
+def _normalize_tagged_output(output):
+    """Separate MPI records merged into one line; never invent missing payload."""
+    return "\n".join(fragment for line in output.splitlines()
+                     for fragment in EMBEDDED_TAG.split(line) if fragment)
 
 
 def _validate_measurement(job, result, text, preflight=None):
@@ -667,7 +685,8 @@ def run(cluster_path, config_path, *, allow_dirty=False, results_root=None):
                 result = exc.execution_result
             (job_dir / "stdout.log").write_text(result.pop("stdout"), encoding="utf-8")
             (job_dir / "stderr.log").write_text(result.pop("stderr"), encoding="utf-8")
-            full_output = (job_dir / "stdout.log").read_text() + "\n" + (job_dir / "stderr.log").read_text()
+            full_output = _normalize_tagged_output((job_dir / "stdout.log").read_text() + "\n" +
+                                                   (job_dir / "stderr.log").read_text())
             result.update(job=job, transport=classify_transport(full_output), rows=parse_nccl_table(full_output))
             try:
                 ranks = _observed_ranks(full_output, job, cluster, preflight)
