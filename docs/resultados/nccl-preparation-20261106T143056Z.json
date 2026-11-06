@@ -1,0 +1,197 @@
+{
+  "timestamp_utc": "20261106T143056Z",
+  "bundle": {
+    "bundle_id": "7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+    "destination": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+    "files": {
+      "bin/all_reduce_perf": {
+        "sha256": "ca182d0c74d4373d979872666abfee78163f799a2cdb46cc48c01a8d8b10ff89",
+        "bytes": 27314816
+      },
+      "bin/all_gather_perf": {
+        "sha256": "d219dc367ded4bc3871df2345f0325af69c93ef317f587bdbe1bd178f2c102e5",
+        "bytes": 22468592
+      },
+      "bin/reduce_scatter_perf": {
+        "sha256": "c9d53d373a7c05b64a6f633ba9f1f2954305d2cbbb9d049fc1e81f35e5803fa9",
+        "bytes": 22470920
+      },
+      "bin/sendrecv_perf": {
+        "sha256": "9c33c37bfe2eb57cb3f7da355e61c07b2ee785beb3da744749f12b8a78531ff6",
+        "bytes": 22475624
+      },
+      "lib/libnccl.so.2.30.7": {
+        "sha256": "d7aef7bfb679df80b0ec03e0efac1df67a6b7a45b88ebbaea5081a7ef54e11b2",
+        "bytes": 61401304
+      },
+      "licenses/nccl.txt": {
+        "sha256": "c1f53beabe4dbf05bd87c00f7ca6084c0cb541c3f7bf8edab7913f266018b7be",
+        "bytes": 13261
+      },
+      "licenses/nccl-tests.txt": {
+        "sha256": "88e8c1b85269ae234e8c56e1688fd3a1a10ea1d508b9228c38467b6877e10409",
+        "bytes": 1519
+      }
+    },
+    "source_checkouts_observed": {
+      "nccl": "73cf112295c33aee2b895f329f592f2a9b4b0f97",
+      "nccl-tests": "717b68318278e93f371d8ffb46b076069d7c7851"
+    },
+    "provenance_note": "Source checkouts observed; existing executable build provenance not independently proven."
+  },
+  "script_sha256": "009a033fe1992377fd583bc1155b0e8ea1db895975960440931c071894effc41",
+  "nodes": [
+    {
+      "node_id": "pegasus",
+      "copy_returncode": 0,
+      "copy_stderr": "",
+      "verify_returncode": 0,
+      "verify_stderr": "",
+      "verification": {
+        "hostname": "spark-cfea",
+        "bundle_id": "7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+        "nccl_version": 23007,
+        "link_checks": [
+          {
+            "binary": "all_reduce_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ffa64669c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ffa644d50000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ffa644bf0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ffa642a50000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ffa6427c0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ffa642710000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffa6426d0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffa642510000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ffa646660000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ffa6424e0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ffa6424b0000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ffa642480000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ffa6423a0000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ffa6422d0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ffa642250000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ffa642210000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ffa6421b0000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ffa642180000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ffa642120000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ffa6420f0000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "all_gather_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000fca8617dd000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000fca860320000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000fca8601c0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000fca85e020000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000fca85dd90000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000fca85dce0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000fca85dca0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000fca85dae0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000fca861790000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000fca85dab0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000fca85da80000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000fca85da50000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000fca85d970000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000fca85d8a0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000fca85d820000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000fca85d7e0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000fca85d780000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000fca85d750000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000fca85d6f0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000fca85d6c0000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "reduce_scatter_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000e954ec1dc000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000e954ead10000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000e954eabb0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000e954e8a10000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e954e8780000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e954e86d0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e954e8690000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e954e84d0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000e954ec1a0000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000e954e84a0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000e954e8470000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000e954e8440000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000e954e8360000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000e954e8290000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000e954e8210000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000e954e81d0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000e954e8170000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000e954e8140000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000e954e80e0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000e954e80b0000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "sendrecv_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ebe3451ac000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ebe343ce0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ebe343b80000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ebe3419e0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ebe341750000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ebe3416a0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ebe341660000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ebe3414a0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ebe345170000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ebe341470000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ebe341440000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ebe341410000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ebe341330000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ebe341260000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ebe3411e0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ebe3411a0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ebe341140000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ebe341110000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ebe3410b0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ebe341080000)\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "octopus",
+      "copy_returncode": 0,
+      "copy_stderr": "",
+      "verify_returncode": 0,
+      "verify_stderr": "",
+      "verification": {
+        "hostname": "spark-60c3",
+        "bundle_id": "7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+        "nccl_version": 23007,
+        "link_checks": [
+          {
+            "binary": "all_reduce_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ef8021d4c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ef8020410000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ef80202b0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ef801e110000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ef801de80000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ef801ddd0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ef801dd90000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ef801dbd0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ef8021d00000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ef801dba0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ef801db70000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ef801db40000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ef801da60000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ef801d990000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ef801d910000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ef801d8d0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ef801d870000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ef801d840000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ef801d7e0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ef801d7b0000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "all_gather_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000f78151279000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000f7814fdc0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000f7814fc60000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000f7814dac0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000f7814d830000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000f7814d780000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000f7814d740000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000f7814d580000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000f78151230000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000f7814d550000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000f7814d520000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000f7814d4f0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000f7814d410000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000f7814d340000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000f7814d2c0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000f7814d280000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000f7814d220000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000f7814d1f0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000f7814d190000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000f7814d160000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "reduce_scatter_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000e6eb1f166000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000e6eb1dcb0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000e6eb1db50000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000e6eb1b9b0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e6eb1b720000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e6eb1b670000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e6eb1b630000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e6eb1b470000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000e6eb1f120000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000e6eb1b440000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000e6eb1b410000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000e6eb1b3e0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000e6eb1b300000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000e6eb1b230000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000e6eb1b1b0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000e6eb1b170000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000e6eb1b110000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000e6eb1b0e0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000e6eb1b080000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000e6eb1b050000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "sendrecv_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ef03242fc000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ef0322e30000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ef0322cd0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ef0320b30000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ef03208a0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ef03207f0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ef03207b0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ef03205f0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ef03242c0000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ef03205c0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ef0320590000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ef0320560000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ef0320480000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ef03203b0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ef0320330000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ef03202f0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ef0320290000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ef0320260000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ef0320200000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ef03201d0000)\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "griffin",
+      "copy_returncode": 0,
+      "copy_stderr": "",
+      "verify_returncode": 0,
+      "verify_stderr": "",
+      "verification": {
+        "hostname": "gx10-726d",
+        "bundle_id": "7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+        "nccl_version": 23007,
+        "link_checks": [
+          {
+            "binary": "all_reduce_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ea7b29f7c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ea7b28640000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ea7b284e0000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ea7b26340000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ea7b260b0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ea7b26000000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ea7b25fc0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ea7b25e00000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ea7b29f30000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ea7b25dd0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ea7b25da0000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ea7b25d70000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ea7b25c90000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ea7b25bc0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ea7b25b40000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ea7b25b00000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ea7b25aa0000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ea7b25a70000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ea7b25a10000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ea7b259e0000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "all_gather_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000f3a59de1d000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000f3a59c960000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000f3a59c800000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000f3a59a660000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000f3a59a3d0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000f3a59a320000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000f3a59a2e0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000f3a59a120000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000f3a59ddd0000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000f3a59a0f0000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000f3a59a0c0000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000f3a59a090000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000f3a599fb0000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000f3a599ee0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000f3a599e60000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000f3a599e20000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000f3a599dc0000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000f3a599d90000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000f3a599d30000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000f3a599d00000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "reduce_scatter_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000e40581958000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000e405804a0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000e40580340000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000e4057e1a0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000e4057df10000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000e4057de60000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000e4057de20000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000e4057dc60000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000e40581910000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000e4057dc30000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000e4057dc00000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000e4057dbd0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000e4057daf0000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000e4057da20000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000e4057d9a0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000e4057d960000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000e4057d900000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000e4057d8d0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000e4057d870000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000e4057d840000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "sendrecv_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000fc761b65c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000fc761a1a0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000fc761a040000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000fc7617ea0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000fc7617c10000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000fc7617b60000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000fc7617b20000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000fc7617960000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000fc761b610000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000fc7617930000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000fc7617900000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000fc76178d0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000fc76177f0000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000fc7617720000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000fc76176a0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000fc7617660000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000fc7617600000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000fc76175d0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000fc7617570000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000fc7617540000)\n",
+            "stderr": ""
+          }
+        ]
+      }
+    },
+    {
+      "node_id": "draggon",
+      "copy_returncode": 0,
+      "copy_stderr": "",
+      "verify_returncode": 0,
+      "verify_stderr": "",
+      "verification": {
+        "hostname": "spark-192d",
+        "bundle_id": "7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95",
+        "nccl_version": 23007,
+        "link_checks": [
+          {
+            "binary": "all_reduce_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000eeead4b26000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000eeead31f0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000eeead3090000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000eeead0ef0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000eeead0c60000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000eeead0bb0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000eeead0b70000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000eeead09b0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000eeead4ae0000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000eeead0980000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000eeead0950000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000eeead0920000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000eeead0840000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000eeead0770000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000eeead06f0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000eeead06b0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000eeead0650000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000eeead0620000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000eeead05c0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000eeead0590000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "all_gather_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000efd4fe77c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000efd4fd2b0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000efd4fd150000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000efd4fafb0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000efd4fad20000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000efd4fac70000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000efd4fac30000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000efd4faa70000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000efd4fe740000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000efd4faa40000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000efd4faa10000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000efd4fa9e0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000efd4fa900000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000efd4fa830000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000efd4fa7b0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000efd4fa770000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000efd4fa710000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000efd4fa6e0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000efd4fa680000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000efd4fa650000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "reduce_scatter_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000f5646983c000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000f56468370000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000f56468210000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000f56466070000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000f56465de0000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000f56465d30000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000f56465cf0000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000f56465b30000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000f56469800000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000f56465b00000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000f56465ad0000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000f56465aa0000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000f564659c0000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000f564658f0000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000f56465870000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000f56465830000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000f564657d0000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000f564657a0000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000f56465740000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000f56465710000)\n",
+            "stderr": ""
+          },
+          {
+            "binary": "sendrecv_perf",
+            "returncode": 0,
+            "stdout": "\tlinux-vdso.so.1 (0x0000ff0aed1ac000)\n\tlibcudart.so.13 => /usr/local/cuda/targets/sbsa-linux/lib/libcudart.so.13 (0x0000ff0aebce0000)\n\tlibmpi.so.40 => /lib/aarch64-linux-gnu/libmpi.so.40 (0x0000ff0aebb80000)\n\tlibnccl.so.2 => /home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib/libnccl.so.2 (0x0000ff0ae99e0000)\n\tlibstdc++.so.6 => /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ff0ae9750000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ff0ae96a0000)\n\tlibgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ff0ae9660000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ff0ae94a0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ff0aed170000)\n\tlibdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ff0ae9470000)\n\tlibpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ff0ae9440000)\n\tlibrt.so.1 => /lib/aarch64-linux-gnu/librt.so.1 (0x0000ff0ae9410000)\n\tlibopen-rte.so.40 => /lib/aarch64-linux-gnu/libopen-rte.so.40 (0x0000ff0ae9330000)\n\tlibopen-pal.so.40 => /lib/aarch64-linux-gnu/libopen-pal.so.40 (0x0000ff0ae9260000)\n\tlibhwloc.so.15 => /lib/aarch64-linux-gnu/libhwloc.so.15 (0x0000ff0ae91e0000)\n\tlibz.so.1 => /lib/aarch64-linux-gnu/libz.so.1 (0x0000ff0ae91a0000)\n\tlibevent_core-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_core-2.1.so.7 (0x0000ff0ae9140000)\n\tlibevent_pthreads-2.1.so.7 => /lib/aarch64-linux-gnu/libevent_pthreads-2.1.so.7 (0x0000ff0ae9110000)\n\tlibudev.so.1 => /lib/aarch64-linux-gnu/libudev.so.1 (0x0000ff0ae90b0000)\n\tlibcap.so.2 => /lib/aarch64-linux-gnu/libcap.so.2 (0x0000ff0ae9080000)\n",
+            "stderr": ""
+          }
+        ]
+      }
+    }
+  ]
+}

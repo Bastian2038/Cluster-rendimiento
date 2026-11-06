@@ -23,6 +23,47 @@ Esta primera versión usa **Open MPI nativo, el usuario local y puerto SSH 22** 
 
 `report` produce Markdown con `--output <nuevo>.md` o todas las métricas derivadas con `--output <nuevo>.json`. Las estadísticas excluyen trabajos rechazados y mantienen sus errores y salidas raw.
 
+## Preparación autorizada del 2026-11-06
+
+Se autorizó copiar los cuatro ejecutables existentes de Pegasus y NCCL 2.30.7 a
+una carpeta exclusiva del experimento en cada nodo. El paquete ocupa aproximadamente
+149 MiB por nodo, se identifica por SHA-256 y conserva las instalaciones anteriores.
+La [comprobación de preparación](resultados/nccl-preparation-20261106T143056Z.json)
+registra hashes idénticos, resolución de bibliotecas y `ncclGetVersion=23007` en
+los cuatro equipos. Las revisiones de fuente son checkouts observados: no prueban
+por sí solas la procedencia de compilación de los ejecutables existentes.
+
+`binary_paths` apunta al directorio `bin` del paquete y el mapa opcional
+`library_paths` a su directorio `lib`. El runner aplica `LD_LIBRARY_PATH` únicamente
+a sus consultas y procesos, registra su valor y no modifica perfiles de usuario,
+configuración del linker, CUDA, drivers ni red. El preflight de cada corrida debe
+revalidar estos datos y el estado dinámico de los nodos.
+
+## Criterios de aceptación
+
+El éxito completo exige las 31 invocaciones previstas, salida cero, sin timeouts,
+identidades/ranks/UUID correctos, configuración efectiva concordante y todos los
+tamaños de la tabla. Debe haber cero errores numéricos en cada comprobación
+soportada. En esta versión SendRecv no comprueba corrección in-place y emite
+`N/A`: se conserva como no comprobado, exigiendo cero errores out-of-place.
+Un `N/A` en otra comprobación o un valor no finito no se considera éxito.
+
+Además, el usuario exige RoCE/RDMA: cada rank multinodo debe aportar evidencia de
+selección y canales de datos NET/IB asociada a dispositivos cuya capa de enlace
+sea Ethernet. Bootstrap por socket es independiente del transporte de datos.
+TCP/Socket puede dar un resultado funcional correcto, pero no satisface este
+requisito; evidencia ausente no equivale a RDMA verificado. GPUDirect RDMA es una
+propiedad adicional y no se deduce únicamente de NET/IB.
+
+Los informes separan corrección, cobertura e integridad, evidencia RDMA y éxito
+completo. Las corridas históricas sin evidencia suficiente no se reclasifican
+como RDMA verificado. Fallos y casos omitidos permanecen visibles.
+
+El rendimiento se caracteriza con mediana, mínimo y máximo de las tres
+repeticiones por tamaño, operación y placement. No hay un umbral mínimo de GB/s
+aprobado; `busbw` no mide directamente la velocidad física del cable. No se exige
+que cuatro nodos superen a dos y se declaran diferencias de rutas o hardware.
+
 ## Matriz de primera sesión
 
 | Orden | Grupo | Operaciones y tamaños | Repeticiones |

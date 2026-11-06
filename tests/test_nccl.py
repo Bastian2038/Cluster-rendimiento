@@ -18,10 +18,12 @@ def fake_outputs(plan, cluster):
     by_id = {node["node_id"]: node for node in cluster["nodes"]}
     outputs = []
     for job in plan["jobs"]:
-        lines = ["[1,0]<stderr>:NET/IB : Using mlx5_0"]
+        lines = [f"[1,0]<stdout>:# Collective test starting: {nccl.OPERATIONS[job['operation']]}",
+                 f"[1,0]<stdout>:# nThread 1 nGpus 1 minBytes {job['minimum']} maxBytes {job['maximum']} step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 graph: 0 unalign: 0"]
         for rank, node_id in enumerate(job["group"]):
             host = by_id[node_id]["expected_hostname"]
             lines.extend((f"[1,{rank}]<stderr>:NCCL version 2.27.3",
+                          f"[1,{rank}]<stderr>:NCCL INFO Using network IB",
                           f"[1,0]<stdout>:# Rank {rank} Group 0 Pid 123 on {host} device 0 [0000:00:00] GPU",
                           f'[1,{rank}]<stdout>:IPRE_RANK_IDENTITY={{"rank":{rank},"hostname":"{host}","gpu_uuid":"GPU-{rank + 1:04d}"}}',
                           f"[1,{rank}]<stdout>:IPRE_ENV=NCCL_DEBUG=INFO",
@@ -30,13 +32,60 @@ def fake_outputs(plan, cluster):
                 lines.append(f"[1,{rank}]<stdout>:IPRE_TELEMETRY={phase}|GPU-{rank + 1:04d}, 0, 10, 5")
                 lines.append(f"[1,{rank}]<stdout>:IPRE_NIC={phase}|eth0|1|2")
         for size in nccl._expected_sizes(job):
-            lines.append(f"[1,0]<stdout>:{size} 2 float sum -1 10 1 2 0 10 1 2 0")
+            count = size // 4 if job['operation'] not in ('all_gather', 'reduce_scatter') else ((size // 4 // len(job['group'])) // 4) * 4
+            redop = 'none' if job['operation'] == 'all_gather' else 'sum'
+            in_wrong = 'N/A' if job['operation'] == 'sendrecv' else '0'
+            lines.append(f"[1,0]<stdout>:{size} {count} float {redop} -1 10 1 2 0 10 1 2 {in_wrong}")
         outputs.append({"stdout": "\n".join(lines), "stderr": "", "returncode": 0,
                         "timed_out": False, "duration_seconds": 1.0})
     return outputs
 
 
 class NcclTests(unittest.TestCase):
+    def test_rdma_requires_used_ethernet_hca_in_either_log_stream(self):
+        stdout = ("NET/IB : Using [0]rocep1s0f0:1/Ethernet [1]rocep1s0f1:1/Ethernet; OOB eth0:1\n"
+                  "NET/IB : Made virtual device [0] name=rocep1s0f0 speed=200 ndevs=1 rail=-1 plane=-1\n"
+                  "NET/IB : Made virtual device [1] name=rocep1s0f1 speed=200 ndevs=1 rail=-1 plane=-1\n"
+                  "NCCL INFO Using network IB\n"
+                  "Channel 00/0 : 0[0] -> 1[0] [send] via NET/IB/1\n")
+        links = ("IPRE_RDMA_LINK=/sys/class/infiniband/rocep1s0f0/ports/1|Ethernet\n"
+                 "IPRE_RDMA_LINK=/sys/class/infiniband/rocep1s0f1/ports/1|Ethernet\n")
+        self.assertTrue(nccl._rank_rdma_verified(stdout + links, ""))
+        self.assertFalse(nccl._rank_rdma_verified(stdout + links.replace("rocep1s0f1/ports/1|Ethernet", "rocep1s0f1/ports/1|InfiniBand"), ""))
+        self.assertFalse(nccl._rank_rdma_verified(stdout.replace("via NET/IB/1", "via NET/Socket/1") + links, ""))
+        self.assertFalse(nccl._rank_rdma_verified(stdout.replace("via NET/IB/1", "via NET/IB/2") + links, ""))
+
+    def test_effective_protocol_and_sendrecv_checks(self):
+        cluster = json.loads(CLUSTER.read_text())
+        plan = nccl.make_plan(CLUSTER, PROTOCOL)
+        by_name = {job["name"]: (job, output) for job, output in zip(plan["jobs"], fake_outputs(plan, cluster))}
+        job, output = by_name["pair-1-sendrecv"]
+        full = output["stdout"]
+        result = dict(output, rows=nccl.parse_nccl_table(full), transport=nccl.classify_transport(full),
+                      ranks=[{"rank": i, "hostname": cluster["nodes"][i]["expected_hostname"]}
+                             for i in range(2)])
+        nccl._validate_measurement(job, result, full)
+        self.assertIsNone(result["rows"][0]["in_place"]["wrong"])
+        for changed, error in ((full.replace(" float sum ", " half sum "), "contradice"),
+                               (full.replace(" 2(factor) ", " 4(factor) "), "parámetros"),
+                               (full.replace(" 1 2 0 10 1 2 N/A", " 1 2 1 10 1 2 N/A"), "wrong != 0")):
+            with self.subTest(error=error):
+                mutated = dict(result, rows=nccl.parse_nccl_table(changed))
+                with self.assertRaisesRegex(nccl.NcclError, error):
+                    nccl._validate_measurement(job, mutated, changed)
+
+    def test_transport_missing_rank_fails(self):
+        cluster = json.loads(CLUSTER.read_text())
+        plan = nccl.make_plan(CLUSTER, PROTOCOL)
+        job, output = plan["jobs"][0], fake_outputs(plan, cluster)[0]
+        full = output["stdout"]
+        partial = full.replace("[1,3]<stderr>:NCCL INFO Using network IB", "")
+        result = dict(output, rows=nccl.parse_nccl_table(partial), transport=nccl.classify_transport(partial),
+                      ranks=[{"rank": rank, "hostname": cluster["nodes"][rank]["expected_hostname"]}
+                             for rank in range(4)])
+        with self.assertRaisesRegex(nccl.NcclError, "cobertura"):
+            nccl._validate_measurement(job, result, partial)
+
     def test_plan_has_no_processes_or_writes(self):
         with mock.patch.object(nccl.subprocess, "Popen", side_effect=AssertionError("spawn")), \
              mock.patch.object(nccl, "_write_new", side_effect=AssertionError("write")):
@@ -171,6 +220,9 @@ class NcclTests(unittest.TestCase):
             summary = json.loads(output_json.read_text())
             self.assertFalse(summary["pending_jobs"])
             self.assertTrue(all(job["valid"] for job in summary["jobs"]))
+            self.assertTrue(summary["functional_success"])
+            self.assertFalse(summary["rdma_success"])
+            self.assertFalse(summary["overall_success"])
             self.assertIn("## Mediciones seleccionadas", output_md.read_text())
 
     def test_incomplete_table_fails_closed(self):
@@ -182,12 +234,14 @@ class NcclTests(unittest.TestCase):
             nccl._validate_measurement(job, result, "NCCL version 2.27.3")
 
     def test_banner_drift_from_preflight_fails(self):
-        job = {"name": "x", "group": ["pegasus"], "minimum": 8, "maximum": 8}
+        job = {"name": "x", "group": ["pegasus"], "operation": "all_reduce", "minimum": 8, "maximum": 8}
         result = {"returncode": 0, "timed_out": False,
                   "rows": nccl.parse_nccl_table("8 2 float sum -1 10 1 2 0 10 1 2 0"),
                   "transport": {"data_transport": "indeterminate"},
                   "ranks": [{"rank": 0, "hostname": "spark-cfea", "node_id": "pegasus"}]}
-        output = ("[1,0]<stderr>:NCCL version 2.27.3\n"
+        output = ("[1,0]<stdout>:# Collective test starting: all_reduce_perf\n"
+                  "[1,0]<stdout>:# nThread 1 nGpus 1 minBytes 8 maxBytes 8 step: 2(factor) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 graph: 0 unalign: 0\n"
+                  "[1,0]<stderr>:NCCL version 2.27.3\n"
                   "[1,0]<stdout>:# Rank 0 Group 0 Pid 123 on spark-cfea device 0 [0] GPU")
         with self.assertRaisesRegex(nccl.NcclError, "difiere"):
             nccl._validate_measurement(job, result, output,
@@ -214,6 +268,8 @@ class NcclTests(unittest.TestCase):
             with self.subTest(drift=drift):
                 def execute(argv, seconds):
                     node_id, cmd = argv[1], argv[6:]
+                    if cmd[:1] == ["env"]:
+                        cmd = cmd[2:]
                     first = cmd[0]
                     stdout = ""
                     if first == "hostname":

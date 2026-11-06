@@ -75,7 +75,10 @@ def _validate_protocol(config, cluster):
     paths = config.get("binary_paths", {})
     if set(paths) != {node["node_id"] for node in nodes}:
         raise NcclError("binary_paths debe cubrir exactamente los nodos")
-    for path in paths.values():
+    libraries = config.get("library_paths", {})
+    if libraries and set(libraries) != set(paths):
+        raise NcclError("library_paths debe cubrir exactamente los nodos")
+    for path in [*paths.values(), *libraries.values()]:
         if not isinstance(path, str) or not path.startswith("/") or any(c in path for c in "\n\r\0"):
             raise NcclError("ruta de binario absoluta inválida")
     for node in nodes:
@@ -114,12 +117,12 @@ def _jobs(cluster):
 
 def _rank_script(job, nodes, config):
     # The only shell text is constructed from validated names and quoted paths.
-    cases = " ".join(f"{shlex.quote(n['expected_hostname'])}) binary={shlex.quote(config['binary_paths'][n['node_id']] + '/' + OPERATIONS[job['operation']])};;"
+    cases = " ".join(f"{shlex.quote(n['expected_hostname'])}) binary={shlex.quote(config['binary_paths'][n['node_id']] + '/' + OPERATIONS[job['operation']])}; library={shlex.quote(config.get('library_paths', {}).get(n['node_id'], ''))};;"
                      for n in nodes)
     args = ["-b", str(job["minimum"]), "-e", str(job["maximum"]), "-f", "2", "-g", "1",
             "-d", "float", "-w", "5", "-n", "20", "-c", "1"]
     return ("set -u; host=$(hostname); case \"$host\" in " + cases +
-            " *) exit 86;; esac; rank=${OMPI_COMM_WORLD_RANK:?}; "
+            " *) exit 86;; esac; if [ -n \"$library\" ]; then export LD_LIBRARY_PATH=\"$library\"; fi; rank=${OMPI_COMM_WORLD_RANK:?}; "
             "if [ -n \"${NCCL_TESTS_SPLIT:-}\" ] || [ -n \"${NCCL_TESTS_SPLIT_MASK:-}\" ] || "
             "[ -n \"${NCCL_TESTS_DEVICE:-}\" ] || [ -n \"${NCCL_DEBUG_FILE:-}\" ] || "
             "{ [ -n \"${CUDA_VISIBLE_DEVICES:-}\" ] && [ \"$CUDA_VISIBLE_DEVICES\" != 0 ]; }; then "
@@ -131,11 +134,13 @@ def _rank_script(job, nodes, config):
             "for dev in /sys/class/net/*; do [ -d \"$dev\" ] || continue; "
             "printf 'IPRE_NIC=%s|%s|%s|%s\\n' \"$1\" \"${dev##*/}\" "
             "\"$(cat \"$dev/statistics/rx_bytes\")\" \"$(cat \"$dev/statistics/tx_bytes\")\"; done; }; "
+            "for port in /sys/class/infiniband/*/ports/*; do [ -f \"$port/link_layer\" ] || continue; "
+            "printf 'IPRE_RDMA_LINK=%s|%s\\n' \"$port\" \"$(cat \"$port/link_layer\")\"; done; "
             "env | grep -E '^(NCCL_DEBUG|NCCL_DEBUG_SUBSYS|NCCL_DEBUG_FILE|NCCL_CONF_FILE|"
             "NCCL_SOCKET_IFNAME|NCCL_IB_HCA|NCCL_IB_DISABLE|NCCL_IB_GID_INDEX|NCCL_NET|"
             "NCCL_NET_PLUGIN|NCCL_NET_GDR_LEVEL|NCCL_P2P_DISABLE|NCCL_SHM_DISABLE|"
             "NCCL_CROSS_NIC|NCCL_ALGO|NCCL_PROTO|NCCL_TESTS_SPLIT|NCCL_TESTS_SPLIT_MASK|"
-            "NCCL_TESTS_DEVICE|CUDA_VISIBLE_DEVICES|UCX_TLS|UCX_NET_DEVICES)=' | sed 's/^/IPRE_ENV=/'; "
+            "NCCL_TESTS_DEVICE|CUDA_VISIBLE_DEVICES|UCX_TLS|UCX_NET_DEVICES|LD_LIBRARY_PATH)=' | sed 's/^/IPRE_ENV=/'; "
             "for file in /etc/nccl.conf \"${HOME:-/dev/null}/.nccl.conf\" \"${NCCL_CONF_FILE:-/dev/null}\"; do "
             "if [ -f \"$file\" ]; then printf 'IPRE_CONF_HASH=%s|' \"$file\"; sha256sum \"$file\"; "
             "else printf 'IPRE_CONF_MISSING=%s\\n' \"$file\"; fi; done; "
@@ -186,7 +191,7 @@ def parse_nccl_table(output):
         size = int(fields[0])
         values = fields[5:13]
         def number(value):
-            if value in ("N/A", "nan", "-"):
+            if value in ("N/A", "-"):
                 return None
             parsed = float(value)
             if not math.isfinite(parsed):
@@ -199,10 +204,12 @@ def parse_nccl_table(output):
             in_wrong = number(values[7])
         except (ValueError, IndexError):
             continue
-        rows.append({"bytes": size, "in_place": {"time_us": in_time, "algbw_GBps": in_alg,
-                        "busbw_GBps": in_bus, "wrong": in_wrong},
+        rows.append({"bytes": size, "count": int(fields[1]), "dtype": fields[2],
+                     "redop": fields[3], "root": fields[4],
+                     "in_place": {"time_us": in_time, "algbw_GBps": in_alg,
+                        "busbw_GBps": in_bus, "wrong": in_wrong, "wrong_token": values[7]},
                      "out_of_place": {"time_us": out_time, "algbw_GBps": out_alg,
-                        "busbw_GBps": out_bus, "wrong": out_wrong}})
+                        "busbw_GBps": out_bus, "wrong": out_wrong, "wrong_token": values[3]}})
     return rows
 
 
@@ -235,6 +242,31 @@ def classify_transport(text):
             "bootstrap_socket_is_data_transport": False}
 
 
+def _rank_rdma_verified(stdout, stderr):
+    """Correlate used NCCL virtual NICs with observed Ethernet RDMA ports."""
+    log = stdout + "\n" + stderr
+    if classify_transport(log)["data_transport"] != "NET/IB":
+        return False
+    channels = re.findall(r"\bvia NET/([^/\s]+)/([0-9]+)", log)
+    if not channels or any(mode != "IB" for mode, _ in channels):
+        return False
+    physical = {}
+    for hca, port, layer in re.findall(r"\[\d+\]([A-Za-z0-9_]+):(\d+)(?:[:\d]*)/(Ethernet|InfiniBand)", log):
+        physical[(hca, port)] = layer
+    virtual = {number: name for number, name in
+               re.findall(r"NET/IB : Made virtual device \[(\d+)\] name=([A-Za-z0-9_+]+)", log)}
+    observed = {(hca, port): layer for hca, port, layer in re.findall(
+        r"IPRE_RDMA_LINK=/sys/class/infiniband/([A-Za-z0-9_]+)/ports/(\d+)\|(Ethernet|InfiniBand)", log)}
+    for _, number in channels:
+        names = virtual.get(number, "").split("+")
+        if not names or not all(any(physical.get((name, port)) == "Ethernet" and
+                                    observed.get((name, port)) == "Ethernet"
+                                    for _, port in observed if _ == name)
+                                for name in names):
+            return False
+    return True
+
+
 def _expected_sizes(job):
     value = job["minimum"]
     sizes = []
@@ -250,13 +282,29 @@ def _validate_measurement(job, result, text, preflight=None):
     rows = result["rows"]
     if sorted(row["bytes"] for row in rows) != _expected_sizes(job):
         raise NcclError(f"tabla NCCL incompleta: {job['name']}")
+    tagged_lines = [RANK_LINE.sub(lambda m: m.group(2), line) for line in text.splitlines()]
+    header = "\n".join(tagged_lines)
+    if not re.search(rf"# Collective test starting: .*{re.escape(OPERATIONS[job['operation']])}", header):
+        raise NcclError(f"operación NCCL no verificable: {job['name']}")
+    expected_header = (rf"# nThread 1 nGpus 1 minBytes {job['minimum']} maxBytes {job['maximum']} "
+                       r"step: 2\(factor\) warmup iters: 5 iters: 20 agg iters: 1 validation: 1 ")
+    if not re.search(expected_header, header):
+        raise NcclError(f"parámetros efectivos NCCL inesperados: {job['name']}")
     for row in rows:
+        ranks = len(job["group"])
+        count = row["bytes"] // 4
+        if job["operation"] in ("all_gather", "reduce_scatter"):
+            count = ((count // ranks) // 4) * 4
+        redop = "none" if job["operation"] == "all_gather" else "sum"
+        if (row["count"], row["dtype"], row["redop"], row["root"]) != (count, "float", redop, "-1"):
+            raise NcclError(f"tabla NCCL contradice protocolo: {job['name']}")
         for side in (row["in_place"], row["out_of_place"]):
             if any(side[field] is None for field in ("time_us", "algbw_GBps", "busbw_GBps")):
                 raise NcclError(f"métricas NCCL ausentes: {job['name']}")
             if side["time_us"] <= 0 or side["algbw_GBps"] < 0 or side["busbw_GBps"] < 0:
                 raise NcclError(f"métricas NCCL fuera de rango: {job['name']}")
-            if side["time_us"] is not None and side["wrong"] is None:
+            if side["wrong"] is None and not (job["operation"] == "sendrecv" and
+                                               side is row["in_place"] and side.get("wrong_token") == "N/A"):
                 raise NcclError(f"check ausente: {job['name']}")
             if side["wrong"] not in (0, None):
                 raise NcclError(f"wrong != 0: {job['name']}")
@@ -266,6 +314,12 @@ def _validate_measurement(job, result, text, preflight=None):
         raise NcclError(f"versión NCCL efectiva ausente: {job['name']}")
     if len(job["group"]) > 1 and result["transport"]["data_transport"] in ("indeterminate", "mixed"):
         raise NcclError(f"transporte NCCL de datos indeterminado: {job['name']}")
+    if len(job["group"]) > 1 and result.get("ranks"):
+        by_rank = result["transport"].get("by_rank", {})
+        if any(str(rank["rank"]) not in by_rank or
+               by_rank[str(rank["rank"])]["data_transport"] != result["transport"]["data_transport"]
+               for rank in result["ranks"]):
+            raise NcclError(f"transporte NCCL sin cobertura por rank: {job['name']}")
     devices = re.findall(r"#\s+Rank\s+(\d+)\s+Group\s+(\d+)\s+Pid\s+\d+\s+on\s+(\S+)\s+device\s+(\d+)", text)
     if any(group != "0" or device != "0" for _, group, _, device in devices):
         raise NcclError(f"grupo NCCL o dispositivo inesperado: {job['name']}")
@@ -380,7 +434,9 @@ def _preflight(cluster, config, deadline, evidence_dir=None):
         commands.append(["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader,nounits"])
         commands.extend(["sha256sum", config["binary_paths"][node["node_id"]] + "/" + name]
                         for name in OPERATIONS.values())
-        commands.extend(["ldd", config["binary_paths"][node["node_id"]] + "/" + name]
+        library = config.get("library_paths", {}).get(node["node_id"])
+        prefix = ["env", f"LD_LIBRARY_PATH={library}"] if library else []
+        commands.extend([*prefix, "ldd", config["binary_paths"][node["node_id"]] + "/" + name]
                         for name in OPERATIONS.values())
         commands.extend(["readelf", "-Ws", config["binary_paths"][node["node_id"]] + "/" + name]
                         for name in OPERATIONS.values())
@@ -396,6 +452,7 @@ def _preflight(cluster, config, deadline, evidence_dir=None):
                 result = {"returncode": None, "stdout": "", "stderr": str(exc),
                           "timed_out": False, "duration_seconds": 0.0}
             evidence["checks"].append({"command": argv, **result})
+            checked_command = command[2:] if command[:1] == ["env"] else command
             if evidence_dir is not None:
                 _write_new(evidence_dir / f"{node['node_id']}-{index:02d}.json",
                            {"node_id": node["node_id"], "expected_hostname": node["expected_hostname"],
@@ -403,8 +460,8 @@ def _preflight(cluster, config, deadline, evidence_dir=None):
             if (result["returncode"] != 0 or result["timed_out"] or "not found" in result["stdout"]) \
                     and command[0] != "nvcc":
                 raise NcclError(f"preflight falló en {node['node_id']}: {shlex.join(command)}")
-            if command[0] == "ldd" and "libmpi" not in result["stdout"]:
-                raise NcclError(f"binario sin enlace MPI verificable: {command[1]}")
+            if checked_command[0] == "ldd" and "libmpi" not in result["stdout"]:
+                raise NcclError(f"binario sin enlace MPI verificable: {checked_command[1]}")
             if command[0] == "readelf" and not re.search(r"\bMPI_Init(?:_thread)?\b", result["stdout"]):
                 raise NcclError(f"binario sin inicialización MPI verificable: {command[-1]}")
             if command[0] == "sha256sum":
@@ -419,10 +476,10 @@ def _preflight(cluster, config, deadline, evidence_dir=None):
                     re.search(rf"^{key}:\s+\d+\s+kB", result["stdout"], flags=re.MULTILINE)
                     for key in ("MemAvailable", "SwapFree")):
                 raise NcclError(f"memoria host no observable en {node['node_id']}")
-            if command[0] == "ldd":
+            if checked_command[0] == "ldd":
                 libraries = re.findall(r"\blibnccl\S*\s+=>\s+(/\S+)", result["stdout"])
                 if len(libraries) != 1:
-                    raise NcclError(f"libnccl efectiva no identificable: {command[1]}")
+                    raise NcclError(f"libnccl efectiva no identificable: {checked_command[1]}")
                 library_command = ["sha256sum", libraries[0]]
                 library_argv = cluster_module.ssh_command(
                     node, ["timeout", "-k", "3s", "11s", *library_command])
@@ -436,7 +493,7 @@ def _preflight(cluster, config, deadline, evidence_dir=None):
                 if not re.fullmatch(r"[a-fA-F0-9]{64}", digest):
                     raise NcclError("SHA-256 libnccl inválido")
                 evidence.setdefault("nccl_library_hashes", []).append(digest.lower())
-                getter = ["python3", "-c", "import ctypes,sys; lib=ctypes.CDLL(sys.argv[1]); v=ctypes.c_int(); "
+                getter = [*prefix, "python3", "-c", "import ctypes,sys; lib=ctypes.CDLL(sys.argv[1]); v=ctypes.c_int(); "
                           "r=lib.ncclGetVersion(ctypes.byref(v)); assert r==0; print(v.value)", libraries[0]]
                 getter_argv = cluster_module.ssh_command(node, ["timeout", "-k", "3s", "11s", *getter])
                 getter_result = _execute(getter_argv, min(15, max(1, deadline - time.monotonic())))
@@ -652,9 +709,24 @@ def report(run_path, output):
                 telemetry.append({"rank": rank["rank"], "node_id": rank["node_id"],
                                   "sha256": manifest.sha256_file(evidence),
                                   "nic_deltas_bytes": info.get("nic_deltas_bytes", {})})
+        rdma_by_rank = []
+        for rank in item.get("ranks", []):
+            evidence_file = path.parent / f"rank-{rank['rank']}-stderr.log"
+            stdout_file = path.parent / f"rank-{rank['rank']}-stdout.log"
+            if not evidence_file.is_file() or not stdout_file.is_file():
+                rdma_by_rank.append(False)
+                continue
+            evidence_text = evidence_file.read_text(encoding="utf-8")
+            stdout_text = stdout_file.read_text(encoding="utf-8")
+            rdma_by_rank.append(_rank_rdma_verified(stdout_text, evidence_text))
+        rdma_status = ("verified" if len(item["job"]["group"]) == len(rdma_by_rank)
+                       and all(rdma_by_rank) and len(rdma_by_rank) > 1 else
+                       "not_verified" if len(item["job"]["group"]) > 1 else "not_applicable")
         jobs.append({"name": item["job"]["name"], "result_sha256": manifest.sha256_file(path),
                      "transport": item["transport"], "valid": invalid is None,
-                     "failure": invalid, "rows": len(item.get("rows", [])),
+                     "failure": invalid, "rdma_status": rdma_status,
+                     "sendrecv_inplace_check": "not_supported" if item["job"].get("operation") == "sendrecv" else "checked",
+                     "rows": len(item.get("rows", [])),
                      "returncode": item["returncode"], "telemetry": telemetry})
         job = item["job"]
         if invalid is not None:
@@ -676,6 +748,12 @@ def report(run_path, output):
                "pending_jobs": [job["name"] for job in planned if job["name"] not in {item["name"] for item in jobs}],
                "dispersion": dispersion,
                "errors": run["errors"], "metric_note": "NCCL busbw GB/s; no es velocidad física del enlace"}
+    summary["functional_success"] = (run["status"] == "complete" and not summary["pending_jobs"]
+                                     and len(jobs) == len(planned) and all(job["valid"] for job in jobs))
+    summary["rdma_success"] = (summary["functional_success"] and
+                               all(job["rdma_status"] == "verified" for job in jobs
+                                   if len(planned[planned_order[job["name"]]]["group"]) > 1))
+    summary["overall_success"] = summary["functional_success"] and summary["rdma_success"]
     if output.suffix not in {".json", ".md"}:
         raise NcclError("--output debe terminar en .json o .md")
     if any((parent / "manifest.json").exists() or (parent / "COMPLETE").exists()
@@ -686,12 +764,13 @@ def report(run_path, output):
         _write_new(output, summary)
     elif output.suffix == ".md":
         sample_sizes = {1048576, 268435456}
-        lines = [f"# NCCL {run['run_id']}", "", f"Estado: **{run['status']}**.", "",
+        lines = [f"# NCCL {run['run_id']}", "", f"Estado: **{run['status']}**.",
+                 f"Corrección funcional: **{'sí' if summary['functional_success'] else 'no'}**. RoCE/RDMA: **{'sí' if summary['rdma_success'] else 'no'}**. Éxito completo: **{'sí' if summary['overall_success'] else 'no'}**.", "",
                  f"SHA-256 manifest: `{summary['manifest_sha256']}`.", "",
-                 "## Jobs", "", "| Job | Válido | Transporte | Falla |", "|---|---|---|---|"]
+                 "## Jobs", "", "| Job | Válido | Transporte | RDMA | Falla |", "|---|---|---|---|---|"]
         for item in jobs:
             lines.append(f"| {item['name']} | {'sí' if item['valid'] else 'no'} | "
-                         f"{item['transport']['data_transport']} | {item['failure'] or ''} |")
+                         f"{item['transport']['data_transport']} | {item['rdma_status']} | {item['failure'] or ''} |")
         lines += ["", "## Mediciones seleccionadas", "",
                   "| Grupo | Operación | Bytes | Métrica | Mediana | Mín | Máx | n |",
                   "|---|---|---:|---|---:|---:|---:|---:|"]

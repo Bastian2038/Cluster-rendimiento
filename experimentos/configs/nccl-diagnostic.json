@@ -6,10 +6,10 @@
   "cleanup_grace_seconds": 5,
   "mpi_launcher": "mpirun",
   "binary_paths": {
-    "pegasus": "/home/bastiangl/nccl-tests/build",
-    "octopus": "/home/bastiangl/nccl-tests/build",
-    "griffin": "/home/bastiangl/nccl-tests/build",
-    "draggon": "/home/bastiangl/nccl-tests/build"
+    "pegasus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin",
+    "octopus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin",
+    "griffin": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin",
+    "draggon": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/bin"
   },
   "gpu_per_node": 1,
   "dtype": "float",
@@ -17,9 +17,54 @@
   "measured_iterations": 20,
   "check": 1,
   "repetitions": 3,
-  "smoke": {"operation": "all_reduce", "group": "four", "minimum_bytes": 8, "maximum_bytes": 1048576, "factor": 2},
-  "main": {"groups": ["four", "pair"], "operations": ["all_reduce", "all_gather", "reduce_scatter"], "minimum_bytes_by_operation": {"all_reduce": 8, "all_gather": 64, "reduce_scatter": 64}, "minimum_reason": "nccl-tests alinea a 16 bytes por rank; con cuatro ranks, tamaños menores a 64 bytes se truncan a cero", "maximum_bytes": 268435456, "factor": 2},
-  "diagnostic": {"operation": "sendrecv", "pairs": "all-six", "minimum_bytes": 8, "maximum_bytes": 1048576, "factor": 2},
-  "control": {"group": "single", "operation": "all_reduce", "minimum_bytes": 8, "maximum_bytes": 1048576, "factor": 2},
-  "environment": {"NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH"}
+  "smoke": {
+    "operation": "all_reduce",
+    "group": "four",
+    "minimum_bytes": 8,
+    "maximum_bytes": 1048576,
+    "factor": 2
+  },
+  "main": {
+    "groups": [
+      "four",
+      "pair"
+    ],
+    "operations": [
+      "all_reduce",
+      "all_gather",
+      "reduce_scatter"
+    ],
+    "minimum_bytes_by_operation": {
+      "all_reduce": 8,
+      "all_gather": 64,
+      "reduce_scatter": 64
+    },
+    "minimum_reason": "nccl-tests alinea a 16 bytes por rank; con cuatro ranks, tamaños menores a 64 bytes se truncan a cero",
+    "maximum_bytes": 268435456,
+    "factor": 2
+  },
+  "diagnostic": {
+    "operation": "sendrecv",
+    "pairs": "all-six",
+    "minimum_bytes": 8,
+    "maximum_bytes": 1048576,
+    "factor": 2
+  },
+  "control": {
+    "group": "single",
+    "operation": "all_reduce",
+    "minimum_bytes": 8,
+    "maximum_bytes": 1048576,
+    "factor": 2
+  },
+  "environment": {
+    "NCCL_DEBUG": "INFO",
+    "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH"
+  },
+  "library_paths": {
+    "pegasus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib",
+    "octopus": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib",
+    "griffin": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib",
+    "draggon": "/home/bastiangl/.local/share/ipre/nccl/7001e3d9c9210a48e2445682501c45217a77ddf8728d536de7d6d6a591efab95/lib"
+  }
 }
