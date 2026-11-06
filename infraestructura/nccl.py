@@ -154,6 +154,9 @@ def _command(job, cluster, config):
     hosts = ",".join((node["expected_hostname"] if node["local"] else node["ssh"]["host"]) + ":1"
                      for node in nodes)
     return ["mpirun", "--tag-output", "--host", hosts, "--map-by", "ppr:1:node",
+            "--launch-agent", "timeout -k 3s 34s orted", "--timeout", "35",
+            "--mca", "orte_leave_session_attached", "1",
+            "--mca", "plm_rsh_no_tree_spawn", "1",
             "--mca", "plm_rsh_agent", "ssh", "--mca", "plm_rsh_args",
             "-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no "
             "-o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8",

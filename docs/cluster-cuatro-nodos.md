@@ -38,6 +38,12 @@ La interfaz de gestión `enP7s7` está UP a 1000 Mb/s en Pegasus, Griffin y Drag
 
 ## Diferencias y pendientes para NCCL
 
+Actualización del 2026-11-06: se preparó un paquete aislado idéntico de NCCL 2.30.7
+y nccl-tests en los cuatro nodos. El preflight verificó bibliotecas y Open MPI
+4.1.6, pero el primer smoke falló durante el arranque distribuido de MPI. Ver
+[evidencia del intento](resultados/nccl-20261106-analysis.md). Las observaciones
+históricas siguientes conservan su fecha y no sustituyen este preflight.
+
 | Entorno observado | Pegasus y Octopus | Griffin | Draggon |
 | --- | --- | --- | --- |
 | Ubuntu | 24.04.4 LTS | 24.04.5 LTS | 24.04.5 LTS |

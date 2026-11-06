@@ -2,7 +2,7 @@
 
 ## Objetivo y autorización
 
-Caracterizar comunicación entre los cuatro nodos reportados y aislar la comparación **4 frente a 2** (Pegasus + Octopus), con Pegasus como control de un nodo. Esta prueba no demuestra rendimiento de Qwen, Llama, inferencia o SFT. **La primera sesión no se ha ejecutado.** Antes de iniciarla, revisar los comandos generados, recursos, duración máxima de 30 minutos y archivos de salida, y obtener autorización operacional para GPU/benchmark. No instalar dependencias, modificar red, persistir variables NCCL ni alterar Docker para facilitar la prueba.
+Caracterizar comunicación entre los cuatro nodos reportados y aislar la comparación **4 frente a 2** (Pegasus + Octopus), con Pegasus como control de un nodo. Esta prueba no demuestra rendimiento de Qwen, Llama, inferencia o SFT. **La primera sesión, del 2026-11-06, falló durante el arranque MPI del smoke de cuatro nodos, sin ranks ni métricas NCCL observados.** Ver [análisis y pendientes](resultados/nccl-20261106-analysis.md). Antes de cada sesión, revisar los comandos generados, recursos, duración máxima de 30 minutos y archivos de salida, y obtener autorización operacional para GPU/benchmark. Sin autorización específica no instalar dependencias, modificar red, persistir variables NCCL ni alterar Docker para facilitar la prueba.
 
 El [protocolo](../experimentos/configs/nccl-diagnostic.json) especifica operaciones y límites; las versiones efectivas se registran al ejecutar. Inspeccionarlo sin conectar a los nodos:
 
@@ -32,6 +32,8 @@ La [comprobación de preparación](resultados/nccl-preparation-20261106T143056Z.
 registra hashes idénticos, resolución de bibliotecas y `ncclGetVersion=23007` en
 los cuatro equipos. Las revisiones de fuente son checkouts observados: no prueban
 por sí solas la procedencia de compilación de los ejecutables existentes.
+Se conserva también el [script exacto de preparación](resultados/nccl-preparation-20261106T143056Z.py),
+un snapshot de esta operación, que rechaza destinos ya existentes.
 
 `binary_paths` apunta al directorio `bin` del paquete y el mapa opcional
 `library_paths` a su directorio `lib`. El runner aplica `LD_LIBRARY_PATH` únicamente
@@ -78,6 +80,14 @@ que cuatro nodos superen a dos y se declaran diferencias de rutas o hardware.
 Tamaños con factor 2, tipo `float`, `5` iteraciones de calentamiento, `20` medidas y `check=1` como valores solicitados. El mínimo de 64 B para AllGather/ReduceScatter ajusta el planteamiento inicial de 8 B: la fuente local de nccl-tests (commit `717b683`) alinea a 16 B por rank y redondea a cero los mensajes menores de 64 B con cuatro ranks. Se conserva el mismo mínimo para dos nodos para comparar los mismos tamaños efectivos. Verificar este comportamiento si cambia el binario.
 
 Una invocación tiene límite de 45 s incluida su limpieza y la sesión completa de 1800 s; detener únicamente los procesos propios al vencer límites. Registrar timeouts, fallos de corrección y casos omitidos. Si el presupuesto impide completar la matriz, preservar el orden y marcar las celdas faltantes; no presentarlas como mediciones. Los contadores de interfaz antes/después y las marcas temporales ayudan a interpretar tráfico, pero incluyen actividad ajena si la hubiera.
+
+La primera sesión expuso que terminar el grupo local no elimina necesariamente
+daemons MPI remotos durante un bloqueo de arranque. Se añadió un watchdog para
+`orted` de 34 s más 3 s de gracia, timeout MPI de 35 s, daemons adjuntos a la
+sesión SSH y lanzamiento sin árbol. El límite externo sigue siendo 45 s. Estos
+watchdogs corren desde el arranque remoto: no demuestran por sí solos un límite
+distribuido estricto si SSH arranca tarde. Verificar procesos propios al finalizar
+y registrar cualquier limpieza adicional, sin señalar procesos ajenos.
 
 Recoger stdout/stderr, código de salida, comando exacto, versiones y hash de binario/fuente, host/rank/GPU UUID efectivos, tamaño, tiempo y `algbw`/`busbw` con sus unidades y definición de `nccl-tests`. Guardar `NCCL_DEBUG=INFO` con subsistemas `INIT,BOOTSTRAP,NET,GRAPH`, saneando secretos. Registrar red de bootstrap y red de datos por separado. No forzar HCA o interfaz sin evidencia y revisión. Una línea NCCL o IP por sí sola no confirma cableado: contrastar con LLDP/puertos y mapa físico del [inventario](cluster-cuatro-nodos.md).
 

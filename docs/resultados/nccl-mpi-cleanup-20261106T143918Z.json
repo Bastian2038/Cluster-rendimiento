@@ -1,0 +1,29 @@
+{
+  "scope": "Only exact PIDs and job ids from NCCL smoke and subsequent CPU diagnostic; pidfd signals after owner/command verification",
+  "nodes": [
+    {
+      "node_id": "pegasus",
+      "returncode": 0,
+      "stdout": "{\"results\": [{\"pid\": 556673, \"job_id\": \"1692467200\", \"status\": \"own_process_terminated\"}, {\"pid\": 556674, \"job_id\": \"1692467200\", \"status\": \"own_process_terminated\"}], \"remaining_own_jobs\": [\" 557432       1 Fri Nov  6 11:37:43 2026 /usr/bin/ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8 146.155.13.134  orted -mca ess \\\"env\\\" -mca ess_base_jobid \\\"2617049088\\\" -mca ess_base_vpid 2 -mca ess_base_num_procs \\\"4\\\" -mca orte_node_regex \\\"spark-cfea,[3:192].168.100.11,[3:146].155.13.134,[3:146].155.13.135@0(4)\\\" -mca orte_hnp_uri \\\"2617049088.0;tcp://146.155.13.132,10.10.0.10,192.168.100.10,10.10.1.10,192.168.101.10,172.17.0.1,100.73.46.49:51011;tcp6://[fdd1:eccf:8581:6581:b2bc:8acf:94a0:d77c]:54459\\\" --mca plm_base_verbose \\\"5\\\" --mca oob_base_verbose \\\"5\\\" -mca plm \\\"rsh\\\" --tree-spawn -mca routed \\\"radix\\\" -mca orte_parent_uri \\\"2617049088.0;tcp://146.155.13.132,10.10.0.10,192.168.100.10,10.10.1.10,192.168.101.10,172.17.0.1,100.73.46.49:51011;tcp6://[fdd1:eccf:8581:6581:b2bc:8acf:94a0:d77c]:54459\\\" -mca plm_rsh_args \\\"-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8\\\" -mca orte_tag_output \\\"1\\\" -mca rmaps_base_mapping_policy \\\"ppr:1:node\\\" -mca pmix \\\"^s1,s2,cray,isolated\\\"\", \" 557433       1 Fri Nov  6 11:37:43 2026 /usr/bin/ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8 146.155.13.135  orted -mca ess \\\"env\\\" -mca ess_base_jobid \\\"2617049088\\\" -mca ess_base_vpid 3 -mca ess_base_num_procs \\\"4\\\" -mca orte_node_regex \\\"spark-cfea,[3:192].168.100.11,[3:146].155.13.134,[3:146].155.13.135@0(4)\\\" -mca orte_hnp_uri \\\"2617049088.0;tcp://146.155.13.132,10.10.0.10,192.168.100.10,10.10.1.10,192.168.101.10,172.17.0.1,100.73.46.49:51011;tcp6://[fdd1:eccf:8581:6581:b2bc:8acf:94a0:d77c]:54459\\\" --mca plm_base_verbose \\\"5\\\" --mca oob_base_verbose \\\"5\\\" -mca plm \\\"rsh\\\" --tree-spawn -mca routed \\\"radix\\\" -mca orte_parent_uri \\\"2617049088.0;tcp://146.155.13.132,10.10.0.10,192.168.100.10,10.10.1.10,192.168.101.10,172.17.0.1,100.73.46.49:51011;tcp6://[fdd1:eccf:8581:6581:b2bc:8acf:94a0:d77c]:54459\\\" -mca plm_rsh_args \\\"-o BatchMode=yes -o StrictHostKeyChecking=yes -o UpdateHostKeys=no -o ControlMaster=no -o ControlPath=none -o ConnectTimeout=8\\\" -mca orte_tag_output \\\"1\\\" -mca rmaps_base_mapping_policy \\\"ppr:1:node\\\" -mca pmix \\\"^s1,s2,cray,isolated\\\"\"]}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "octopus",
+      "returncode": 0,
+      "stdout": "{\"results\": [], \"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "griffin",
+      "returncode": 0,
+      "stdout": "{\"results\": [{\"pid\": 309976, \"job_id\": \"1692467200\", \"status\": \"own_process_terminated\"}, {\"pid\": 310346, \"job_id\": \"2617049088\", \"status\": \"own_process_terminated\"}], \"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    },
+    {
+      "node_id": "draggon",
+      "returncode": 0,
+      "stdout": "{\"results\": [{\"pid\": 1964982, \"job_id\": \"1692467200\", \"status\": \"own_process_terminated\"}, {\"pid\": 1965377, \"job_id\": \"2617049088\", \"status\": \"own_process_terminated\"}], \"remaining_own_jobs\": []}\n",
+      "stderr": ""
+    }
+  ]
+}

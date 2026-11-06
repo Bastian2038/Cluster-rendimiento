@@ -101,6 +101,14 @@ class NcclTests(unittest.TestCase):
         self.assertEqual(plan["jobs"][19]["group"], ["pegasus", "griffin"])
         self.assertIn("timeout -k 3s 29s", plan["jobs"][0]["command"][-1])
         self.assertEqual(plan["jobs"][0]["command"][-7:-3], ["timeout", "-k", "5s", "34s"])
+        for job in plan["jobs"]:
+            command = job["command"]
+            self.assertEqual(command[command.index("--launch-agent") + 1], "timeout -k 3s 34s orted")
+            self.assertEqual(command[command.index("--timeout") + 1], "35")
+            self.assertIn(["--mca", "orte_leave_session_attached", "1"],
+                          [command[i:i + 3] for i in range(len(command) - 2)])
+            self.assertIn(["--mca", "plm_rsh_no_tree_spawn", "1"],
+                          [command[i:i + 3] for i in range(len(command) - 2)])
 
     def test_parser_and_transport(self):
         table = ("[1,0]<stdout>:# 8 2 float sum -1 12.5 0.1 0.2 1 13.5 0.3 0.4 0\n"

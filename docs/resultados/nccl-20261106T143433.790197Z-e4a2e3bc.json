@@ -1,0 +1,67 @@
+{
+  "run_id": "20261106T143433.790197Z-e4a2e3bc",
+  "status": "failed",
+  "manifest_sha256": "3d5c41c6241adfe0c5e14030fd8347f6155f1a9fc960d9b0f71d0be2295e8b81",
+  "jobs": [
+    {
+      "name": "smoke-four",
+      "result_sha256": "202551f46c9d311a5ea62fb279080c0b5e35e6b95864a2a2fe91ab0613838a11",
+      "transport": {
+        "data_transport": "indeterminate",
+        "hca_mentions": [],
+        "selection_evidence": [],
+        "by_rank": {},
+        "bootstrap_socket_is_data_transport": false
+      },
+      "valid": false,
+      "failure": "timeout",
+      "rdma_status": "not_verified",
+      "sendrecv_inplace_check": "checked",
+      "rows": 0,
+      "returncode": 1,
+      "telemetry": []
+    }
+  ],
+  "pending_jobs": [
+    "main-four-all_reduce-1",
+    "main-four-all_reduce-2",
+    "main-four-all_reduce-3",
+    "main-four-all_gather-1",
+    "main-four-all_gather-2",
+    "main-four-all_gather-3",
+    "main-four-reduce_scatter-1",
+    "main-four-reduce_scatter-2",
+    "main-four-reduce_scatter-3",
+    "main-pair-all_reduce-1",
+    "main-pair-all_reduce-2",
+    "main-pair-all_reduce-3",
+    "main-pair-all_gather-1",
+    "main-pair-all_gather-2",
+    "main-pair-all_gather-3",
+    "main-pair-reduce_scatter-1",
+    "main-pair-reduce_scatter-2",
+    "main-pair-reduce_scatter-3",
+    "pair-1-allreduce",
+    "pair-2-allreduce",
+    "pair-3-allreduce",
+    "pair-4-allreduce",
+    "pair-5-allreduce",
+    "pair-1-sendrecv",
+    "pair-2-sendrecv",
+    "pair-3-sendrecv",
+    "pair-4-sendrecv",
+    "pair-5-sendrecv",
+    "pair-6-sendrecv",
+    "control-single"
+  ],
+  "dispersion": [],
+  "errors": [
+    {
+      "message": "NcclError: job falló o faltan ranks: smoke-four"
+    }
+  ],
+  "metric_note": "NCCL busbw GB/s; no es velocidad física del enlace",
+  "functional_success": false,
+  "rdma_success": false,
+  "overall_success": false
+}

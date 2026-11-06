@@ -4,7 +4,7 @@ Este repositorio prepara la caracterización de **Pegasus, Octopus, Griffin y Dr
 
 La primera entrega es infraestructura: inventario de los cuatro nodos y protocolo de diagnóstico NCCL. Después se prepararán inferencia/serving y SFT completo. El orden de cada bloque es **4 → 2 → 1**: cuatro nodos, Pegasus + Octopus y Pegasus. La comparación principal es 4 frente a 2; Pegasus proporciona la referencia contemporánea de un nodo donde la configuración sea viable. PEFT/LoRA queda fuera de la campaña actual. Las variantes concretas de Qwen y Llama se seleccionarán con revisión y compatibilidad verificadas.
 
-La primera sesión NCCL está propuesta para un máximo de 30 minutos, después de revisar objetivo, comandos, recursos y salidas; no se ha ejecutado. Los comandos `plan` de inventario y NCCL preparan la ejecución sin acceso a nodos ni GPU. Una captura o prueba real requiere autorización operacional según [AGENTS.md](AGENTS.md).
+La primera sesión NCCL se intentó el 2026-11-06: el preflight pasó, pero el smoke de cuatro nodos falló por timeout de arranque MPI sin ranks ni métricas NCCL; quedaron 30 trabajos pendientes. El [informe del intento](docs/resultados/nccl-20261106-analysis.md) conserva evidencia, diagnóstico CPU y limpieza. Cada nueva sesión mantiene el máximo de 30 minutos y requiere revisar objetivo, comandos, recursos y salidas. Los comandos `plan` de inventario y NCCL preparan la ejecución sin acceso a nodos ni GPU. Una captura o prueba real requiere autorización operacional según [AGENTS.md](AGENTS.md).
 
 ```bash
 python3 -m infraestructura.cluster_inventory plan --config experimentos/configs/cluster.json

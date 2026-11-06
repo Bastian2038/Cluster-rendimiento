@@ -1,12 +1,13 @@
 # Índice de resultados de rendimiento
 
-Este repositorio aún no contiene resultados observados de NCCL, inferencia, serving, SFT ni escalamiento de Qwen o Llama en cuatro nodos. Sí contiene un primer inventario pasivo con evidencia raw cerrada; no es un benchmark de modelos. Al ejecutar campañas autorizadas, indexar cada resumen con `run_id`, fecha, hosts/ranks observados, commit, modelo/revisión o `model=null`, configuración, definición de métricas y enlace a evidencia raw cerrada; mantener los derivados fuera de raw.
+Este repositorio contiene un inventario pasivo y el primer intento NCCL, cerrado como FAILED por timeout de arranque MPI el 2026-11-06. Aún no hay tablas NCCL válidas ni mediciones de inferencia, serving, SFT o escalamiento de Qwen/Llama en cuatro nodos. Al ejecutar campañas autorizadas, indexar cada resumen con `run_id`, fecha, hosts/ranks observados, commit, modelo/revisión o `model=null`, configuración, definición de métricas y enlace a evidencia raw cerrada; mantener los derivados fuera de raw.
 
 Orden previsto: 4 → 2 → 1, con comparación principal cuatro frente a Pegasus + Octopus. Pegasus será el único baseline single-node, contemporáneo y pareado cuando el trabajo sea viable. El acceso desde Pegasus y los componentes principales están observados; el switch se identifica por anuncios LLDP y su mapa físico/administración sigue pendiente. Ver [metodología](../metodologia-rendimiento.md), [inventario del clúster](../cluster-cuatro-nodos.md), [NCCL](../protocolo-nccl.md) y [reproducibilidad](../reproducibilidad.md).
 
 | Corrida | Fecha UTC | Participantes observados | Commit de captura | Alcance y resultado |
 | --- | --- | --- | --- | --- |
 | [20261031T224804.348141Z-af026390, reporte v2](cluster-20261031T224804.348141Z-af026390-v2.md) | 2026-10-31 22:48 | Pegasus, Octopus, Griffin, Draggon; rank=null | `a73350a5b335774e3463284a3565ec8bb264ba8d` | Inventario pasivo COMPLETE; model=null; acceso, hardware y anuncios LLDP. Sin métricas de rendimiento. |
+| [20261106T143433.790197Z-e4a2e3bc](nccl-20261106T143433.790197Z-e4a2e3bc.md) | 2026-11-06 14:34 | Cuatro nodos verificados en preflight; ningún rank NCCL acreditado | `7a4a5f9dafb09222423cf4295648666c817f663c` | NCCL FAILED; model=null; smoke con timeout, 30 trabajos omitidos. [Análisis y pendientes](nccl-20261106-analysis.md). |
 
 La captura usó `--allow-dirty`: el contexto registra únicamente `image.png` sin seguimiento. Código y configuración capturados coinciden con el commit indicado; esta excepción se conserva y no se reclasifica como corrida estricta. [Manifiesto y contexto](../../resultados/raw/cluster-inventory/20261031T224804.348141Z-af026390/manifest.json) y [análisis de límites](../cluster-cuatro-nodos.md).
 
