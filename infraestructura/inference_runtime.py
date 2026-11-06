@@ -61,11 +61,13 @@ image = command(['docker','inspect','--type','image',request['image_id'],
                  '--format','{{json .Id}} {{json .Architecture}}'])
 packages = None
 if request.get('container_probe') and image['returncode'] == 0:
-    code = "import importlib.metadata as m,json,platform; names=['ray','vllm','torch','transformers','tokenizers','huggingface-hub','apache-tvm-ffi']; d={};\nfor name in names:\n try:d[name]=m.version(name)\n except m.PackageNotFoundError:d[name]=None\nprint(json.dumps({'python':platform.python_version(),'packages':d}))"
+    code = "import importlib.metadata as m,json,platform; names=['ray','vllm','torch','transformers','tokenizers','huggingface-hub','apache-tvm-ffi']; d={};\nfor name in names:\n try:d[name]=m.version(name)\n except m.PackageNotFoundError:d[name]=None\nimport flashinfer.comm\nfrom flashinfer.jit import env\nfrom pathlib import Path\np=env.FLASHINFER_WORKSPACE_DIR\nassert p.is_relative_to(Path('/tmp/ipre-cache'))\n(p/'ipre-write-check').write_text('CPU import passed')\nprint(json.dumps({'python':platform.python_version(),'packages':d,'cpu_imports':{'flashinfer.comm':'passed','cache_write':'passed','cuda_arch_override':'12.1; not hardware validation'}}))"
     packages = command(['docker','run','--rm','--pull=never','--network','none','--read-only',
-                        '--tmpfs','/tmp:rw,nosuid,size=64m','--user',str(os.getuid())+':'+str(os.getgid()),
+                        '--tmpfs','/tmp:rw,nosuid,size=256m','--user',str(os.getuid())+':'+str(os.getgid()),
                         '--env','USER='+pwd.getpwuid(os.getuid()).pw_name,
                         '--env','LOGNAME='+pwd.getpwuid(os.getuid()).pw_name,
+                        '--env','NVIDIA_VISIBLE_DEVICES=void','--env','XDG_CACHE_HOME=/tmp/ipre-cache',
+                        '--env','FLASHINFER_WORKSPACE_BASE=/tmp/ipre-cache','--env','FLASHINFER_CUDA_ARCH_LIST=12.1',
                         '--entrypoint','python3',request['image_id'],'-c',code], 45)
 ports = set()
 for name in ('/proc/net/tcp','/proc/net/tcp6'):
@@ -267,12 +269,14 @@ def docker_base(node, config, node_probe, workspace, name, *, gpu=True):
         'TRANSFORMERS_OFFLINE':'1', 'HF_HUB_DISABLE_TELEMETRY':'1',
         'XDG_CACHE_HOME':'/work/cache', 'TORCH_HOME':'/work/cache/torch',
         'TRITON_CACHE_DIR':'/work/cache/triton', 'TORCHINDUCTOR_CACHE_DIR':'/work/cache/torchinductor',
+        'FLASHINFER_WORKSPACE_BASE':'/work/cache',
         'VLLM_CACHE_ROOT':'/work/cache/vllm', 'VLLM_NO_USAGE_STATS':'1',
         'RAY_USAGE_STATS_ENABLED':'0', 'RAY_DEDUP_LOGS':'0',
         'RAY_TMPDIR':'/work/ray', 'VLLM_USE_RAY_V2_EXECUTOR_BACKEND':'1',
         'IPRE_NODE_ID':node['node_id'], 'IPRE_EVIDENCE_DIR':'/work/evidence',
         'VLLM_HOST_IP':config['network']['node_ips'][node['node_id']],
         'RAY_ADDRESS':f"{config['network']['node_ips']['pegasus']}:{config['runtime']['ray_port']}"}
+    if not gpu: environment['NVIDIA_VISIBLE_DEVICES']='void'
     for key, value in environment.items(): argv += ['--env',f'{key}={value}']
     return argv
 

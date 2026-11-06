@@ -1,0 +1,10 @@
+{
+  "flashinfer_comm_import": "passed",
+  "cache_write": "passed",
+  "workspace": "/work/cache/.cache/flashinfer/0.6.14/121a",
+  "uid": 1002,
+  "flashinfer_version": "0.6.14+d0510b70.nv26.7.cu.59527636",
+  "source_sha256": "09d2e6d6d03770d765acb8d89db2b58cd9600babacf6fbaad9dde0002a7d2cb9",
+  "cuda_arch_for_cpu_probe": "12.1 (configured, not GPU validation)",
+  "gpu_benchmark": false
+}

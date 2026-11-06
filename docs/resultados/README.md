@@ -9,6 +9,11 @@ registra el runner Qwen/Llama, imagen, tokenización real CPU y controles de
 reproducibilidad. La primera campaña solicitada compara 4 → 2 y aplaza la
 referencia Pegasus-only. Preparación y pruebas CPU no son métricas de inferencia.
 
+El [primer arranque de inferencia](inference-20261106-startup-analysis.md)
+reconoció cuatro nodos en Ray y falló antes de medir por la ruta de caché de
+FlashInfer. La campaña cerró `PARTIAL`, conservó evidencia y retiró sus cuatro
+contenedores. La corrección de ruta está comprobada en CPU.
+
 Actualización posterior del 2026-11-06: [MPI completó una suma CPU entre cuatro nodos](mpi-20261106-analysis.md)
 al seleccionar explícitamente la red común para control y datos TCP. Es un
 diagnóstico funcional pequeño, no una corrida NCCL ni una medición de rendimiento.

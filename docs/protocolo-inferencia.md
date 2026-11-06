@@ -15,6 +15,12 @@ Los JSONL usan palabras sintéticas deterministas y hash. El tokenizer SHA40 con
 3. Para ejecutar la sesión autorizada y revisada, usar `python3 -m infraestructura.inference run --execute`. Repite preflight con sonda, exige Git limpio, prepara cargas y crea evidencia nueva. No instala paquetes ni descarga modelos. Un fallo detiene trabajos siguientes sin reintento automático.
 4. `python3 -m infraestructura.inference report <directorio-campaña> --output <ruta-nueva-fuera-de-raw>.md` verifica hashes y produce JSON/Markdown derivados. `--plot` añade SVG si Matplotlib está instalado; actualmente no lo está. No sobrescribir resultados cerrados.
 
+`run --session-limit-seconds <segundos>` permite reducir el máximo de ocupación
+y registra el límite efectivo; nunca permite superar ocho horas. El servidor
+se supervisa durante el arranque: si termina, se cierra la corrida inmediatamente.
+La caché de FlashInfer se fija con `FLASHINFER_WORKSPACE_BASE=/work/cache`.
+La sonda CPU comprueba su importación y escritura sin GPU antes de la campaña.
+
 Cada corrida tiene manifiesto `inference-serving` y participantes observados con GPU UUID, rank y evidencia; los hosts solicitados no cuentan. El índice de campaña referencia cierres por hash y marca `COMPLETE` o `PARTIAL`. Solo celdas válidas y pares 4/2 completos de la misma campaña, bloque, modelo, carga y entorno producen `S4/2` y `E4/2`; fallos y fronteras se informan sin speedup ficticio. Raw es inmutable tras cierre. El detalle conserva TTFT individual e intervalos ITL; TPOT y E2E p50/p95 proceden del resumen vLLM. No conserva E2E individual. Registrar throughput, errores y telemetría por nodo/rank. Con 32 solicitudes, los percentiles son descriptivos; `p99` no estima bien la cola poblacional. En memoria unificada, `N/A` de NVML no equivale a cero ni se suman RAM y memoria GPU como reservas separadas. [NVIDIA 26.07](https://docs.nvidia.com/deeplearning/frameworks/vllm-release-notes/rel-26-07.html) advierte sobre asignación vLLM en DGX Spark; se fija `gpu_memory_utilization=0.70`.
 
 ## Estado observado al 2026-11-06

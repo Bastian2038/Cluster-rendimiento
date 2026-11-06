@@ -1,0 +1,41 @@
+{
+  "campaign_id": "20261106T193814.808039Z-a8dda4ef",
+  "cells": [],
+  "limitations": [
+    "Primera campaña solicitada exclusivamente 4/2; referencia Pegasus-only aplazada.",
+    "Carga sintética de sistemas: no evalúa calidad, SLO ni capacidad máxima.",
+    "La limitación NCCL f0 de cuatro nodos y las diferencias de driver/kernel permanecen como confusores observados.",
+    "p50/p95 descriptivos con32solicitudes por celda; no inferir p99 poblacional.",
+    "Cliente en Pegasus compartido con servicio; saturación del cliente no descartada solo por benchmark JSON."
+  ],
+  "paired_comparisons": [],
+  "pending_jobs": [
+    "b1-qwen35-9b-pair",
+    "b1-llama31-8b-four",
+    "b1-llama31-8b-pair",
+    "b2-qwen35-9b-four",
+    "b2-qwen35-9b-pair",
+    "b2-llama31-8b-four",
+    "b2-llama31-8b-pair",
+    "b3-qwen35-9b-four",
+    "b3-qwen35-9b-pair",
+    "b3-llama31-8b-four",
+    "b3-llama31-8b-pair"
+  ],
+  "runs": [
+    {
+      "block": 1,
+      "errors": [
+        "KeyboardInterrupt: signal de parada",
+        "matriz de seis celdas incompleta"
+      ],
+      "group": "four",
+      "job": "b1-qwen35-9b-four",
+      "manifest_sha256": "2f5d50797b2b546940817a9f051246f51333dbcd8cb4520925db073599deb7bd",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261106T193836.439092Z-22578a66",
+      "status": "failed"
+    }
+  ],
+  "status": "partial"
+}

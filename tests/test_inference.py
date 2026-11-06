@@ -84,6 +84,7 @@ class InferencePlanTests(unittest.TestCase):
         self.assertIn('1002:1002',command)
         self.assertIn(self.config['paths']['hf_hub']+':/models:ro',command)
         self.assertIn('VLLM_USE_RAY_V2_EXECUTOR_BACKEND=1',command)
+        self.assertIn('FLASHINFER_WORKSPACE_BASE=/work/cache',command)
         self.assertNotIn('--privileged',command)
         self.assertEqual(command[-3:],['50s','ray','start'])
 
@@ -129,6 +130,18 @@ class InferencePlanTests(unittest.TestCase):
         with mock.patch.object(inf.time,'monotonic',return_value=20):
             with self.assertRaises(TimeoutError):inf.remaining(19,60)
             self.assertEqual(inf.remaining(25,60),5)
+
+    def test_effective_budget_cannot_extend_approved_session(self):
+        for budget in (28801,300,0,True):
+            with self.subTest(budget=budget),mock.patch.object(rt,'preflight',side_effect=AssertionError('remote')):
+                with self.assertRaisesRegex(inf.InferenceError,'límite efectivo'):
+                    inf.run_campaign(session_limit_seconds=budget)
+
+    def test_readiness_stops_on_dead_server_without_waiting_for_timeout(self):
+        with mock.patch.object(rt,'remote',return_value=command_result('false 1')):
+            with self.assertRaisesRegex(inf.InferenceError,'terminó antes'):
+                inf.wait_ready(18000,'fixture',inf.time.monotonic()+60,
+                    lambda:inf.ensure_running(self.cluster['nodes'][0],'own',inf.time.monotonic()+60))
 
     def test_telemetry_must_cover_measured_window(self):
         with tempfile.TemporaryDirectory() as temporary:

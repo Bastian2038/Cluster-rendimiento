@@ -216,8 +216,12 @@ def _http(port, path, data=None, timeout=5):
         return json.load(response)
 
 
-def wait_ready(port, model_key, deadline):
+def wait_ready(port, model_key, deadline, check_running=None):
+    next_check=0
     while time.monotonic() < deadline:
+        if check_running is not None and time.monotonic()>=next_check:
+            check_running()
+            next_check=time.monotonic()+5
         try:
             models = _http(port,'/v1/models',timeout=min(3,max(.1,deadline-time.monotonic())))
             if [m['id'] for m in models.get('data',[])] == [model_key]: return
@@ -232,9 +236,22 @@ def remaining(deadline, cap):
     return min(cap,left)
 
 
-def wait_ray_head(config, deadline):
+def ensure_running(node, name, deadline):
+    result=runtime.checked(runtime.remote(node,['docker','inspect','--type','container',name,
+        '--format','{{.State.Running}} {{.State.ExitCode}}'],timeout=remaining(deadline,10)),
+        'verificar proceso propio de arranque')
+    fields=result['stdout'].strip().split()
+    if len(fields)!=2 or fields[0]!='true':
+        raise InferenceError(f'contenedor propio {name} terminó antes de estar listo: {result["stdout"].strip()}')
+
+
+def wait_ray_head(config, deadline, check_running=None):
     address=(config['network']['node_ips']['pegasus'],config['runtime']['ray_port'])
+    next_check=0
     while time.monotonic()<deadline:
+        if check_running is not None and time.monotonic()>=next_check:
+            check_running()
+            next_check=time.monotonic()+5
         try:
             with socket.create_connection(address,timeout=remaining(deadline,2)): return
         except OSError: time.sleep(min(.5,max(0,deadline-time.monotonic())))
@@ -460,8 +477,11 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             # Record potential own container even on a lost SSH reply. A cleanup
             # checks its label and ID, so collisions never stop someone else's.
             runtime.checked(result,'arrancar contenedor Ray/vLLM')
-            if node['node_id']=='pegasus': wait_ray_head(config,startup_deadline)
-        wait_ready(config['runtime']['api_port'],model['key'],startup_deadline)
+            if node['node_id']=='pegasus':
+                head_name=name
+                check_running=lambda:ensure_running(nodes[0],head_name,startup_deadline)
+                wait_ray_head(config,startup_deadline,check_running)
+        wait_ready(config['runtime']['api_port'],model['key'],startup_deadline,check_running)
         ranks=validate_worker_records(_rank_records(nodes,workspace,startup_deadline),
              {n['node_id']:n for n in nodes},len(nodes),runtime.model_path(model))
         for rank in ranks:
@@ -573,8 +593,13 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             'manifest_sha256':manifest.sha256_file(directory/'manifest.json'),'errors':errors}
 
 
-def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultados/raw'):
+def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultados/raw', session_limit_seconds=None):
     config,cluster_config,cluster_path=load_config(config_path)
+    maximum=config['measurement']['session_limit_seconds']
+    effective_limit=maximum if session_limit_seconds is None else session_limit_seconds
+    if (type(effective_limit) is not int or
+            not config['measurement']['cleanup_reserve_seconds']<effective_limit<=maximum):
+        raise InferenceError('el límite efectivo solo puede reducir las ocho horas y debe reservar el cierre')
     check=runtime.preflight(cluster_config,config,container_probe=True)
     preflight_path=REPO_ROOT/'resultados/tmp'/f'inference-preflight-{manifest.generate_run_id()}.json'
     write_new(preflight_path,check)
@@ -590,7 +615,7 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
     write_new(directory/'plan.json',make_plan(config_path))
     write_new(directory/'preflight.json',check)
     started=time.monotonic()
-    deadline=started+config['measurement']['session_limit_seconds']-config['measurement']['cleanup_reserve_seconds']
+    deadline=started+effective_limit-config['measurement']['cleanup_reserve_seconds']
     records=[]; errors=[]
     try:
         for job in jobs(config):
@@ -604,7 +629,8 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
     except (Exception,KeyboardInterrupt) as exc: errors.append(f'{type(exc).__name__}: {exc}')
     status='complete' if len(records)==12 and not errors else 'partial'
     campaign={'campaign_id':campaign_id,'status':status,'git':git,'protocol':config,
-        'duration_seconds':time.monotonic()-started,'runs':records,'errors':errors,
+        'duration_seconds':time.monotonic()-started,'effective_session_limit_seconds':effective_limit,
+        'runs':records,'errors':errors,
         'pending_jobs':[j['name'] for j in jobs(config) if j['name'] not in {r['job'] for r in records}]}
     write_new(directory/'campaign.json',campaign)
     write_new(directory/('COMPLETE' if status=='complete' else 'PARTIAL'),
@@ -722,7 +748,10 @@ def main(argv=None):
         if name!='run': p.add_argument('--output',type=Path)
         if name=='preflight': p.add_argument('--container-probe',action='store_true',
                   help='sonda CPU efímera de paquetes; sin GPU/red del contenedor')
-        if name=='run': p.add_argument('--execute',action='store_true',help='ejecutar plan operativo previamente revisado')
+        if name=='run':
+            p.add_argument('--execute',action='store_true',help='ejecutar plan operativo previamente revisado')
+            p.add_argument('--session-limit-seconds',type=int,
+                help='reducir el presupuesto de ocupación; nunca amplía el máximo aprobado de ocho horas')
     p=sub.add_parser('report');p.add_argument('directory',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--plot',action='store_true',help='añadir SVG científico con Matplotlib ya instalado')
     args=parser.parse_args(argv)
@@ -735,7 +764,7 @@ def main(argv=None):
             if not args.execute: raise InferenceError('use plan y después run --execute para iniciar la campaña')
             def interrupt(_signum,_frame): raise KeyboardInterrupt('signal de parada')
             signal.signal(signal.SIGTERM,interrupt)
-            closed=run_campaign(args.config)
+            closed=run_campaign(args.config,session_limit_seconds=args.session_limit_seconds)
             return 0 if read_json(closed/'campaign.json')['status']=='complete' else 2
         else:
             data=build_report(args.directory)
