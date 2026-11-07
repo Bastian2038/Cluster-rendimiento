@@ -1,6 +1,6 @@
 # Índice de resultados de rendimiento
 
-Este repositorio contiene el inventario pasivo, los intentos NCCL fallidos y la primera matriz NCCL completa con RoCE, del 2026-11-06. La [selección de interfaces f0](nccl-20261106-f0-analysis.md) permitió completar 31/31 pruebas y 666 filas válidas. Aún no hay mediciones de inferencia, serving, SFT o escalamiento de Qwen/Llama en cuatro nodos. Al ejecutar campañas autorizadas, indexar cada resumen con `run_id`, fecha, hosts/ranks observados, commit, modelo/revisión o `model=null`, configuración, definición de métricas y enlace a evidencia raw cerrada; mantener los derivados fuera de raw.
+Este repositorio contiene el inventario pasivo, los intentos NCCL fallidos, la primera matriz NCCL completa con RoCE y la [primera campaña completa de inferencia Qwen/Llama 4/2](inference-20261106-analysis.md), del 2026-11-06. La [selección de interfaces f0](nccl-20261106-f0-analysis.md) permitió completar 31/31 pruebas y 666 filas válidas. Inferencia/serving conserva 12 corridas, 72 celdas, 36 comparaciones pareadas y 2304 solicitudes medidas sin fallos. SFT y estrés con SLO siguen pendientes. Al ejecutar campañas autorizadas, indexar cada resumen con `run_id`, fecha, hosts/ranks observados, commit, modelo/revisión o `model=null`, configuración, definición de métricas y enlace a evidencia raw cerrada; mantener los derivados fuera de raw.
 
 Orden previsto: 4 → 2 → 1, con comparación principal cuatro frente a Pegasus + Octopus. Pegasus será el único baseline single-node, contemporáneo y pareado cuando el trabajo sea viable. El acceso desde Pegasus y los componentes principales están observados; el switch se identifica por anuncios LLDP y su mapa físico/administración sigue pendiente. Ver [metodología](../metodologia-rendimiento.md), [inventario del clúster](../cluster-cuatro-nodos.md), [NCCL](../protocolo-nccl.md) y [reproducibilidad](../reproducibilidad.md).
 
@@ -19,6 +19,13 @@ Qwen TP4 y la tokenización del servidor, pero el cliente carecía de pandas.
 La imagen posterior y el cliente completo ya pasaron comprobaciones CPU; esos
 resultados funcionales no se usan como mediciones de inferencia.
 
+La [campaña completa](inference-20261106T204612.868541Z-22733085.md) y su
+[JSON](inference-20261106T204612.868541Z-22733085.json) verifican el cierre y todos
+los artefactos. El [análisis](inference-20261106-analysis.md) interpreta los pares
+por modelo/carga; la [telemetría](inference-20261106T204612.868541Z-22733085-telemetry.md)
+resume 216 ventanas celda×nodo en total y conserva hashes de sus fuentes. Los intentos
+fallidos previos permanecen separados y no se usan en el cálculo de speedup.
+
 Actualización posterior del 2026-11-06: [MPI completó una suma CPU entre cuatro nodos](mpi-20261106-analysis.md)
 al seleccionar explícitamente la red común para control y datos TCP. Es un
 diagnóstico funcional pequeño, no una corrida NCCL ni una medición de rendimiento.
@@ -30,6 +37,7 @@ corrida de las 16:10 UTC validó ese filtro y completó la matriz.
 
 | Corrida | Fecha UTC | Participantes observados | Commit de captura | Alcance y resultado |
 | --- | --- | --- | --- | --- |
+| [20261106T204612.868541Z-22733085](inference-20261106T204612.868541Z-22733085.md) | 2026-11-06 20:46–23:45 | Cuatro nodos/GPU en TP4; Pegasus + Octopus en TP2; ranks observados en cada corrida | `ecbc380a11750ffea3ac57a2952d045605a37c8e` | COMPLETE; Qwen3.5-9B y Llama-3.1-8B-Instruct, BF16; 3 bloques, 72 celdas válidas, 2304 solicitudes medidas. [Interpretación y límites](inference-20261106-analysis.md). |
 | [20261031T224804.348141Z-af026390, reporte v2](cluster-20261031T224804.348141Z-af026390-v2.md) | 2026-10-31 22:48 | Pegasus, Octopus, Griffin, Draggon; rank=null | `a73350a5b335774e3463284a3565ec8bb264ba8d` | Inventario pasivo COMPLETE; model=null; acceso, hardware y anuncios LLDP. Sin métricas de rendimiento. |
 | [20261106T143433.790197Z-e4a2e3bc](nccl-20261106T143433.790197Z-e4a2e3bc.md) | 2026-11-06 14:34 | Cuatro nodos verificados en preflight; ningún rank NCCL acreditado | `7a4a5f9dafb09222423cf4295648666c817f663c` | NCCL FAILED; model=null; smoke con timeout, 30 trabajos omitidos. [Análisis y pendientes](nccl-20261106-analysis.md). |
 | [20261106T150825.443182Z-0fbee512](nccl-20261106T150825.443182Z-0fbee512.md) | 2026-11-06 15:08 | Cuatro nodos en preflight; smoke no validado | `b5ff03513cc84da50c8ad2fb678af69f95375d73` | FAILED, bootstrap NCCL inaccesible desde Octopus; 30 trabajos omitidos. |

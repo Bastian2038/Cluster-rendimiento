@@ -28,9 +28,33 @@ Cada corrida tiene manifiesto `inference-serving` y participantes observados con
 
 ## Estado observado al 2026-11-06
 
+La [campaña 20261106T204612.868541Z-22733085](resultados/inference-20261106-analysis.md)
+cerró COMPLETE con 12 corridas, 72 celdas, 36 pares 4/2 y 2304 solicitudes
+medidas sin fallos. Duró 10722,15 s y verificó transporte RoCE en todos los
+participantes multinodo. El resultado acredita las dos variantes seleccionadas
+con esta imagen y configuración; no acredita SFT, otras variantes ni capacidad
+máxima. Los párrafos siguientes conservan la secuencia de preparación.
+
 En Pegasus se construyó `ipre/vllm:26.07-ray2.48.0` (`sha256:da2b08e0cf7952aa6dc9c9f529abdb3577b641bcaeef54774be11f0fef321d6c`), con Ray 2.48.0, `apache-tvm-ffi` 0.1.9, versiones protegidas preservadas y `pip check` limpio. La base traía TVM 0.1.7: el primer build detectó la contradicción; el segundo la corrigió. Ambos tokenizers pasaron la generación real en CPU para 512/2048 tokens y 16+32 prompts. Qwen y Llama están en `resultados/tmp/model-cache`; el índice de Llama referencia cuatro shards presentes (16.060.556.376 bytes). No se rehashearon los pesos completos. El acceso HF fue comprobado sin exponer credenciales. Docker fue habilitado por el usuario en Griffin y Draggon. La distribución concluyó y el [preflight final](resultados/inference-preflight-v2-20261106.json) verificó imagen, modelos, paquetes y disponibilidad en los cuatro nodos sin errores. Este estado precede a la ejecución GPU; ver [preparación y comandos](resultados/inference-preparacion-20261106.md).
 
 Tras los dos intentos registrados, la configuración actual usa la derivada
 `ipre/vllm:26.07-ray2.48.0-bench`, ID `sha256:4df9ac0696275f800e4c70fa2d459a2b77473014d3654f98c2714ae3954c42ac`.
 Incluye pandas para el cliente custom y tiene preflight CPU completo en los
 cuatro nodos. Ver [correcciones y validación del cliente](resultados/inference-20261106-client-analysis.md).
+
+## Interpretación de las métricas y telemetría
+
+T32 es la duración del lote cerrado de 32 solicitudes, con tasa ofrecida infinita
+y concurrencia limitada en el cliente. TTFT y E2E comienzan después de adquirir
+ese permiso de concurrencia: excluyen la espera anterior en el cliente. No son
+latencia desde la llegada de toda la demanda. TTFT incluye más que cómputo de
+prefill; no atribuir sus diferencias a un kernel sin instrumentación adicional.
+Los speedups se calculan por bloque y después se resumen sus medianas/rangos;
+la mediana de razones no tiene por qué coincidir con la razón de medianas.
+
+`python3 -m infraestructura.inference_telemetry_report <reporte.json> --output <nuevo.json>`
+genera un derivado verificado por celda/nodo con memoria UMA, GPU, CPU, PSI y
+contadores netdev. Sus ventanas externas incluyen arranque y cierre del cliente;
+la consulta nominal de 1 s, los bordes y el desfase de reloj no medido limitan
+la precisión temporal. Los contadores netdev pueden omitir tráfico RoCE
+offloaded y no acreditan ancho de banda NCCL ni saturación del enlace.
