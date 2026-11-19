@@ -20,9 +20,11 @@ def _summary(values: list[float]) -> dict[str, float | int]:
 
 def prepare_plot_data(report: dict) -> dict:
     """Selecciona solo celdas válidas y pares ya verificados por el informe."""
+    groups = ("four", "pair", "single")
+    ratios = ("s4_2", "s2_1", "s4_1")
     cells: dict[tuple, dict[int, dict]] = defaultdict(dict)
     for row in report.get("cells", []):
-        if row.get("status", "valid") != "valid" or row.get("group") not in {"four", "pair"}:
+        if row.get("status", "valid") != "valid" or row.get("group") not in groups:
             continue
         try:
             key = (str(row["model_key"]), int(row["input_tokens"]),
@@ -39,24 +41,28 @@ def prepare_plot_data(report: dict) -> dict:
             raise ValueError(f"celda duplicada: {key}, bloque {block}")
         cells[key][block] = {"throughput": float(throughput), "ttft": float(ttft)}
 
-    speedups: dict[tuple, dict[int, float]] = defaultdict(dict)
+    speedups: dict[tuple, dict[str, dict[int, float]]] = defaultdict(lambda: defaultdict(dict))
     for row in report.get("paired_comparisons", []):
         try:
             key = (str(row["model"]), int(row["input_tokens"]), int(row["concurrency"]))
-            block, speedup = int(row["block"]), row["s4_2"]
+            block = int(row["block"])
         except (KeyError, TypeError, ValueError):
             continue
-        if block < 1 or not _positive(speedup):
+        if block < 1:
             continue
-        if block in speedups[key]:
-            raise ValueError(f"par duplicado: {key}, bloque {block}")
-        speedups[key][block] = float(speedup)
+        for ratio in ratios:
+            speedup = row.get(ratio)
+            if not _positive(speedup):
+                continue
+            if block in speedups[key][ratio]:
+                raise ValueError(f"par duplicado: {key}, bloque {block}, {ratio}")
+            speedups[key][ratio][block] = float(speedup)
 
     result = []
     coordinates = sorted({(model, length, concurrency) for model, length, concurrency, _ in cells})
     for model, length, concurrency in coordinates:
         group_data = {}
-        for group in ("four", "pair"):
+        for group in groups:
             blocks = cells.get((model, length, concurrency, group), {})
             if blocks:
                 group_data[group] = {
@@ -66,7 +72,8 @@ def prepare_plot_data(report: dict) -> dict:
         paired = speedups.get((model, length, concurrency), {})
         result.append({"model_key": model, "input_tokens": length,
                        "concurrency": concurrency, "groups": group_data,
-                       "s4_2": _summary(list(paired.values())) if paired else None})
+                       **{ratio: _summary(list(paired[ratio].values())) if paired.get(ratio) else None
+                          for ratio in ratios}})
     return {"points": result, "models": sorted({row["model_key"] for row in result})}
 
 
@@ -90,43 +97,49 @@ def plot_report(report: dict, output: Path) -> dict:
         raise RuntimeError("Matplotlib no está instalado; no se generó el gráfico") from exc
 
     panels = sorted({(p["model_key"], p["input_tokens"]) for p in data["points"]})
-    fig, axes = plt.subplots(len(panels), 3, figsize=(15, 3.5 * len(panels)),
+    ratios = {"s4_2": "Speedup 4/2 (T₂/T₄)",
+              "s2_1": "Speedup 2/1 (T₁/T₂)",
+              "s4_1": "Speedup 4/1 (T₁/T₄)"}
+    visible_ratios = [(field, title) for field, title in ratios.items()
+                      if any(point[field] for point in data["points"])]
+    columns = (("output_tokens_per_second", "Output tokens/s"),
+               ("ttft_p50_ms", "TTFT p50 (ms)"), *visible_ratios)
+    fig, axes = plt.subplots(len(panels), len(columns), figsize=(5 * len(columns), 3.5 * len(panels)),
                              squeeze=False, constrained_layout=True)
-    colors = {"four": "#1769aa", "pair": "#c66b17"}
+    colors = {"four": "#1769aa", "pair": "#c66b17", "single": "#803ca6"}
+    offsets = {"four": 0.12, "pair": 0, "single": -0.12}
+    node_labels = {"four": "4", "pair": "2", "single": "1"}
     try:
         for row_index, (model, length) in enumerate(panels):
             points = [p for p in data["points"] if (p["model_key"], p["input_tokens"]) == (model, length)]
-            for column, (field, title) in enumerate((
-                ("output_tokens_per_second", "Output tokens/s"),
-                ("ttft_p50_ms", "TTFT p50 (ms)"),
-                ("s4_2", "Speedup 4/2 (T₂/T₄)"),
-            )):
+            for column, (field, title) in enumerate(columns):
                 ax = axes[row_index][column]
-                if field == "s4_2":
+                if field in ratios:
                     for point in points:
-                        value = point["s4_2"]
+                        value = point[field]
                         if value:
                             ax.errorbar(point["concurrency"], value["median"],
                                         yerr=[[value["median"] - value["min"]],
                                               [value["max"] - value["median"]]],
                                         fmt="o", color="#417d42", capsize=3)
-                    ax.axhline(1, color="0.6", linestyle=":", linewidth=1)
+                    if any(point[field] for point in points):
+                        ax.axhline(1, color="0.6", linestyle=":", linewidth=1)
                 else:
-                    for group in ("four", "pair"):
+                    for group, label in node_labels.items():
                         for point in points:
                             value = point["groups"].get(group, {}).get(field)
                             if value:
-                                ax.errorbar(point["concurrency"] + (0.08 if group == "four" else -0.08),
+                                ax.errorbar(point["concurrency"] + offsets[group],
                                             value["median"], yerr=[[value["median"] - value["min"]],
                                                                    [value["max"] - value["median"]]],
                                             fmt="o", color=colors[group], capsize=3,
-                                            label=group if point is points[0] else None)
-                    if row_index == 0:
-                        ax.legend(title="Nodos", labels=["4", "2"])
+                                            label=label)
+                                label = None
+                    ax.legend(title="Nodos")
                 ax.set(title=f"{model} · entrada {length} · {title}", xlabel="Concurrencia")
                 ax.set_xticks(sorted({point["concurrency"] for point in points}))
                 ax.grid(alpha=0.25)
-        fig.suptitle("Inferencia: mediana y rango entre bloques; pares 4/2 verificados")
+        fig.suptitle("Inferencia: mediana y rango entre bloques; parejas verificadas")
         output.parent.mkdir(parents=True, exist_ok=True)
         with output.open("xb") as stream:
             try:

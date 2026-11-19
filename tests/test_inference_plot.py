@@ -35,6 +35,23 @@ class InferencePlotTests(unittest.TestCase):
         llama = next(p for p in data["points"] if p["model_key"] == "llama")
         self.assertIsNone(llama["s4_2"])
 
+    def test_single_and_partial_speedups_use_only_verified_pairs(self):
+        comparison = {"model": "qwen", "input_tokens": 512, "concurrency": 4}
+        report = {"cells": [cell("qwen", "four", 1), cell("qwen", "pair", 1),
+                            cell("qwen", "pair", 2), cell("qwen", "single", 2),
+                            cell("qwen", "four", 3), cell("qwen", "single", 3),
+                            cell("llama", "single", 1)],
+                  "paired_comparisons": [
+                      {**comparison, "block": 1, "s4_2": 1.2, "e4_2": 0.6},
+                      {**comparison, "block": 2, "s2_1": 1.5, "e2_1": 0.75},
+                      {**comparison, "block": 3, "s4_1": 2.0, "e4_1": 0.5}]}
+        llama, qwen = prepare_plot_data(report)["points"]
+        self.assertEqual(qwen["groups"]["single"]["ttft_p50_ms"]["blocks"], 2)
+        self.assertEqual(set(llama["groups"]), {"single"})
+        for field, value in (("s4_2", 1.2), ("s2_1", 1.5), ("s4_1", 2.0)):
+            self.assertEqual(qwen[field], {"median": value, "min": value, "max": value, "blocks": 1})
+            self.assertIsNone(llama[field])
+
     def test_empty_skips_without_creating_file(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "plot.svg"

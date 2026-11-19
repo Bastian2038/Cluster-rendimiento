@@ -7,6 +7,8 @@ import math
 from pathlib import Path
 from typing import Any, Mapping
 
+from infraestructura.inference_runtime import model_path
+
 
 def _number(value: Any, name: str, *, positive: bool = False) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
@@ -30,6 +32,27 @@ def load_bench_result(path: str | Path) -> dict[str, Any]:
     if not isinstance(result, dict):
         raise ValueError("benchmark result must be one JSON object")
     return result
+
+
+def validate_client_identity(raw: Mapping[str, Any], *, model: Mapping[str, Any],
+                             concurrency: int) -> None:
+    """Match a vLLM 0.24.0 client result to the selected serving command.
+
+    Both phases record the served alias, the pinned local tokenizer path, an
+    integer concurrency and the literal string ``"inf"`` for unthrottled load.
+    """
+    if not isinstance(raw, Mapping):
+        raise ValueError("client result must be an object")
+    if _integer(concurrency, "concurrency") <= 0:
+        raise ValueError("concurrency must be positive")
+    if _integer(raw.get("max_concurrency"), "max_concurrency") != concurrency:
+        raise ValueError("max_concurrency differs from the requested cell")
+    if raw.get("request_rate") != "inf":
+        raise ValueError('expected request_rate "inf"')
+    if raw.get("model_id") != model["key"]:
+        raise ValueError("model_id differs from the served alias")
+    if raw.get("tokenizer_id") != model_path(model):
+        raise ValueError("tokenizer_id differs from the pinned local snapshot")
 
 
 def validate_bench_result(
@@ -135,18 +158,35 @@ def summarize_bench_result(
     }
 
 
-def paired_speedup(two_node: Mapping[str, Any], four_node: Mapping[str, Any]) -> dict[str, float]:
-    """Compute strong-scale 4/2 only for independently paired, validated trials.
+def paired_speedup(two_node: Mapping[str, Any], four_node: Mapping[str, Any], *,
+                   baseline_nodes: int = 2, scaled_nodes: int = 4) -> dict[str, float]:
+    """Compute strong scaling for independently paired, validated trials.
 
     The caller must establish identical campaign/model/workload/config identity;
     this function requires the same explicit ``comparison_key`` in each input.
+    Defaults preserve the historical 4/2 API. Counts must be observed node counts,
+    not world sizes inferred from a group label or GPU capacity.
     """
+    baseline_nodes = _integer(baseline_nodes, 'baseline_nodes')
+    scaled_nodes = _integer(scaled_nodes, 'scaled_nodes')
+    if not 0 < baseline_nodes < scaled_nodes:
+        raise ValueError('node counts must satisfy 0 < baseline_nodes < scaled_nodes')
     key = two_node.get("comparison_key")
     if not key or key != four_node.get("comparison_key"):
         raise ValueError("paired trials require the same nonempty comparison_key")
-    if two_node.get("raw_counts") != four_node.get("raw_counts"):
+    counts = two_node.get("raw_counts")
+    if not isinstance(counts, Mapping) or counts != four_node.get("raw_counts"):
         raise ValueError("paired trials have different work")
-    t2 = _number(two_node.get("t32_seconds"), "two-node T32", positive=True)
-    t4 = _number(four_node.get("t32_seconds"), "four-node T32", positive=True)
-    speedup = t2 / t4
-    return {"s4_2": speedup, "e4_2": speedup / 2}
+    for trial, nodes in ((two_node, baseline_nodes), (four_node, scaled_nodes)):
+        if "node_count" in trial and _integer(trial["node_count"], "node_count") != nodes:
+            raise ValueError("node_count differs from the observed topology argument")
+        for name in ('requested', 'completed', 'failed', 'input_tokens', 'output_tokens'):
+            _integer(trial['raw_counts'].get(name), name)
+    if (counts['requested'] != 32 or counts['completed'] != 32 or counts['failed'] != 0
+            or counts['input_tokens'] <= 0 or counts['output_tokens'] <= 0):
+        raise ValueError('paired trials require complete T32 work')
+    baseline = _number(two_node.get("t32_seconds"), "baseline T32", positive=True)
+    scaled = _number(four_node.get("t32_seconds"), "scaled T32", positive=True)
+    speedup = baseline / scaled
+    suffix = f'{scaled_nodes}_{baseline_nodes}'
+    return {f's{suffix}': speedup, f'e{suffix}': speedup / (scaled_nodes / baseline_nodes)}

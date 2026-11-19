@@ -55,8 +55,9 @@ telemetría por nodo/rank. La topología de cuatro nodos requiere verificación 
 de atribuirle resultados.
 
 Para escalamiento fuerte comparable calcular `S4/2 = T2/T4` y
-`E4/2 = S4/2 / 2`; informar también `S2/1 = T1/T2` y `S4/1 = T1/T4`
-solo cuando existan corridas de un nodo con el mismo trabajo. En throughput,
+`E4/2 = S4/2 / 2`. Cuando exista una referencia pareada del mismo trabajo en
+Pegasus, informar `S2/1 = T1/T2` con `E2/1 = S2/1 / 2`, y `S4/1 = T1/T4`
+con `E4/1 = S4/1 / 4`. En throughput,
 declarar la convención de speedup y la carga ofrecida. Para SFT completo fijar
 batch global, número de pasos y tokens procesados entre topologías; registrar
 microbatch y acumulación efectivas. Si cambia el tamaño de lote global o la
@@ -114,9 +115,7 @@ documentación aplicable o validación experimental. Priorizar fuentes oficiales
 de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
-El [flujo de reproducibilidad](reproducibilidad.md) define el registro mínimo y
-la conservación de resultados raw. El [runner de inferencia/serving](protocolo-inferencia.md)
-implementa la primera campaña solicitada 4 → 2 con Qwen3.5-9B y
-Llama-3.1-8B-Instruct. Esta campaña aplaza explícitamente Pegasus-only y no
-permite calcular 4/1 o 2/1. SFT completo sigue pendiente. La validación CPU de
-los runners y la prueba NCCL no acreditan ejecución ni rendimiento de modelos.
+La primera campaña de inferencia midió Qwen3.5-9B y Llama-3.1-8B-Instruct en
+tres bloques 4 → 2. El runner también prepara la matriz 4 → 2 → 1. Medir
+el rendimiento con un nodo y ejecutar SFT completo siguen pendientes.
+[Resultado de inferencia](resultados/inference-20261106-analysis.md) · [Protocolo de inferencia](protocolo-inferencia.md) · [Reproducibilidad](reproducibilidad.md)

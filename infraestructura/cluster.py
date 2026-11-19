@@ -16,6 +16,10 @@ _ADDRESS = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.:_-]*$")
 _SECRET = re.compile(r"password|passwd|private.?key|secret|token|credential", re.I)
 
 
+TOPOLOGIES = {"single": ["pegasus"], "pair": ["pegasus", "octopus"],
+              "four": ["pegasus", "octopus", "griffin", "draggon"]}
+
+
 def validate_config(config: dict) -> None:
     if not isinstance(config, dict) or config.get("schema_version") != "1.0":
         raise ValueError("schema_version de cluster debe ser 1.0")
@@ -64,9 +68,7 @@ def validate_config(config: dict) -> None:
     groups = config.get("groups")
     if not isinstance(groups, dict) or set(groups) != {"single", "pair", "four"}:
         raise ValueError("grupos inesperados")
-    expected = {"single": ["pegasus"], "pair": ["pegasus", "octopus"],
-                "four": ["pegasus", "octopus", "griffin", "draggon"]}
-    if groups != expected or ids != set(expected["four"]):
+    if groups != TOPOLOGIES or ids != set(TOPOLOGIES["four"]):
         raise ValueError("nodos/grupos no corresponden al contrato")
     switch = config.get("switch")
     if not isinstance(switch, dict) or set(switch) != {"status", "manufacturer", "model", "management_address"}:

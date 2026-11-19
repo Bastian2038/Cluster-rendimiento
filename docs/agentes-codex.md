@@ -1,36 +1,82 @@
-# Agentes Codex de rendimiento
+# Agentes Codex del estudio de rendimiento
 
-La configuración local de `.codex/` rige al abrir este repositorio como proyecto confiable en una **sesión nueva**. No modifica configuración ni reglas globales. `AGENTS.md` define alcance y seguridad; un perfil no amplía autorización experimental.
+Los perfiles locales se cargan al abrir el repositorio como proyecto confiable en una sesión nueva. [Política del proyecto](../AGENTS.md) · [Fases y estado de las campañas](../AGENTS.md#estado-de-las-campañas) · [Autorizaciones operacionales](../AGENTS.md#seguridad-operacional)
 
-Los perfiles se orientan a caracterizar cuatro nodos reportados con Qwen y Llama: inventario y NCCL primero, después inferencia/serving y SFT completo en orden 4 → 2 → 1. La comparación principal es 4/2 y Pegasus sigue siendo referencia contemporánea y pareada de un nodo. PEFT/LoRA está fuera de la campaña actual. La compatibilidad debe verificarse por variante, framework y estrategia; incluir una familia en el alcance no acredita soporte de ejecución.
+## Al pulsar Implementar
 
-| Rol | Modelo | Esfuerzo | Función |
+1. El principal conserva el hilo y convierte el plan aprobado en encargos acotados. Para una implementación invoca a `experiment_operator` por nombre y le indica objetivo, archivos asignados, autorización, entrega y validación.
+2. El operador edita los archivos asignados y devuelve el cambio, las comprobaciones y los pendientes. Si cambia el protocolo, las métricas, los criterios de comparación, los manifiestos o los cierres, el principal encarga una auditoría independiente a `reproducibility_reviewer`. Los cambios menores los comprueba el principal.
+3. El principal revisa los metadatos efectivos, el diff y la lista de archivos tocados, verifica la entrega e incorpora el cambio. Usa `/subagents` para consultar los encargos y `/status` para consultar el estado de la sesión.
+
+## Roles y entregables
+
+| Rol | Modelo | Esfuerzo | Entregable |
 | --- | --- | --- | --- |
-| Principal | `gpt-6-astra` | `high`; plan `xhigh` | Coordina, delega y contrasta evidencia. |
-| `performance_methodologist` | `gpt-6-astra` | `high` | Método, matrices y comparabilidad. |
-| `dgx_architect` | `gpt-6-sol` | `high` | Inventario de los cuatro nodos, interconexión y confusores. |
-| `pipeline_researcher` | `gpt-6-sol` | `high` | Soporte Qwen/Llama y pipelines de inferencia/serving y SFT completo. |
-| `reproducibility_reviewer` | `gpt-6-astra` | `high` | Trazabilidad y validez de comparaciones. |
-| `experiment_operator` | `gpt-6-sol` | `medium` | Código y automatización asignados. |
-| `explorer` | `gpt-6-luna` | `high` | Lectura acotada del repositorio. |
-| `worker` y `default` | `gpt-6-sol` | `medium` | Apoyo acotado en archivos asignados. |
+| Principal | `gpt-6.2-astra` | `max` | Planifica y coordina con el mismo esfuerzo, comprueba las pruebas e integra la entrega. |
+| `experiment_operator` | `gpt-6.1-sol` | `ultra` | Implementación en los archivos asignados, comandos y resultados de validación CPU. |
+| `performance_methodologist` | `gpt-6.2-astra` | `max` | Protocolo con trabajo controlado, comparaciones viables y criterios de interpretación. |
+| `reproducibility_reviewer` | `gpt-6.2-astra` | `max` | Auditoría de trazabilidad, manifiestos y cierres, con evidencia y pendientes. |
+| `dgx_architect` | `gpt-6.2-sol` | `high` | Análisis de inventario, interconexión y diferencias entre nodos. |
+| `pipeline_researcher` | `gpt-6.2-sol` | `high` | Matriz de soporte de inferencia o SFT por variante, revisión, framework y estrategia, con fuentes y límites. |
+| `explorer` | `gpt-6.2-sol` | `low` | Referencias a archivos y líneas que responden una pregunta acotada. |
+| `worker` | `gpt-6.2-sol` | `medium` | Cambio acotado en archivos asignados y resultado de su comprobación. |
+| `default` | `gpt-6.2-sol` | `medium` | Resultado del encargo acotado y validación. Las ediciones requieren archivos asignados. |
 
-El principal es el único que delega, normalmente a dos o tres subagentes y máximo cinco. En cada encargo especifica objetivo, alcance, archivos propios, autorización, entrega y validación. Los investigadores y `explorer` declaran `read-only` y tienen prohibición expresa de editar; el operador declara `workspace-write` y edita solo archivos asignados. `worker` y `default` siguen el mismo límite de archivos. Los hijos no redelegan. Si una selección explícita exige contexto nuevo, usar `fork_turns="none"` y transmitir restricciones. No sustituir modelos inaccesibles silenciosamente.
+Los investigadores, el revisor y `explorer` trabajan en solo lectura por encargo. Los permisos técnicos se heredan de la sesión principal. El principal comprueba modelo, esfuerzo, sandbox y aprobaciones en los metadatos de ejecución. Al revisar el diff, tiene en cuenta las ediciones concurrentes. [Política de delegación](../AGENTS.md#agentes)
 
-`approval_policy="on-request"`, revisión `user`, `sandbox_mode="workspace-write"` y `network_access=false` son valores locales declarados. El runtime puede aplicar otro sandbox al hijo: comprobar los metadatos efectivos de modelo, esfuerzo, aprobaciones y sandbox de una sesión nueva antes de atribuirle aislamiento. El TOML válido o la autoidentificación de un agente no prueban qué modelo ni permisos ejecutó. Los hilos ya abiertos pueden retener ajustes anteriores.
+## Encargos para copiar
 
-Las reglas locales en `.codex/rules/ipre-rendimiento.rules` piden `prompt` para `docker exec`, `npx skills add` y `npx --yes skills add`, incluidas consultas que coincidan. No amplían permisos globales ni autorizan GPU, instalación, red o Docker. Revisar una regla mediante `codex execpolicy check` evalúa coincidencias sin ejecutar el comando; consultar primero `codex execpolicy check --help`. No inferir la decisión combinada de reglas globales sin inspeccionarlas en el entorno activo.
+**Implementación en un archivo**
 
-Para comprobar solo sintaxis, desde la raíz ejecutar:
-
-```bash
-python3 - <<'PYCODE'
-from pathlib import Path
-import tomllib
-for path in [Path('.codex/config.toml'), *sorted(Path('.codex/agents').glob('*.toml'))]:
-    tomllib.loads(path.read_text())
-    print(path)
-PYCODE
+```text
+Al pulsar Implementar, conserva este hilo y delega por nombre a experiment_operator.
+Autoriza editar solo infraestructura/inference_metrics.py. En el docstring de
+paired_speedup, aclara que la función exige un comparison_key común no vacío
+y recuentos de trabajo iguales. Conserva el comportamiento actual.
+Pide que aplique AGENTS.md y valide en CPU con
+timeout 120s python3 -B -m unittest tests.test_inference_metrics
+Pídele el archivo modificado, el resultado y los pendientes. Como principal,
+comprueba los metadatos y el diff antes de incorporar.
 ```
 
-Luego iniciar una sesión nueva, por ejemplo con `codex --strict-config`, y revisar que cargue perfiles y reglas locales. Verificar metadatos efectivos del principal y cada rol requerido mediante tareas de solo lectura y sin forzar modelo en la llamada. No se afirma aquí que esa prueba de runtime se haya hecho para el repositorio separado; cualquier validación histórica de otro árbol o fecha no es prueba vigente. Mantener límites de CPU de 120 s por comando y 300 s por tarea para comprobaciones autónomas. Nunca mostrar credenciales ni volcar variables de entorno.
+**Auditoría independiente en solo lectura**
+
+```text
+Delega por nombre a reproducibility_reviewer, que no haya intervenido en el cambio.
+En solo lectura, audita el diff de infraestructura/manifest.py y compáralo con
+docs/reproducibilidad.md. Comprueba compatibilidad con manifiestos históricos,
+integridad de artefactos y condiciones de los cierres COMPLETE y FAILED.
+Pide que aplique AGENTS.md y entregue hallazgos con severidad, archivo y línea,
+corrección propuesta y comprobaciones pendientes. Como principal, verifica los
+metadatos del auditor y compara el diff antes y después del encargo.
+```
+
+## Validar la configuración
+
+La configuración local declara aprobación `on-request` con revisión `user` y sandbox `workspace-write` con red desactivada. Los requisitos de aprobación están en la [política operacional](../AGENTS.md#seguridad-operacional) y en las [reglas locales](../.codex/rules/ipre-rendimiento.rules), incluidas las consultas que coincidan con ellas. Para revisar coincidencias sin ejecutar el comando, consulta `codex execpolicy check --help`.
+
+1. Desde la raíz, comprueba la sintaxis de los siete TOML con Python 3.11 o posterior.
+
+   ```bash
+   timeout 120s python3 - <<'PY'
+   from pathlib import Path
+   import tomllib
+
+   paths = [Path(".codex/config.toml"), *sorted(Path(".codex/agents").glob("*.toml"))]
+   if len(paths) != 7:
+       raise SystemExit(f"Se esperaban siete TOML, se encontraron {len(paths)}")
+   for path in paths:
+       with path.open("rb") as source:
+           tomllib.load(source)
+       print(path)
+   PY
+   ```
+
+2. Desde la raíz del proyecto confiable, comprueba la carga estricta con `timeout 120s codex --strict-config app-server --print-startup-config`. El comando valida la configuración y termina antes de arrancar el servicio.
+3. En una sesión confiable nueva, comprueba los metadatos efectivos del principal y de cada rol mediante encargos breves de solo lectura por nombre, sin forzar modelo ni esfuerzo. Contrasta modelo, esfuerzo, sandbox y aprobaciones con los valores esperados. Registra las discrepancias y los campos que la sesión no muestre.
+
+Las comprobaciones locales siguen los límites de CPU de la [política operacional](../AGENTS.md#seguridad-operacional).
+
+**Verificación del 2026-11-19 con Codex CLI 0.167.0.** Una sesión iniciada desde la raíz con `codex --strict-config exec` registró Astra 6.2 Max. Los seis perfiles y los dos auxiliares usaron los modelos y esfuerzos de la tabla y heredaron los permisos del principal. En dos archivos temporales, el operador corrigió una errata que verificó el principal y una fórmula de speedup que auditó el revisor independiente.
+
+El hilo de esas dos pruebas se abrió desde otra tarea y registró Astra 6.2 con `high`. Al abrir un hilo, consulta `/status`. Si muestra otro esfuerzo, selecciona `/model gpt-6.2-astra --reasoning=max` antes de planificar. Las aprobaciones efectivas fueron `on-request` en ese hilo y `never` en la prueba no interactiva con `codex exec`.

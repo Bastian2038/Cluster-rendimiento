@@ -1,4 +1,4 @@
-"""Campaña de inferencia 4/2: plan, preflight, run y report.
+"""Campañas de inferencia 4/2 y 4/2/1: plan, preflight, run y report.
 
 El plan no ejecuta comandos. El runner no instala, descarga, modifica red ni
 detiene procesos ajenos. Los prerrequisitos ausentes bloquean antes de usar GPU.
@@ -27,7 +27,8 @@ from pathlib import Path
 
 from infraestructura import cluster, manifest
 from infraestructura import inference_runtime as runtime
-from infraestructura.inference_metrics import summarize_bench_result, paired_speedup
+from infraestructura.inference_evidence import RUNNER_SOURCES, archived_job_evidence, verify_client_cell
+from infraestructura.inference_metrics import paired_speedup, summarize_bench_result, validate_client_identity
 from infraestructura.inference_observation import validate_worker_records
 from infraestructura.rutas import REPO_ROOT
 
@@ -36,6 +37,10 @@ DEFAULT_CONFIG = REPO_ROOT / 'experimentos/configs/inferencia-4-2.json'
 SAFE = re.compile(r'^[a-zA-Z0-9][a-zA-Z0-9._-]*$')
 SHA40 = re.compile(r'^[0-9a-f]{40}$')
 SHA256 = re.compile(r'^sha256:[0-9a-f]{64}$')
+TOPOLOGIES = cluster.TOPOLOGIES
+PEGASUS_REFERENCE_PROTOCOL = 'inference-4-2-1-v1'
+PROTOCOL_ORDERS = {'inference-4-2-v1':['four','pair'],
+                   PEGASUS_REFERENCE_PROTOCOL:['four','pair','single']}
 
 
 class InferenceError(ValueError):
@@ -54,8 +59,8 @@ def write_new(path, data):
         stream.write('\n')
 
 
-def validate_config(config, cluster_config):
-    if config.get('schema_version') != '1.0' or config.get('protocol_id') != 'inference-4-2-v1':
+def _validate_protocol(config):
+    if config.get('schema_version') != '1.0' or config.get('protocol_id') not in PROTOCOL_ORDERS:
         raise InferenceError('protocolo de inferencia desconocido')
     models = config.get('models', [])
     if len(models) != 2 or [m.get('key') for m in models] != ['qwen35-9b','llama31-8b']:
@@ -84,16 +89,16 @@ def validate_config(config, cluster_config):
         'ray_object_store_bytes':1073741824,'pipeline_parallel_size':1,
         'prefix_caching':False,'speculative_decoding':False}
     if any(r.get(k) != v for k,v in expected_runtime.items()):
-        raise InferenceError('runtime fuera del protocolo BF16 aprobado')
+        raise InferenceError('runtime fuera del protocolo BF16')
     expected_workload = {'seed':20261106,'input_tokens':[512,2048], 'output_tokens':128,
         'concurrencies':[1,4,8],'temperature':0,'ignore_eos':True}
     if w != expected_workload:
-        raise InferenceError('carga fuera del protocolo aprobado')
-    expected_measurement = {'blocks':3,'campaign_order':['four','pair'], 'warmup_requests':16,
+        raise InferenceError('carga fuera del protocolo')
+    expected_measurement = {'blocks':3,'campaign_order':PROTOCOL_ORDERS[config['protocol_id']], 'warmup_requests':16,
         'measured_requests':32,'telemetry_interval_seconds':1,'session_limit_seconds':28800,
         'startup_limit_seconds':900,'cell_limit_seconds':900,'cleanup_reserve_seconds':300}
     if m != expected_measurement:
-        raise InferenceError('medición fuera de la campaña de ocho horas aprobada')
+        raise InferenceError('medición fuera del protocolo de ocho horas')
     ports = runtime.used_ports(config)
     if any(type(p) is not int or not 1024 <= p <= 65535 for p in ports) or len(ports) != len(set(ports)):
         raise InferenceError('puertos reservados inválidos o duplicados')
@@ -104,6 +109,11 @@ def validate_config(config, cluster_config):
         'NCCL_IB_HCA':'=rocep1s0f0:1,roceP2p1s0f0:1','GLOO_SOCKET_IFNAME':'enp1s0f0np0'}
     if config['network']['environment'] != expected_environment:
         raise InferenceError('selectores f0 fuera del protocolo')
+
+
+def validate_config(config, cluster_config):
+    _validate_protocol(config)
+    cluster.validate_config(cluster_config)
     ips = config['network']['node_ips']
     if set(ips) != set(cluster_config['groups']['four']):
         raise InferenceError('IP requerida por cada nodo')
@@ -132,6 +142,20 @@ def jobs(config):
                                 for concurrency in config['workload']['concurrencies']]}
 
 
+def _plan_counts(measurement, planned_jobs):
+    cells = sum(len(job['cells']) for job in planned_jobs)
+    return {'job_count': len(planned_jobs), 'cell_count': cells,
+            'measured_requests': cells * measurement['measured_requests'],
+            'warmup_requests': cells * measurement['warmup_requests']}
+
+
+def _cell_commands(config, model, cell):
+    length, concurrency = cell['input_tokens'], cell['concurrency']
+    directory = f'/work/metrics/{length}-c{concurrency}'
+    return {phase: runtime.bench_command(config, model, length, concurrency, phase, directory)
+            for phase in ('warmup', 'measured')}
+
+
 def make_plan(config_path=DEFAULT_CONFIG):
     config, cluster_config, _ = load_config(config_path)
     preview = []
@@ -140,14 +164,11 @@ def make_plan(config_path=DEFAULT_CONFIG):
         preview.append({**job, 'nodes':[n['node_id'] for n in nodes],
             'ray_commands':{n['node_id']:runtime.ray_command(n, config) for n in nodes},
             'server_command':runtime.server_command(config,job['model'],len(nodes)),
-            'cells':[{**cell, 'commands':{phase:runtime.bench_command(config,job['model'],
-                     cell['input_tokens'],cell['concurrency'],phase,
-                     f"/work/metrics/{cell['input_tokens']}-c{cell['concurrency']}")
-                     for phase in ('warmup','measured')}} for cell in job['cells']]})
+            'cells':[{**cell, 'commands':_cell_commands(config,job['model'],cell)} for cell in job['cells']]})
     return {'status':'planned_only','protocol':config,'jobs':preview,
             'resources_max':{'nodes':4,'gpus':4,'replicas':1},
-            'job_count':12,'cell_count':72,'measured_requests':2304,'warmup_requests':1152,
-            'maximum_occupation_seconds':28800,
+            **_plan_counts(config['measurement'], preview),
+            'maximum_occupation_seconds':config['measurement']['session_limit_seconds'],
             'preflight_commands':{n['node_id']:cluster.ssh_command(n,runtime.probe_command(n,config,container_probe=True))
                                   for n in cluster_config['nodes']},
             'docker_policy':{'pull':'never','user':'UID:GID observados no root','network':'host',
@@ -343,14 +364,17 @@ def _job_shell(config, job, node, lifetime):
     steps = ['set -eu',f'{telemetry} > /work/logs/telemetry.jsonl 2> /work/logs/telemetry.stderr &',
              f'{ray} > /work/logs/ray-start.log 2>&1']
     if node['node_id'] == 'pegasus':
-        world = 4 if job['group']=='four' else 2
-        expected_ips=[config['network']['node_ips'][key] for key in
-                      (['pegasus','octopus','griffin','draggon'] if world==4 else ['pegasus','octopus'])]
+        roster=TOPOLOGIES[job['group']]
+        world=len(roster)
+        expected_ips=[config['network']['node_ips'][key] for key in roster]
         barrier=("import json,ray,time; ray.init(address="+repr(f"{config['network']['node_ips']['pegasus']}:{config['runtime']['ray_port']}")+
                  "); end=time.monotonic()+"+str(config['measurement']['startup_limit_seconds'])+
                  "; expected=set("+repr(expected_ips)+");\nwhile time.monotonic()<end:\n"
                  " nodes=[n for n in ray.nodes() if n['Alive']];\n"
-                 " if {n['NodeManagerAddress'] for n in nodes}==expected and all(n['Resources'].get('GPU')==1 for n in nodes):break\n"
+                 " ids={n.get('NodeID') for n in nodes};\n"
+                 " if (len(nodes)==len(expected)==len(ids) and all(ids) and "
+                 "{n['NodeManagerAddress'] for n in nodes}==expected and "
+                 "all(n['Resources'].get('GPU')==1 for n in nodes)):break\n"
                  " time.sleep(.5)\nelse:raise TimeoutError('membresia Ray incompleta')\n"
                  "print(json.dumps(nodes));ray.shutdown()")
         steps.append(shlex.join(['python3','-c',barrier])+' > /work/logs/ray-membership.json 2> /work/logs/ray-membership.stderr')
@@ -432,17 +456,19 @@ def worker_log_window(nodes, workspace, deadline, offsets=None):
     return data
 
 
+def _experiment_inputs(workloads):
+    inputs = {name: REPO_ROOT / name for name in RUNNER_SOURCES}
+    for path in sorted(workloads.rglob('*')):
+        if path.is_file():
+            inputs['workload/' + str(path.relative_to(workloads))] = path
+    return inputs
+
+
 def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             preflight_result, workloads, deadline, results_root):
     model=job['model']; nodes=cluster.selected_nodes(cluster_config,job['group'])
     request={'protocol':config,'job':job,'campaign_id':campaign_id}
-    inputs={'cluster':cluster_path,'protocol':config_path}
-    inputs.update({name:REPO_ROOT/name for name in [
-        'infraestructura/inference.py','infraestructura/inference_runtime.py',
-        'infraestructura/inference_worker.py','infraestructura/inference_workload.py',
-        'infraestructura/inference_metrics.py','infraestructura/inference_observation.py']})
-    for path in sorted(workloads.rglob('*')):
-        if path.is_file(): inputs['workload/'+str(path.relative_to(workloads))]=path
+    inputs={'cluster':cluster_path,'protocol':config_path,**_experiment_inputs(workloads)}
     directory=manifest.start_run(kind='inference-serving',model_id=model['id'],model_revision=model['revision'],
         tokenizer_id=model['tokenizer_id'],tokenizer_revision=model['tokenizer_revision'],
         requested_config=request,requested_config_path=config_path,inputs=inputs,
@@ -457,10 +483,13 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
         for name,path in inputs.items():
             target=directory/'raw'/'inputs'/name
             target.parent.mkdir(parents=True,exist_ok=True)
-            with target.open('xb') as stream: stream.write(Path(path).read_bytes())
-        files=source_files()
-        files.update({'workloads/'+str(p.relative_to(workloads)):p.read_bytes()
-                      for p in workloads.rglob('*') if p.is_file()})
+            contents = Path(path).read_bytes()
+            with target.open('xb') as stream:
+                stream.write(contents)
+            if name in RUNNER_SOURCES:
+                files['code/' + name] = contents
+            elif name.startswith('workload/'):
+                files['workloads/' + name.removeprefix('workload/')] = contents
         write_new(directory/'raw'/'preflight.json',preflight_result)
         write_new(directory/'raw'/'requested-job.json',request)
         # Launch head Ray first; vLLM waits for resources while workers join.
@@ -501,11 +530,13 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
         write_new(directory/'raw'/'startup.json',{'seconds':time.monotonic()-started,'ranks':ranks})
         # Server-side tokenization must match the persisted client dataset;
         # the benchmark's input_lens alone are not independent proof.
+        archived_profiles = directory / 'raw/inputs/workload' / model['key']
         for length in config['workload']['input_tokens']:
-            metadata=read_json(workloads/model['key']/str(length)/'metadata.json')
+            profile = archived_profiles / str(length)
+            metadata=read_json(profile/'metadata.json')
             prompts=[]
             for phase in ('warmup','measured'):
-                prompts.extend(json.loads(line) for line in (workloads/model['key']/str(length)/(phase+'.jsonl')).read_text().splitlines())
+                prompts.extend(json.loads(line) for line in (profile/(phase+'.jsonl')).read_text().splitlines())
             for row,prompt in zip(metadata['rows'],prompts):
                 response=_http(config['runtime']['api_port'],'/tokenize',
                     {'model':model['key'],'prompt':prompt['prompt'],'add_special_tokens':True},
@@ -542,6 +573,7 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
                 active_clients.remove((nodes[0],name))
                 runtime.checked(result,f'{cell_name} {phase}')
                 raw=read_json(Path(workspace)/'metrics'/cell_name/(phase+'.json'))
+                validate_client_identity(raw, model=model, concurrency=cell['concurrency'])
                 summary=summarize_bench_result(raw,expected_prompt_tokens=cell['input_tokens'],
                      expected_count=config['measurement']['warmup_requests' if phase=='warmup' else 'measured_requests'])
                 if phase=='measured':
@@ -599,7 +631,7 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
     effective_limit=maximum if session_limit_seconds is None else session_limit_seconds
     if (type(effective_limit) is not int or
             not config['measurement']['cleanup_reserve_seconds']<effective_limit<=maximum):
-        raise InferenceError('el límite efectivo solo puede reducir las ocho horas y debe reservar el cierre')
+        raise InferenceError('el límite efectivo solo puede reducir las ocho horas configuradas y debe reservar el cierre')
     check=runtime.preflight(cluster_config,config,container_probe=True)
     preflight_path=REPO_ROOT/'resultados/tmp'/f'inference-preflight-{manifest.generate_run_id()}.json'
     write_new(preflight_path,check)
@@ -610,6 +642,10 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
         raise InferenceError('campaña requiere commit identificable y árbol limpio; no se usará allow-dirty')
     campaign_id=manifest.generate_run_id()
     workloads=prepare_workloads(config,cluster_config,check,campaign_id)
+    input_hashes = {}
+    if config['protocol_id'] == PEGASUS_REFERENCE_PROTOCOL:
+        input_hashes = {name: manifest.sha256_file(path)
+                        for name, path in _experiment_inputs(workloads).items()}
     directory=Path(results_root)/'inference-campaign'/campaign_id
     directory.mkdir(parents=True,exist_ok=False)
     write_new(directory/'plan.json',make_plan(config_path))
@@ -617,8 +653,9 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
     started=time.monotonic()
     deadline=started+effective_limit-config['measurement']['cleanup_reserve_seconds']
     records=[]; errors=[]
+    planned_jobs = list(jobs(config))
     try:
-        for job in jobs(config):
+        for job in planned_jobs:
             if time.monotonic()>=deadline:
                 errors.append('presupuesto global agotado'); break
             record=run_job(config,cluster_config,Path(config_path).resolve(),cluster_path,job,campaign_id,
@@ -627,11 +664,13 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
             if record['status']!='complete':
                 errors.append('sesión detenida tras fallo; sin reintentos automáticos'); break
     except (Exception,KeyboardInterrupt) as exc: errors.append(f'{type(exc).__name__}: {exc}')
-    status='complete' if len(records)==12 and not errors else 'partial'
+    status='complete' if len(records)==len(planned_jobs) and not errors else 'partial'
     campaign={'campaign_id':campaign_id,'status':status,'git':git,'protocol':config,
         'duration_seconds':time.monotonic()-started,'effective_session_limit_seconds':effective_limit,
         'runs':records,'errors':errors,
-        'pending_jobs':[j['name'] for j in jobs(config) if j['name'] not in {r['job'] for r in records}]}
+        'pending_jobs':[j['name'] for j in planned_jobs[len(records):]]}
+    if config['protocol_id'] == PEGASUS_REFERENCE_PROTOCOL:
+        campaign['input_hashes'] = input_hashes
     write_new(directory/'campaign.json',campaign)
     write_new(directory/('COMPLETE' if status=='complete' else 'PARTIAL'),
               {'campaign_sha256':manifest.sha256_file(directory/'campaign.json'),
@@ -639,6 +678,117 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
                'preflight_sha256':manifest.sha256_file(directory/'preflight.json')})
     print(json.dumps({'event':'campaign_closed','directory':str(directory),'status':status}),flush=True)
     return directory
+
+
+def _probe_identity(probe, model_key):
+    return (probe['hostname'], probe['architecture'], probe['gpu']['stdout'].strip(),
+            probe['image']['stdout'].strip(), probe['container_probe']['stdout'].strip(),
+            probe['models'][model_key])
+
+
+def _observed_topology(path, run, job, preflight, protocol, campaign_probes):
+    """Validate evidence, then return identities for the participating nodes only.
+
+    Preflight covers all four hosts even for TP1. Extra preflight hosts must not
+    enter a single/pair trial's identity. Rank order may differ between TP4 and
+    TP2; it is verified within each trial rather than inferred from node IDs.
+    """
+    expected=set(TOPOLOGIES[job['group']])
+    participants=run['participants']
+    if (len(participants)!=len(expected) or {p['node_id'] for p in participants}!=expected
+            or any(type(p['rank']) is not int for p in participants)
+            or {p['rank'] for p in participants}!=set(range(len(expected)))):
+        raise InferenceError('roster observado no corresponde a la topología comparada')
+    probes={p['node_id']:p for p in preflight['nodes']}
+    if len(probes)!=len(preflight['nodes']) or not expected<=probes.keys():
+        raise InferenceError('preflight sin identidad única por participante')
+    inventory={node_id:{'expected_hostname':probes[node_id]['hostname']} for node_id in expected}
+    # Prefer the immutable inventory copied by the runner, never today's hosts.
+    inventory_path=path/'raw'/'inputs'/'cluster'
+    if inventory_path.is_file():
+        recorded=next((i for i in run['inputs'] if i['name']=='cluster'),None)
+        if recorded is None or manifest.sha256_file(inventory_path)!=recorded['sha256']:
+            raise InferenceError('hash del inventario copiado no coincide')
+        archived=read_json(inventory_path)
+        inventory={n['node_id']:n for n in cluster.selected_nodes(archived,job['group'])}
+    evidence=[read_json(path/p['evidence_path']) for p in participants]
+    ranks=validate_worker_records(evidence,inventory,len(expected),runtime.model_path(job['model']))
+    identities = {}
+    comparable = inventory_path.is_file() or campaign_probes is None
+    model_key = job['model']['key']
+    for participant,rank in zip(sorted(participants,key=lambda p:p['rank']),ranks):
+        if any(participant[key]!=rank[key] for key in ('node_id','hostname','gpu_uuid','rank')):
+            raise InferenceError('identidad efectiva contradice el manifiesto')
+        probe=probes[participant['node_id']]
+        if campaign_probes is not None:
+            reference = campaign_probes.get(participant['node_id'])
+            if reference is None or _probe_identity(reference, model_key) != _probe_identity(probe, model_key):
+                comparable = False
+        gpu=probe['gpu']; package_probe=probe['container_probe']
+        if (probe['hostname']!=participant['hostname'] or gpu['returncode']!=0
+                or package_probe['returncode']!=0):
+            raise InferenceError('identidad de host/GPU difiere del preflight')
+        gpu_lines=gpu['stdout'].strip().splitlines()
+        if len(gpu_lines)!=1 or gpu_lines[0].split(',')[0].strip()!=participant['gpu_uuid']:
+            raise InferenceError('UUID de participante difiere del preflight')
+        env=json.loads(package_probe['stdout'].splitlines()[-1])
+        if any(rank['versions'].get(k)!=env['packages'].get(k) for k in ('vllm','torch','ray')):
+            raise InferenceError('versiones efectivas de worker difieren del preflight')
+        snapshot=probe['models'][job['model']['key']]
+        if not snapshot.get('complete') or not snapshot.get('metadata_sha256') or not snapshot.get('shards'):
+            raise InferenceError('snapshot efectivo sin identidad completa')
+        image=protocol['image']; versions=env['packages']
+        try: image_identity=shlex.split(probe['image']['stdout'].strip())
+        except ValueError: image_identity=[]
+        if (probe['architecture']!='aarch64' or probe['image']['returncode']!=0
+                or image_identity!=[image['id'],image['architecture']]
+                or versions.get('ray')!=image['ray_version']
+                or versions.get('apache-tvm-ffi')!=image['tvm_ffi_version']
+                or versions.get('pandas')!=image['pandas_version']
+                or not str(versions.get('vllm','')).startswith(image['vllm_version_prefix'])):
+            comparable=False
+        identities[participant['node_id']]={
+            'hostname':participant['hostname'],'gpu_uuid':participant['gpu_uuid'],
+            'gpu':gpu_lines[0], 'architecture':probe['architecture'],
+            'image':probe['image']['stdout'].strip(), 'environment':env,
+            'worker_versions':rank['versions'],
+            'snapshot':{'metadata_sha256':snapshot['metadata_sha256'],'shards':snapshot['shards']}}
+    head = identities['pegasus']
+    common_fields = ('image', 'architecture', 'environment', 'worker_versions', 'snapshot')
+    if any(node[field] != head[field] for node in identities.values() for field in common_fields):
+        comparable = False
+    return identities, probes['pegasus'], comparable
+
+
+def _pair_compatible(baseline, scaled, identities):
+    if baseline['comparison_key']!=scaled['comparison_key']:
+        return False
+    small=identities[baseline['run_dir']]; large=identities[scaled['run_dir']]
+    return small.keys() < large.keys() and all(small[node] == large[node] for node in small)
+
+
+def _validate_planned_matrix(plan, protocol, expected_jobs):
+    measurement = protocol['measurement']
+    saved_jobs = plan.get('jobs')
+    if not isinstance(saved_jobs, list) or len(saved_jobs) != len(expected_jobs):
+        raise InferenceError('cantidad de corridas del plan incompatible con el protocolo')
+    for field, expected in _plan_counts(measurement, expected_jobs).items():
+        if type(plan.get(field)) is not int or plan[field] != expected:
+            raise InferenceError(f'total del plan incompatible con el protocolo: {field}')
+    for saved, expected in zip(saved_jobs, expected_jobs):
+        if (not isinstance(saved, dict)
+                or any(saved.get(k) != expected[k] for k in ('name', 'block', 'model', 'group'))
+                or saved.get('nodes') != TOPOLOGIES[expected['group']]):
+            raise InferenceError('identidad u orden de corridas incorrecto en el plan')
+        cells = saved.get('cells')
+        if not isinstance(cells, list) or len(cells) != len(expected['cells']):
+            raise InferenceError(f"matriz de celdas incompleta en el plan de {expected['name']}")
+        for cell, coordinate in zip(cells, expected['cells']):
+            if not isinstance(cell, dict) or any(
+                    type(cell.get(k)) is not int or cell[k] != value for k, value in coordinate.items()):
+                raise InferenceError(f"coordenadas de celda incorrectas en el plan de {expected['name']}")
+            if cell.get('commands') != _cell_commands(protocol, expected['model'], coordinate):
+                raise InferenceError(f"comandos de celda incompatibles con el plan de {expected['name']}")
 
 
 def build_report(directory):
@@ -649,7 +799,33 @@ def build_report(directory):
     marker=read_json(markers[0])
     for key,name in [('campaign_sha256','campaign.json'),('plan_sha256','plan.json'),('preflight_sha256','preflight.json')]:
         if marker[key]!=manifest.sha256_file(directory/name): raise InferenceError('integridad de campaña inválida')
-    pairs={}; rows=[]; seen_jobs=set(); seen_slots=set(); seen_paths=set()
+    protocol=campaign['protocol']
+    _validate_protocol(protocol)
+    protocol_id=protocol['protocol_id']
+    reference_protocol = protocol_id == PEGASUS_REFERENCE_PROTOCOL
+    expected_jobs={job['name']:job for job in jobs(protocol)}
+    if (campaign['status'] not in ('complete','partial')
+            or markers[0].name!=('COMPLETE' if campaign['status']=='complete' else 'PARTIAL')):
+        raise InferenceError('estado y marcador de campaña contradictorios')
+    plan=read_json(directory/'plan.json')
+    if plan.get('protocol', None if reference_protocol else protocol)!=protocol:
+        raise InferenceError('plan y protocolo de campaña contradictorios')
+    if reference_protocol:
+        _validate_planned_matrix(plan, protocol, list(expected_jobs.values()))
+    if campaign['status']=='complete' and (
+            campaign['pending_jobs'] or campaign.get('errors')
+            or [r['job'] for r in campaign['runs']]!=list(expected_jobs)
+            or any(r['status']!='complete' for r in campaign['runs'])
+            or [j['name'] for j in plan.get('jobs',[])]!=list(expected_jobs)):
+        raise InferenceError('COMPLETE requiere todos los jobs y el plan íntegros')
+    campaign_probes = None
+    if reference_protocol:
+        probe_list = read_json(directory/'preflight.json')['nodes']
+        campaign_probes = {probe['node_id']: probe for probe in probe_list}
+        if len(campaign_probes) != len(probe_list) or set(campaign_probes) != set(TOPOLOGIES['four']):
+            raise InferenceError('preflight de campaña sin identidad única de los cuatro nodos')
+    campaign_hashes = campaign.get('input_hashes', {})
+    pairs={}; rows=[]; excluded=[]; identities={}; seen_jobs=set(); seen_slots=set(); seen_paths=set()
     for ref in campaign['runs']:
         job_name=ref['job']; slot=(ref['model_key'],ref['block'],ref['group'])
         run_path=Path(ref['run_dir']).resolve()
@@ -660,45 +836,124 @@ def build_report(directory):
         if ref['manifest_sha256']!=manifest.sha256_file(path/'manifest.json'):
             raise InferenceError('manifiesto cambió desde cierre de campaña')
         request=run['requested_config']; job=request['job']; model=run['model']
+        expected_job=expected_jobs.get(job_name)
         if request.get('campaign_id')!=campaign['campaign_id']:
             raise InferenceError('corrida pertenece a otra campaña')
         if (ref['job']!=job['name'] or ref['group']!=job['group'] or ref['block']!=job['block']
                 or ref['model_key']!=job['model']['key'] or model['id']!=job['model']['id']
-                or model['revision']!=job['model']['revision']):
+                or model['revision']!=job['model']['revision']
+                or model['tokenizer']!={'id':job['model']['tokenizer_id'],
+                                        'revision':job['model']['tokenizer_revision']}
+                or expected_job is None or ref['status']!=run['status']
+                or any(job[k]!=expected_job[k] for k in ('name','group','block','cells'))
+                or job['model']['key']!=expected_job['model']['key']):
             raise InferenceError('índice de campaña contradice la identidad de la corrida')
+        if run['status'] != 'complete':
+            continue
         assessment=read_json(path/'metrics'/'assessment.json')
-        if run['status']!='complete' or not assessment['valid']: continue
-        world=4 if job['group']=='four' else 2
-        if len(run['participants'])!=world or {p['rank'] for p in run['participants']}!=set(range(world)):
-            raise InferenceError('roster observado no corresponde a la topología comparada')
+        if not assessment['valid']:
+            if campaign['status']=='complete': raise InferenceError('COMPLETE contiene corrida inválida')
+            continue
+        observed,head,comparable=_observed_topology(
+            path,run,job,read_json(path/'raw'/'preflight.json'),protocol,campaign_probes)
+        identities[str(path)]=observed
+        run_issues = []
+        if not comparable:
+            run_issues.append('El inventario o el entorno de los participantes difiere de la referencia.')
+        if request['protocol'] != protocol or job['model'] != expected_job['model']:
+            run_issues.append('La configuración o revisión del modelo difiere del plan.')
+        commit = run['git'].get('commit')
+        if run['git'].get('dirty') is not False or not SHA40.fullmatch(commit or ''):
+            run_issues.append('La corrida carece de un commit limpio e identificable.')
+        if reference_protocol:
+            campaign_git = campaign.get('git', {})
+            if campaign_git.get('dirty') is not False or campaign_git.get('commit') != commit:
+                run_issues.append('El commit de la corrida difiere del commit limpio de la campaña.')
+            code_hashes, profile_hashes, profile_issues = archived_job_evidence(path, run, job)
+            if any(campaign_hashes.get(name) != digest for name, digest in code_hashes.items()):
+                run_issues.append('El código archivado difiere del fijado antes de la campaña.')
+        else:
+            legacy_workloads = {i['name']:i['sha256'] for i in run['inputs'] if i['name'].startswith('workload/')}
+        seen_cells=set()
         for cell in assessment['cells']:
             if cell['status']!='valid': continue
+            slot=(cell['input_tokens'],cell['concurrency'])
+            if slot in seen_cells:
+                raise InferenceError('celda de grupo duplicada en comparación pareada')
+            seen_cells.add(slot)
+            if {'input_tokens':slot[0],'concurrency':slot[1]} not in job['cells']:
+                raise InferenceError('celda fuera de la carga solicitada')
             # Identity includes source commit, protocol, model/tokenizer revision,
             # exact datasets and the trial. Node count alone differs.
-            identity={'commit':run['git']['commit'],'protocol':request['protocol'],'model':model,
+            issues = list(run_issues)
+            length = cell['input_tokens']
+            if reference_protocol:
+                workload_hashes = profile_hashes[length]
+                issues.extend(profile_issues[length])
+                if any(campaign_hashes.get(name) != digest for name, digest in workload_hashes.items()):
+                    issues.append('La carga archivada difiere de la preparada para este modelo y longitud.')
+                issues.extend(verify_client_cell(path, job['model'], cell, protocol))
+            else:
+                workload_hashes = legacy_workloads
+            identity={'commit':commit,'protocol':request['protocol'],'model':model,
                 'block':job['block'],'input_tokens':cell['input_tokens'],'concurrency':cell['concurrency'],
-                'workload_hashes':{i['name']:i['sha256'] for i in run['inputs'] if i['name'].startswith('workload/')},
-                'effective_environment':json.loads(read_json(path/'raw'/'preflight.json')['nodes'][0]['container_probe']['stdout'].splitlines()[-1]),
-                'snapshot_identity':read_json(path/'raw'/'preflight.json')['nodes'][0]['models'][job['model']['key']]}
+                'workload_hashes':workload_hashes,
+                'effective_environment':json.loads(head['container_probe']['stdout'].splitlines()[-1]),
+                'snapshot_identity':head['models'][job['model']['key']]}
+            # Keep legacy comparison keys byte-for-byte reproducible. The new
+            # protocol also binds code inputs and campaign identity explicitly.
+            if reference_protocol:
+                identity['campaign_id']=request['campaign_id']
+                identity['code_hashes']=code_hashes
             key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
             summary={**cell,'comparison_key':key,'model_key':ref['model_key'],'block':ref['block'],
                      'group':ref['group'],'run_dir':str(path)}
-            group_pairs=pairs.setdefault(key,{})
-            if ref['group'] in group_pairs:
-                raise InferenceError('celda de grupo duplicada en comparación pareada')
-            group_pairs[ref['group']]=summary; rows.append(summary)
+            expected_counts={'requested':protocol['measurement']['measured_requests'],
+                'completed':protocol['measurement']['measured_requests'],'failed':0,
+                'input_tokens':protocol['measurement']['measured_requests']*cell['input_tokens'],
+                'output_tokens':protocol['measurement']['measured_requests']*protocol['workload']['output_tokens']}
+            counts=cell.get('raw_counts',{})
+            if not isinstance(counts,dict) or any(
+                    type(counts.get(k)) is not int or counts[k]!=v for k,v in expected_counts.items()):
+                issues.append('Los conteos difieren del lote medido fijado para la celda.')
+            if not workload_hashes:
+                issues.append('Faltan hashes de la carga.')
+            if reference_protocol:
+                summary['node_count']=len(observed)
+                if issues:
+                    excluded.append({**summary,'status':'excluded','reasons':issues})
+                    continue
+            rows.append(summary)
+            if not issues:
+                pairs.setdefault((ref['model_key'],ref['block'],*slot),{})[ref['group']] = summary
+        if campaign['status']=='complete' and len(seen_cells)!=len(job['cells']):
+            raise InferenceError('COMPLETE contiene una matriz de celdas incompleta')
     comparisons=[]
     for group in pairs.values():
-        if set(group)=={'four','pair'}:
-            four,two=group['four'],group['pair']
-            comparisons.append({'model':four['model_key'],'block':four['block'],
-                'input_tokens':four['input_tokens'],'concurrency':four['concurrency'],
-                **paired_speedup(two,four)})
-    return {'campaign_id':campaign['campaign_id'],'status':campaign['status'],
+        sample=next(iter(group.values()))
+        comparison={'model':sample['model_key'],'block':sample['block'],
+                    'input_tokens':sample['input_tokens'],'concurrency':sample['concurrency']}
+        for scaled_group,baseline_group in (('four','pair'),('pair','single'),('four','single')):
+            if not {scaled_group,baseline_group}<=group.keys(): continue
+            scaled,baseline=group[scaled_group],group[baseline_group]
+            if not _pair_compatible(baseline,scaled,identities): continue
+            try:
+                comparison.update(paired_speedup(baseline,scaled,
+                    baseline_nodes=len(identities[baseline['run_dir']]),
+                    scaled_nodes=len(identities[scaled['run_dir']])))
+            except ValueError:
+                # A rejected pair must not discard another valid pair in this cell.
+                continue
+        if 's4_2' in comparison or 's2_1' in comparison or 's4_1' in comparison:
+            comparisons.append(comparison)
+    report={'campaign_id':campaign['campaign_id'],'status':campaign['status'],
             'pending_jobs':campaign['pending_jobs'],'runs':campaign['runs'],'cells':rows,
             'paired_comparisons':comparisons,'limitations':campaign['protocol']['limitations']+
                 ['p50/p95 descriptivos con32solicitudes por celda; no inferir p99 poblacional.',
                  'Cliente en Pegasus compartido con servicio; saturación del cliente no descartada solo por benchmark JSON.']}
+    if reference_protocol:
+        report.update(protocol_id=protocol_id, excluded_cells=excluded)
+    return report
 
 
 def markdown_report(report):
@@ -716,7 +971,7 @@ def markdown_report(report):
     def spread(values):
         return f'{statistics.median(values):.3f} ({min(values):.3f}–{max(values):.3f})'
     for (model,group,length,concurrency),cells in sorted(grouped.items()):
-        lines.append(f"| {model} | {4 if group=='four' else 2} | {length} | {concurrency} | {len(cells)} | "
+        lines.append(f"| {model} | {len(TOPOLOGIES[group])} | {length} | {concurrency} | {len(cells)} | "
                      f"{spread([c['t32_seconds'] for c in cells])} | "
                      f"{spread([c['output_tokens_per_second'] for c in cells])} |")
     lines += ['','| Modelo | Nodos | Entrada | Concurrencia | TTFT p50/p95 ms | TPOT p50/p95 ms | E2E p50/p95 ms |',
@@ -724,13 +979,22 @@ def markdown_report(report):
     for (model,group,length,concurrency),cells in sorted(grouped.items()):
         values=[' / '.join(f"{statistics.median(c[metric][p] for c in cells):.3f}" for p in ('p50_ms','p95_ms'))
                 for metric in ('ttft','tpot','e2el')]
-        lines.append(f"| {model} | {4 if group=='four' else 2} | {length} | {concurrency} | "+' | '.join(values)+' |')
+        lines.append(f"| {model} | {len(TOPOLOGIES[group])} | {length} | {concurrency} | "+' | '.join(values)+' |')
     if not grouped: lines += ['','No hay celdas válidas para resumir.']
+    if report.get('excluded_cells'):
+        lines += ['', f"Celdas excluidas de medianas y comparaciones: {len(report['excluded_cells'])}. "
+                  'El JSON conserva sus observaciones y motivos en `excluded_cells`.']
+    metric_columns=['s4_2','e4_2']
+    if (report.get('protocol_id')==PEGASUS_REFERENCE_PROTOCOL
+            or any(run['group']=='single' for run in report['runs'])):
+        metric_columns+=['s2_1','e2_1','s4_1','e4_1']
+    titles={'s4_2':'S4/2','e4_2':'E4/2','s2_1':'S2/1','e2_1':'E2/1','s4_1':'S4/1','e4_1':'E4/1'}
     lines += ['','## Comparaciones pareadas por bloque','',
-           '| Modelo | Bloque | Entrada | Concurrencia | S4/2 | E4/2 |',
-           '| --- | ---: | ---: | ---: | ---: | ---: |']
+           '| Modelo | Bloque | Entrada | Concurrencia | '+' | '.join(titles[k] for k in metric_columns)+' |',
+           '| --- | ---: | ---: | ---: | '+' | '.join('---:' for _ in metric_columns)+' |']
     for row in report['paired_comparisons']:
-        lines.append(f"| {row['model']} | {row['block']} | {row['input_tokens']} | {row['concurrency']} | {row['s4_2']:.3f} | {row['e4_2']:.3f} |")
+        values=[f'{row[k]:.3f}' if k in row else '—' for k in metric_columns]
+        lines.append(f"| {row['model']} | {row['block']} | {row['input_tokens']} | {row['concurrency']} | "+' | '.join(values)+' |')
     if not report['paired_comparisons']: lines += ['','No hay pares completos y válidos para calcular speedup.']
     lines += ['','## Limitaciones','']+[f'- {s}' for s in report['limitations']]
     lines += ['','## Corridas y evidencia','']
@@ -749,13 +1013,16 @@ def main(argv=None):
         if name=='preflight': p.add_argument('--container-probe',action='store_true',
                   help='sonda CPU efímera de paquetes; sin GPU/red del contenedor')
         if name=='run':
-            p.add_argument('--execute',action='store_true',help='ejecutar plan operativo previamente revisado')
+            p.add_argument('--execute',action='store_true',help='ejecutar campaña; requiere autorización específica de comandos, duración, recursos y salidas')
             p.add_argument('--session-limit-seconds',type=int,
-                help='reducir el presupuesto de ocupación; nunca amplía el máximo aprobado de ocho horas')
+                help='reducir el presupuesto de ocupación; nunca amplía el máximo configurado de ocho horas')
     p=sub.add_parser('report');p.add_argument('directory',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--plot',action='store_true',help='añadir SVG científico con Matplotlib ya instalado')
     args=parser.parse_args(argv)
     try:
+        output = getattr(args, 'output', None)
+        if output and output.resolve().is_relative_to((REPO_ROOT/'resultados/raw').resolve()):
+            raise InferenceError('el plan, el preflight y los informes derivados deben escribirse fuera de raw')
         if args.command=='plan': data=make_plan(args.config)
         elif args.command=='preflight':
             config,cluster_config,_=load_config(args.config)
@@ -768,8 +1035,6 @@ def main(argv=None):
             return 0 if read_json(closed/'campaign.json')['status']=='complete' else 2
         else:
             data=build_report(args.directory)
-            if args.output.resolve().is_relative_to((REPO_ROOT/'resultados/raw').resolve()):
-                raise InferenceError('informes derivados deben ir fuera de raw')
             if args.plot:
                 from infraestructura.inference_plot import plot_report
                 data['plot']=plot_report(data,args.output.with_suffix('.svg'))
