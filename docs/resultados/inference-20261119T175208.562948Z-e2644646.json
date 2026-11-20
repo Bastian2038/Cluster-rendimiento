@@ -1,0 +1,5169 @@
+{
+  "campaign_id": "20261119T175208.562948Z-e2644646",
+  "cells": [
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f4e39b175a5da143a6b84cf49ad56c2087cf4e43d694b7169370d90ff97433e7",
+      "concurrency": 1,
+      "duration_seconds": 119.44100567899295,
+      "e2el": {
+        "p50_ms": 3732.2807459859177,
+        "p95_ms": 3740.000360760314
+      },
+      "ended_at": "2026-11-19T17:58:23.457626Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 137.1723212380954,
+      "measurement_ended_at": "2026-11-19T17:58:23.457617Z",
+      "measurement_started_at": "2026-11-19T17:56:15.257317Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 34.29308030952385,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2679146899181551,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T17:55:06.587306Z",
+      "status": "valid",
+      "t32_seconds": 119.44100567899295,
+      "tpot": {
+        "p50_ms": 27.992245732251128,
+        "p95_ms": 28.061285183543163
+      },
+      "ttft": {
+        "p50_ms": 176.58073449274525,
+        "p95_ms": 180.16839240299305
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "17ef2820d75662d1d56d0d7cfe999419a1e68ba25a5b8d6bdba55f1acf34c5de",
+      "concurrency": 4,
+      "duration_seconds": 30.92952078298549,
+      "e2el": {
+        "p50_ms": 3864.7116124921013,
+        "p95_ms": 3872.5929795531556
+      },
+      "ended_at": "2026-11-19T17:59:26.496526Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 529.7204607519471,
+      "measurement_ended_at": "2026-11-19T17:59:26.496514Z",
+      "measurement_started_at": "2026-11-19T17:58:47.019251Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 132.4301151879868,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.0346102749061468,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T17:58:23.457734Z",
+      "status": "valid",
+      "t32_seconds": 30.92952078298549,
+      "tpot": {
+        "p50_ms": 25.046432326757714,
+        "p95_ms": 28.733657510249003
+      },
+      "ttft": {
+        "p50_ms": 686.2870970071526,
+        "p95_ms": 699.4147428616998
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "c5d593c4e9c280f8a4b500bd6df9d2e1fb02a476ece7cee8715d05ee1df66114",
+      "concurrency": 8,
+      "duration_seconds": 18.993329490011092,
+      "e2el": {
+        "p50_ms": 4743.652022007154,
+        "p95_ms": 4762.734963593539
+      },
+      "ended_at": "2026-11-19T18:00:11.184977Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 862.6186371703086,
+      "measurement_ended_at": "2026-11-19T18:00:11.184968Z",
+      "measurement_started_at": "2026-11-19T17:59:44.253425Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 215.65465929257715,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.684802025723259,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T17:59:26.496640Z",
+      "status": "valid",
+      "t32_seconds": 18.993329490011092,
+      "tpot": {
+        "p50_ms": 26.73333093712352,
+        "p95_ms": 35.62106931448949
+      },
+      "ttft": {
+        "p50_ms": 1350.1267999963602,
+        "p95_ms": 1362.4633640429238
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "aaeaa8b8d7d29e1a3db04496a9944e7f17ebb51813a63f2d507db3d4f12b5a34",
+      "concurrency": 1,
+      "duration_seconds": 135.56280090499786,
+      "e2el": {
+        "p50_ms": 4236.907494996558,
+        "p95_ms": 4247.164884798985
+      },
+      "ended_at": "2026-11-19T18:03:51.762173Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 483.4364557422172,
+      "measurement_ended_at": "2026-11-19T18:03:51.762162Z",
+      "measurement_started_at": "2026-11-19T18:01:27.388099Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.214778483888576,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2360529569053795,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T18:00:11.185081Z",
+      "status": "valid",
+      "t32_seconds": 135.56280090499786,
+      "tpot": {
+        "p50_ms": 28.13793242119315,
+        "p95_ms": 28.214471817051436
+      },
+      "ttft": {
+        "p50_ms": 663.5590535006486,
+        "p95_ms": 668.4284376446158
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f09b2b194f807c5ea52bcf5c9e932a24224f78350921b46b2523d2bf39fe5b79",
+      "concurrency": 4,
+      "duration_seconds": 46.65705025900388,
+      "e2el": {
+        "p50_ms": 5818.49859248905,
+        "p95_ms": 6160.6070295471
+      },
+      "ended_at": "2026-11-19T18:05:18.492843Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1404.63230393252,
+      "measurement_ended_at": "2026-11-19T18:05:18.492829Z",
+      "measurement_started_at": "2026-11-19T18:04:23.113147Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 87.7895189957825,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6858556171545508,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T18:03:51.762279Z",
+      "status": "valid",
+      "t32_seconds": 46.65705025900388,
+      "tpot": {
+        "p50_ms": 35.23841502757259,
+        "p95_ms": 40.44891488337321
+      },
+      "ttft": {
+        "p50_ms": 1337.7102085069055,
+        "p95_ms": 2318.8397219491885
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9a7c4175f27dbbef63c3bdd9843c2e608a7ec188b6f1442cddbc745aac2155d4",
+      "concurrency": 8,
+      "duration_seconds": 34.72220248897793,
+      "e2el": {
+        "p50_ms": 8655.892020993633,
+        "p95_ms": 9624.966061832674
+      },
+      "ended_at": "2026-11-19T18:06:27.614056Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1887.4378726638517,
+      "measurement_ended_at": "2026-11-19T18:06:27.614045Z",
+      "measurement_started_at": "2026-11-19T18:05:44.111358Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 117.96486704149073,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9216005237616464,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "started_at": "2026-11-19T18:05:18.493042Z",
+      "status": "valid",
+      "t32_seconds": 34.72220248897793,
+      "tpot": {
+        "p50_ms": 42.33938556299252,
+        "p95_ms": 62.46070414276264
+      },
+      "ttft": {
+        "p50_ms": 3279.9513895006385,
+        "p95_ms": 4920.104044798063
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f4e39b175a5da143a6b84cf49ad56c2087cf4e43d694b7169370d90ff97433e7",
+      "concurrency": 1,
+      "duration_seconds": 197.54425423202338,
+      "e2el": {
+        "p50_ms": 6174.34977350058,
+        "p95_ms": 6182.498810157995
+      },
+      "ended_at": "2026-11-19T18:14:11.475680Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 82.93837785206527,
+      "measurement_ended_at": "2026-11-19T18:14:11.475670Z",
+      "measurement_started_at": "2026-11-19T18:10:46.874369Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 20.734594463016318,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.16198901924231499,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:09:00.427256Z",
+      "status": "valid",
+      "t32_seconds": 197.54425423202338,
+      "tpot": {
+        "p50_ms": 47.73674502361045,
+        "p95_ms": 47.798057340553456
+      },
+      "ttft": {
+        "p50_ms": 111.3413205021061,
+        "p95_ms": 115.08263579889899
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "17ef2820d75662d1d56d0d7cfe999419a1e68ba25a5b8d6bdba55f1acf34c5de",
+      "concurrency": 4,
+      "duration_seconds": 44.87756988601177,
+      "e2el": {
+        "p50_ms": 5608.34567299753,
+        "p95_ms": 5616.454917250667
+      },
+      "ended_at": "2026-11-19T18:15:33.649771Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 365.0821566679094,
+      "measurement_ended_at": "2026-11-19T18:15:33.649760Z",
+      "measurement_started_at": "2026-11-19T18:14:41.344718Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 91.27053916697734,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7130510872420105,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:14:11.475783Z",
+      "status": "valid",
+      "t32_seconds": 44.87756988601177,
+      "tpot": {
+        "p50_ms": 40.85034924808168,
+        "p95_ms": 42.75638059174182
+      },
+      "ttft": {
+        "p50_ms": 421.17429949576035,
+        "p95_ms": 430.70968139218166
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "c5d593c4e9c280f8a4b500bd6df9d2e1fb02a476ece7cee8715d05ee1df66114",
+      "concurrency": 8,
+      "duration_seconds": 24.558147455973085,
+      "e2el": {
+        "p50_ms": 6136.319843993988,
+        "p95_ms": 6151.3748432538705
+      },
+      "ended_at": "2026-11-19T18:16:25.015212Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 667.151299965627,
+      "measurement_ended_at": "2026-11-19T18:16:25.015198Z",
+      "measurement_started_at": "2026-11-19T18:15:53.430332Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 166.78782499140675,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.3030298827453652,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:15:33.649880Z",
+      "status": "valid",
+      "t32_seconds": 24.558147455973085,
+      "tpot": {
+        "p50_ms": 42.60272714577516,
+        "p95_ms": 46.85688768739227
+      },
+      "ttft": {
+        "p50_ms": 727.5251870159991,
+        "p95_ms": 740.8239781012526
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "aaeaa8b8d7d29e1a3db04496a9944e7f17ebb51813a63f2d507db3d4f12b5a34",
+      "concurrency": 1,
+      "duration_seconds": 206.22886497998843,
+      "e2el": {
+        "p50_ms": 6444.93650450022,
+        "p95_ms": 6454.3884713129955
+      },
+      "ended_at": "2026-11-19T18:21:49.039294Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 317.78286713821234,
+      "measurement_ended_at": "2026-11-19T18:21:49.039284Z",
+      "measurement_started_at": "2026-11-19T18:18:15.522899Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 19.86142919613827,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.15516741559483024,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:16:25.015418Z",
+      "status": "valid",
+      "t32_seconds": 206.22886497998843,
+      "tpot": {
+        "p50_ms": 47.882930523561,
+        "p95_ms": 47.94486966214416
+      },
+      "ttft": {
+        "p50_ms": 363.95202748826705,
+        "p95_ms": 368.4160652614082
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f09b2b194f807c5ea52bcf5c9e932a24224f78350921b46b2523d2bf39fe5b79",
+      "concurrency": 4,
+      "duration_seconds": 52.986093790997984,
+      "e2el": {
+        "p50_ms": 6607.308825012296,
+        "p95_ms": 6807.58303564362
+      },
+      "ended_at": "2026-11-19T18:23:23.271729Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1236.8528289423398,
+      "measurement_ended_at": "2026-11-19T18:23:23.271715Z",
+      "measurement_started_at": "2026-11-19T18:22:22.830488Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 77.30330180889624,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6039320453820018,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:21:49.039402Z",
+      "status": "valid",
+      "t32_seconds": 52.986093790997984,
+      "tpot": {
+        "p50_ms": 46.17941529523512,
+        "p95_ms": 48.71628189921896
+      },
+      "ttft": {
+        "p50_ms": 739.9720175017137,
+        "p95_ms": 1245.768502994906
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9a7c4175f27dbbef63c3bdd9843c2e608a7ec188b6f1442cddbc745aac2155d4",
+      "concurrency": 8,
+      "duration_seconds": 32.69156235200353,
+      "e2el": {
+        "p50_ms": 8121.231212498969,
+        "p95_ms": 8664.387989298846
+      },
+      "ended_at": "2026-11-19T18:24:27.046233Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2004.6762921376123,
+      "measurement_ended_at": "2026-11-19T18:24:27.046219Z",
+      "measurement_started_at": "2026-11-19T18:23:47.046960Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 125.29226825860077,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9788458457703185,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "started_at": "2026-11-19T18:23:23.271946Z",
+      "status": "valid",
+      "t32_seconds": 32.69156235200353,
+      "tpot": {
+        "p50_ms": 50.90946546450026,
+        "p95_ms": 60.44028958147135
+      },
+      "ttft": {
+        "p50_ms": 1659.3923540058313,
+        "p95_ms": 2531.616808097169
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f4e39b175a5da143a6b84cf49ad56c2087cf4e43d694b7169370d90ff97433e7",
+      "concurrency": 1,
+      "duration_seconds": 310.1841490060033,
+      "e2el": {
+        "p50_ms": 9690.137625511852,
+        "p95_ms": 9716.389893116138
+      },
+      "ended_at": "2026-11-19T18:34:46.449307Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 52.82023614844002,
+      "measurement_ended_at": "2026-11-19T18:34:46.449299Z",
+      "measurement_started_at": "2026-11-19T18:29:28.519189Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 13.205059037110004,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.10316452372742191,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:26:44.533497Z",
+      "status": "valid",
+      "t32_seconds": 310.1841490060033,
+      "tpot": {
+        "p50_ms": 75.00997008253934,
+        "p95_ms": 75.19687981194429
+      },
+      "ttft": {
+        "p50_ms": 163.82614549365826,
+        "p95_ms": 169.05599264864577
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "17ef2820d75662d1d56d0d7cfe999419a1e68ba25a5b8d6bdba55f1acf34c5de",
+      "concurrency": 4,
+      "duration_seconds": 76.46027160997619,
+      "e2el": {
+        "p50_ms": 9585.325338994153,
+        "p95_ms": 9651.854532958532
+      },
+      "ended_at": "2026-11-19T18:36:57.297949Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 214.2812163102791,
+      "measurement_ended_at": "2026-11-19T18:36:57.297939Z",
+      "measurement_started_at": "2026-11-19T18:35:32.823368Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 53.57030407756977,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.41851800060601385,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:34:46.449412Z",
+      "status": "valid",
+      "t32_seconds": 76.46027160997619,
+      "tpot": {
+        "p50_ms": 70.27023276770176,
+        "p95_ms": 73.42988967311827
+      },
+      "ttft": {
+        "p50_ms": 661.956204494345,
+        "p95_ms": 692.1449366083834
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "c5d593c4e9c280f8a4b500bd6df9d2e1fb02a476ece7cee8715d05ee1df66114",
+      "concurrency": 8,
+      "duration_seconds": 40.52181222802028,
+      "e2el": {
+        "p50_ms": 10128.005015503732,
+        "p95_ms": 10135.825665842276
+      },
+      "ended_at": "2026-11-19T18:38:14.451736Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 404.3254508906363,
+      "measurement_ended_at": "2026-11-19T18:38:14.451726Z",
+      "measurement_started_at": "2026-11-19T18:37:24.510450Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 101.08136272265908,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7896981462707741,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:36:57.298047Z",
+      "status": "valid",
+      "t32_seconds": 40.52181222802028,
+      "tpot": {
+        "p50_ms": 70.85016163400151,
+        "p95_ms": 77.46309326066981
+      },
+      "ttft": {
+        "p50_ms": 1129.827168493648,
+        "p95_ms": 1141.9170054039569
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "aaeaa8b8d7d29e1a3db04496a9944e7f17ebb51813a63f2d507db3d4f12b5a34",
+      "concurrency": 1,
+      "duration_seconds": 324.2691554490011,
+      "e2el": {
+        "p50_ms": 10132.84631400893,
+        "p95_ms": 10140.260848803155
+      },
+      "ended_at": "2026-11-19T18:46:34.607174Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 202.10371198967476,
+      "measurement_ended_at": "2026-11-19T18:46:34.607161Z",
+      "measurement_started_at": "2026-11-19T18:41:03.341215Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 12.631481999354673,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.09868345311995838,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:38:14.451839Z",
+      "status": "valid",
+      "t32_seconds": 324.2691554490011,
+      "tpot": {
+        "p50_ms": 75.32581103945931,
+        "p95_ms": 75.37194849568279
+      },
+      "ttft": {
+        "p50_ms": 567.286758494447,
+        "p95_ms": 573.6247701919638
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f09b2b194f807c5ea52bcf5c9e932a24224f78350921b46b2523d2bf39fe5b79",
+      "concurrency": 4,
+      "duration_seconds": 87.88191254198318,
+      "e2el": {
+        "p50_ms": 10952.114062994951,
+        "p95_ms": 11295.172218247899
+      },
+      "ended_at": "2026-11-19T18:49:00.148070Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 745.7279672730377,
+      "measurement_ended_at": "2026-11-19T18:49:00.148058Z",
+      "measurement_started_at": "2026-11-19T18:47:25.607887Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 46.60799795456486,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.36412498402003796,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:46:34.607396Z",
+      "status": "valid",
+      "t32_seconds": 87.88191254198318,
+      "tpot": {
+        "p50_ms": 77.31866940152904,
+        "p95_ms": 81.13561011425735
+      },
+      "ttft": {
+        "p50_ms": 1133.2366455026204,
+        "p95_ms": 1931.7579346432462
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9a7c4175f27dbbef63c3bdd9843c2e608a7ec188b6f1442cddbc745aac2155d4",
+      "concurrency": 8,
+      "duration_seconds": 53.22233506399789,
+      "e2el": {
+        "p50_ms": 13239.78305250057,
+        "p95_ms": 14090.864940763277
+      },
+      "ended_at": "2026-11-19T18:50:33.766005Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1231.3627337319076,
+      "measurement_ended_at": "2026-11-19T18:50:33.765994Z",
+      "measurement_started_at": "2026-11-19T18:49:33.677913Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 76.96017085824423,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.601251334830033,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "started_at": "2026-11-19T18:49:00.148273Z",
+      "status": "valid",
+      "t32_seconds": 53.22233506399789,
+      "tpot": {
+        "p50_ms": 84.0048925590419,
+        "p95_ms": 98.59515486858459
+      },
+      "ttft": {
+        "p50_ms": 2599.0807880152715,
+        "p95_ms": 3968.4088932204754
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "19afac38a6c1d8032d6934cc9a964ca5600c78afa15a754d968ba1ca620ced3f",
+      "concurrency": 1,
+      "duration_seconds": 117.27956073297537,
+      "e2el": {
+        "p50_ms": 3665.8861039904878,
+        "p95_ms": 3672.5366567116
+      },
+      "ended_at": "2026-11-19T18:55:16.111669Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 139.7003868159384,
+      "measurement_ended_at": "2026-11-19T18:55:16.111655Z",
+      "measurement_started_at": "2026-11-19T18:53:09.838886Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 34.9250967039846,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2728523179998797,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T18:51:59.649617Z",
+      "status": "valid",
+      "t32_seconds": 117.27956073297537,
+      "tpot": {
+        "p50_ms": 27.50629759047595,
+        "p95_ms": 27.55879611419706
+      },
+      "ttft": {
+        "p50_ms": 172.20559349516407,
+        "p95_ms": 173.6445822956739
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "851fbdac46caf44aca8087c4bbb77877fca45526d4c06195fe72fcbf03047fd4",
+      "concurrency": 4,
+      "duration_seconds": 29.0295129030128,
+      "e2el": {
+        "p50_ms": 3603.8608709932305,
+        "p95_ms": 3692.402198148193
+      },
+      "ended_at": "2026-11-19T18:56:17.669327Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 564.3911441000996,
+      "measurement_ended_at": "2026-11-19T18:56:17.669312Z",
+      "measurement_started_at": "2026-11-19T18:55:38.725233Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 141.0977860250249,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.102326453320507,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T18:55:16.111884Z",
+      "status": "valid",
+      "t32_seconds": 29.0295129030128,
+      "tpot": {
+        "p50_ms": 23.542962618186834,
+        "p95_ms": 27.16881153619469
+      },
+      "ttft": {
+        "p50_ms": 664.3595579953399,
+        "p95_ms": 675.3980139430496
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "b5d32de5379955f364d8d3d1780eb86b56557f42405a56590e00233c270dd2d1",
+      "concurrency": 8,
+      "duration_seconds": 17.638363082020078,
+      "e2el": {
+        "p50_ms": 4405.703787997481,
+        "p95_ms": 4420.2278539931285
+      },
+      "ended_at": "2026-11-19T18:57:00.811815Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 928.8843825140026,
+      "measurement_ended_at": "2026-11-19T18:57:00.811800Z",
+      "measurement_started_at": "2026-11-19T18:56:34.840844Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 232.22109562850065,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.8142273095976613,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T18:56:17.669576Z",
+      "status": "valid",
+      "t32_seconds": 17.638363082020078,
+      "tpot": {
+        "p50_ms": 24.526489503941992,
+        "p95_ms": 33.0187311034382
+      },
+      "ttft": {
+        "p50_ms": 1295.1294179947581,
+        "p95_ms": 1305.2502299979096
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ce4ab5e36898614938d17c1e5456aa7021e5a41488efc6467c90d01436a419c1",
+      "concurrency": 1,
+      "duration_seconds": 133.15293804599787,
+      "e2el": {
+        "p50_ms": 4160.552971501602,
+        "p95_ms": 4172.910603992932
+      },
+      "ended_at": "2026-11-19T19:00:38.081599Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 492.18591014011645,
+      "measurement_ended_at": "2026-11-19T19:00:38.081584Z",
+      "measurement_started_at": "2026-11-19T18:58:16.023460Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.761619383757278,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.24032515143560373,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T18:57:00.812044Z",
+      "status": "valid",
+      "t32_seconds": 133.15293804599787,
+      "tpot": {
+        "p50_ms": 27.67504816535699,
+        "p95_ms": 27.765336188494125
+      },
+      "ttft": {
+        "p50_ms": 645.428155985428,
+        "p95_ms": 647.6037314452697
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4bab79ee44c82e606cdeab5b472ce574267b6f408847b62ddb1438a95836ed3b",
+      "concurrency": 4,
+      "duration_seconds": 44.83517646699329,
+      "e2el": {
+        "p50_ms": 5591.779831491294,
+        "p95_ms": 5927.623996704642
+      },
+      "ended_at": "2026-11-19T19:02:02.755124Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1461.7094247024147,
+      "measurement_ended_at": "2026-11-19T19:02:02.755114Z",
+      "measurement_started_at": "2026-11-19T19:01:08.954441Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 91.35683904390092,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7137253050304759,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T19:00:38.081802Z",
+      "status": "valid",
+      "t32_seconds": 44.83517646699329,
+      "tpot": {
+        "p50_ms": 33.724535094490676,
+        "p95_ms": 38.64529630314563
+      },
+      "ttft": {
+        "p50_ms": 1303.1356049905298,
+        "p95_ms": 2259.995817043818
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4d79c9cc8b74d46eaa0a01435c40764ae9920bfcbc7313fd6a1aef6544cd4452",
+      "concurrency": 8,
+      "duration_seconds": 33.656505306018516,
+      "e2el": {
+        "p50_ms": 8377.966002502944,
+        "p95_ms": 9342.053158402266
+      },
+      "ended_at": "2026-11-19T19:03:10.482233Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1947.2015708143274,
+      "measurement_ended_at": "2026-11-19T19:03:10.482222Z",
+      "measurement_started_at": "2026-11-19T19:02:28.011041Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 121.70009817589546,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9507820169991833,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "started_at": "2026-11-19T19:02:02.755236Z",
+      "status": "valid",
+      "t32_seconds": 33.656505306018516,
+      "tpot": {
+        "p50_ms": 40.88958202759042,
+        "p95_ms": 60.47763702761901
+      },
+      "ttft": {
+        "p50_ms": 3183.98717699165,
+        "p95_ms": 4773.794136893412
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "19afac38a6c1d8032d6934cc9a964ca5600c78afa15a754d968ba1ca620ced3f",
+      "concurrency": 1,
+      "duration_seconds": 157.5563869519974,
+      "e2el": {
+        "p50_ms": 4896.303301517037,
+        "p95_ms": 5116.58172315656
+      },
+      "ended_at": "2026-11-19T19:08:57.260508Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 103.98816777254292,
+      "measurement_ended_at": "2026-11-19T19:08:57.260494Z",
+      "measurement_started_at": "2026-11-19T19:06:11.388299Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 25.99704194313573,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2031018901807479,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:04:43.383730Z",
+      "status": "valid",
+      "t32_seconds": 157.5563869519974,
+      "tpot": {
+        "p50_ms": 37.77549727157576,
+        "p95_ms": 39.51350756533358
+      },
+      "ttft": {
+        "p50_ms": 97.30619649053551,
+        "p95_ms": 102.0313481494668
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "851fbdac46caf44aca8087c4bbb77877fca45526d4c06195fe72fcbf03047fd4",
+      "concurrency": 4,
+      "duration_seconds": 42.03191232000245,
+      "e2el": {
+        "p50_ms": 5208.542263499112,
+        "p95_ms": 5410.450674712774
+      },
+      "ended_at": "2026-11-19T19:10:15.011223Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 389.7990620855731,
+      "measurement_ended_at": "2026-11-19T19:10:15.011211Z",
+      "measurement_started_at": "2026-11-19T19:09:25.403331Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 97.44976552139327,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.761326293135885,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:08:57.260738Z",
+      "status": "valid",
+      "t32_seconds": 42.03191232000245,
+      "tpot": {
+        "p50_ms": 38.15515890548384,
+        "p95_ms": 40.410202178417975
+      },
+      "ttft": {
+        "p50_ms": 369.3378004973056,
+        "p95_ms": 381.61549710057443
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "b5d32de5379955f364d8d3d1780eb86b56557f42405a56590e00233c270dd2d1",
+      "concurrency": 8,
+      "duration_seconds": 22.557807208999293,
+      "e2el": {
+        "p50_ms": 5619.350662993384,
+        "p95_ms": 5697.969437408028
+      },
+      "ended_at": "2026-11-19T19:11:03.382036Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 726.311730932061,
+      "measurement_ended_at": "2026-11-19T19:11:03.382020Z",
+      "measurement_started_at": "2026-11-19T19:10:33.520136Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 181.57793273301525,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.4185775994766816,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:10:15.011333Z",
+      "status": "valid",
+      "t32_seconds": 22.557807208999293,
+      "tpot": {
+        "p50_ms": 39.52074285040199,
+        "p95_ms": 42.9490204863264
+      },
+      "ttft": {
+        "p50_ms": 600.9911500004819,
+        "p95_ms": 617.4899207966519
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ce4ab5e36898614938d17c1e5456aa7021e5a41488efc6467c90d01436a419c1",
+      "concurrency": 1,
+      "duration_seconds": 166.62395065501914,
+      "e2el": {
+        "p50_ms": 5190.715599499526,
+        "p95_ms": 5342.527438451361
+      },
+      "ended_at": "2026-11-19T19:15:28.321100Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 393.3168055514826,
+      "measurement_ended_at": "2026-11-19T19:15:28.321086Z",
+      "measurement_started_at": "2026-11-19T19:12:34.000370Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 24.582300346967664,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.19204922146068487,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:11:03.382260Z",
+      "status": "valid",
+      "t32_seconds": 166.62395065501914,
+      "tpot": {
+        "p50_ms": 38.328173547189344,
+        "p95_ms": 39.52399416888311
+      },
+      "ttft": {
+        "p50_ms": 324.8637079959735,
+        "p95_ms": 329.32752204797
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4bab79ee44c82e606cdeab5b472ce574267b6f408847b62ddb1438a95836ed3b",
+      "concurrency": 4,
+      "duration_seconds": 50.078730669018114,
+      "e2el": {
+        "p50_ms": 6208.551798001281,
+        "p95_ms": 6539.308347612678
+      },
+      "ended_at": "2026-11-19T19:16:58.559057Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1308.6593674496773,
+      "measurement_ended_at": "2026-11-19T19:16:58.559043Z",
+      "measurement_started_at": "2026-11-19T19:16:00.718471Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 81.79121046560483,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6389938317625378,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:15:28.321323Z",
+      "status": "valid",
+      "t32_seconds": 50.078730669018114,
+      "tpot": {
+        "p50_ms": 43.86641228352453,
+        "p95_ms": 46.52100829806318
+      },
+      "ttft": {
+        "p50_ms": 630.6390355020994,
+        "p95_ms": 1077.832099155057
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4d79c9cc8b74d46eaa0a01435c40764ae9920bfcbc7313fd6a1aef6544cd4452",
+      "concurrency": 8,
+      "duration_seconds": 31.166948631987907,
+      "e2el": {
+        "p50_ms": 7793.799210485304,
+        "p95_ms": 8243.940380738059
+      },
+      "ended_at": "2026-11-19T19:18:00.311200Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2102.7403347640434,
+      "measurement_ended_at": "2026-11-19T19:18:00.311189Z",
+      "measurement_started_at": "2026-11-19T19:17:21.773041Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 131.4212709227527,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.0267286790840056,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "started_at": "2026-11-19T19:16:58.559267Z",
+      "status": "valid",
+      "t32_seconds": 31.166948631987907,
+      "tpot": {
+        "p50_ms": 50.45075913788989,
+        "p95_ms": 57.59327836680972
+      },
+      "ttft": {
+        "p50_ms": 1443.2799520000117,
+        "p95_ms": 2208.4423475855147
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "19afac38a6c1d8032d6934cc9a964ca5600c78afa15a754d968ba1ca620ced3f",
+      "concurrency": 1,
+      "duration_seconds": 289.12660246601445,
+      "e2el": {
+        "p50_ms": 9034.753162515699,
+        "p95_ms": 9040.302201305167
+      },
+      "ended_at": "2026-11-19T19:27:51.801575Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 56.667217268344814,
+      "measurement_ended_at": "2026-11-19T19:27:51.801567Z",
+      "measurement_started_at": "2026-11-19T19:22:55.523122Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 14.166804317086203,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.11067815872723596,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:20:20.790841Z",
+      "status": "valid",
+      "t32_seconds": 289.12660246601445,
+      "tpot": {
+        "p50_ms": 70.08505434642993,
+        "p95_ms": 70.12945210822862
+      },
+      "ttft": {
+        "p50_ms": 134.10270249005407,
+        "p95_ms": 137.62151509727119
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "851fbdac46caf44aca8087c4bbb77877fca45526d4c06195fe72fcbf03047fd4",
+      "concurrency": 4,
+      "duration_seconds": 73.54679079400375,
+      "e2el": {
+        "p50_ms": 9192.13291851338,
+        "p95_ms": 9207.125370646827
+      },
+      "ended_at": "2026-11-19T19:29:55.898141Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 222.7697473012756,
+      "measurement_ended_at": "2026-11-19T19:29:55.898132Z",
+      "measurement_started_at": "2026-11-19T19:28:35.442410Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 55.6924368253189,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.4350971626978039,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:27:51.801906Z",
+      "status": "valid",
+      "t32_seconds": 73.54679079400375,
+      "tpot": {
+        "p50_ms": 67.90188536612595,
+        "p95_ms": 70.3450214398033
+      },
+      "ttft": {
+        "p50_ms": 564.444088988239,
+        "p95_ms": 579.2941399951815
+      }
+    },
+    {
+      "block": 1,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "b5d32de5379955f364d8d3d1780eb86b56557f42405a56590e00233c270dd2d1",
+      "concurrency": 8,
+      "duration_seconds": 39.39143612398766,
+      "e2el": {
+        "p50_ms": 9843.907132497407,
+        "p95_ms": 9863.433118596731
+      },
+      "ended_at": "2026-11-19T19:31:08.883783Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 415.9279684150145,
+      "measurement_ended_at": "2026-11-19T19:31:08.883771Z",
+      "measurement_started_at": "2026-11-19T19:30:22.426204Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 103.98199210375363,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.8123593133105752,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:29:55.898243Z",
+      "status": "valid",
+      "t32_seconds": 39.39143612398766,
+      "tpot": {
+        "p50_ms": 69.82405137008985,
+        "p95_ms": 75.42652901537959
+      },
+      "ttft": {
+        "p50_ms": 976.4121134940069,
+        "p95_ms": 990.5476482570521
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ce4ab5e36898614938d17c1e5456aa7021e5a41488efc6467c90d01436a419c1",
+      "concurrency": 1,
+      "duration_seconds": 305.925425569003,
+      "e2el": {
+        "p50_ms": 9514.138724509394,
+        "p95_ms": 9697.197281449917
+      },
+      "ended_at": "2026-11-19T19:39:01.270818Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 214.22214213842136,
+      "measurement_ended_at": "2026-11-19T19:39:01.270806Z",
+      "measurement_started_at": "2026-11-19T19:33:47.962668Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 13.388883883651335,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.10460065534102606,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:31:08.883994Z",
+      "status": "valid",
+      "t32_seconds": 305.925425569003,
+      "tpot": {
+        "p50_ms": 70.93916121651657,
+        "p95_ms": 72.30143899065497
+      },
+      "ttft": {
+        "p50_ms": 505.67433300602715,
+        "p95_ms": 523.9203278979403
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4bab79ee44c82e606cdeab5b472ce574267b6f408847b62ddb1438a95836ed3b",
+      "concurrency": 4,
+      "duration_seconds": 87.45406949598691,
+      "e2el": {
+        "p50_ms": 10914.651230996242,
+        "p95_ms": 11175.4768236613
+      },
+      "ended_at": "2026-11-19T19:41:28.723046Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 749.3762197424936,
+      "measurement_ended_at": "2026-11-19T19:41:28.723033Z",
+      "measurement_started_at": "2026-11-19T19:39:54.323182Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 46.83601373390585,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.36590635729613946,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:39:01.270939Z",
+      "status": "valid",
+      "t32_seconds": 87.45406949598691,
+      "tpot": {
+        "p50_ms": 77.66478703947146,
+        "p95_ms": 81.01196610778992
+      },
+      "ttft": {
+        "p50_ms": 1050.9342400036985,
+        "p95_ms": 1739.3203702027674
+      }
+    },
+    {
+      "block": 1,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4d79c9cc8b74d46eaa0a01435c40764ae9920bfcbc7313fd6a1aef6544cd4452",
+      "concurrency": 8,
+      "duration_seconds": 53.370148373011034,
+      "e2el": {
+        "p50_ms": 13252.982602003613,
+        "p95_ms": 14049.201291339705
+      },
+      "ended_at": "2026-11-19T19:43:02.721482Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1227.9523665919048,
+      "measurement_ended_at": "2026-11-19T19:43:02.721470Z",
+      "measurement_started_at": "2026-11-19T19:42:02.357293Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 76.74702291199405,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.5995861164999535,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "started_at": "2026-11-19T19:41:28.723263Z",
+      "status": "valid",
+      "t32_seconds": 53.370148373011034,
+      "tpot": {
+        "p50_ms": 86.13025604719277,
+        "p95_ms": 99.22691756344032
+      },
+      "ttft": {
+        "p50_ms": 2318.342615501024,
+        "p95_ms": 3537.6921311457404
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "5fa4be374075b982643a9bcf21464148695f9afcb699290bebf127243e36fa29",
+      "concurrency": 1,
+      "duration_seconds": 120.11173833798966,
+      "e2el": {
+        "p50_ms": 3740.6632310012355,
+        "p95_ms": 3805.8005854996736
+      },
+      "ended_at": "2026-11-19T19:48:47.016107Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 136.4063182059365,
+      "measurement_ended_at": "2026-11-19T19:48:47.016092Z",
+      "measurement_started_at": "2026-11-19T19:46:38.053740Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 34.10157955148412,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2664185902459697,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:45:26.887727Z",
+      "status": "valid",
+      "t32_seconds": 120.11173833798966,
+      "tpot": {
+        "p50_ms": 28.0676472008111,
+        "p95_ms": 28.563915292480797
+      },
+      "ttft": {
+        "p50_ms": 177.36579100892413,
+        "p95_ms": 178.97589685453568
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "62f5783b4340c6f2326d48fd135f8758a812e59dd968d3defa3ae5d37f519480",
+      "concurrency": 4,
+      "duration_seconds": 31.033272898028372,
+      "e2el": {
+        "p50_ms": 3876.747129994328,
+        "p95_ms": 3894.7908813890535
+      },
+      "ended_at": "2026-11-19T19:49:50.427243Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 527.9494706805779,
+      "measurement_ended_at": "2026-11-19T19:49:50.427228Z",
+      "measurement_started_at": "2026-11-19T19:49:10.943362Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 131.98736767014447,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.0311513099230036,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:48:47.016327Z",
+      "status": "valid",
+      "t32_seconds": 31.033272898028372,
+      "tpot": {
+        "p50_ms": 25.134659247948626,
+        "p95_ms": 28.840888645735983
+      },
+      "ttft": {
+        "p50_ms": 686.5289315028349,
+        "p95_ms": 697.2193303503445
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "2fc222084127faf94391744b9c6bec20bd321a52aae6d90b8fde94904852213f",
+      "concurrency": 8,
+      "duration_seconds": 19.07903458600049,
+      "e2el": {
+        "p50_ms": 4763.024491505348,
+        "p95_ms": 4780.701116089767
+      },
+      "ended_at": "2026-11-19T19:50:37.683146Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 858.7436605425513,
+      "measurement_ended_at": "2026-11-19T19:50:37.683135Z",
+      "measurement_started_at": "2026-11-19T19:50:08.007252Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 214.68591513563783,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.6772337119971705,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:49:50.427457Z",
+      "status": "valid",
+      "t32_seconds": 19.07903458600049,
+      "tpot": {
+        "p50_ms": 26.915476704772566,
+        "p95_ms": 35.7662943243732
+      },
+      "ttft": {
+        "p50_ms": 1348.4202690015081,
+        "p95_ms": 1362.3714531422593
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15ae63a6ea134769cc238902a66813fd65cb09d036c25ff8d87f76a60a0c5aeb",
+      "concurrency": 1,
+      "duration_seconds": 135.40661235601874,
+      "e2el": {
+        "p50_ms": 4230.77431449201,
+        "p95_ms": 4242.525451899564
+      },
+      "ended_at": "2026-11-19T19:54:18.309204Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 483.99408906035575,
+      "measurement_ended_at": "2026-11-19T19:54:18.309194Z",
+      "measurement_started_at": "2026-11-19T19:51:54.149966Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.249630566272234,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.23632523879900183,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:50:37.683254Z",
+      "status": "valid",
+      "t32_seconds": 135.40661235601874,
+      "tpot": {
+        "p50_ms": 28.09376583464891,
+        "p95_ms": 28.196124296865012
+      },
+      "ttft": {
+        "p50_ms": 662.6361420057947,
+        "p95_ms": 666.5891733558965
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "44a83e47949fa8c147894daf57d04f75dac057e1bf486d87005b03aec5d6404f",
+      "concurrency": 4,
+      "duration_seconds": 46.8163092090108,
+      "e2el": {
+        "p50_ms": 5838.968157506315,
+        "p95_ms": 6181.890956663118
+      },
+      "ended_at": "2026-11-19T19:55:45.216636Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1399.8540488831657,
+      "measurement_ended_at": "2026-11-19T19:55:45.216626Z",
+      "measurement_started_at": "2026-11-19T19:54:49.751039Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 87.49087805519785,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6835224848062332,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:54:18.309315Z",
+      "status": "valid",
+      "t32_seconds": 46.8163092090108,
+      "tpot": {
+        "p50_ms": 35.39941214562639,
+        "p95_ms": 40.49700586744914
+      },
+      "ttft": {
+        "p50_ms": 1339.8972090071766,
+        "p95_ms": 2313.455361552769
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "0fc4521154d49e9e6ad4546bbb71d3d7727ab1422d225075fe131ca283a55dc9",
+      "concurrency": 8,
+      "duration_seconds": 34.761404626013245,
+      "e2el": {
+        "p50_ms": 8657.313306001015,
+        "p95_ms": 9642.18226620578
+      },
+      "ended_at": "2026-11-19T19:56:54.065338Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1885.3093166136614,
+      "measurement_ended_at": "2026-11-19T19:56:54.065324Z",
+      "measurement_started_at": "2026-11-19T19:56:10.624033Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 117.83183228835384,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9205611897527644,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "started_at": "2026-11-19T19:55:45.216751Z",
+      "status": "valid",
+      "t32_seconds": 34.761404626013245,
+      "tpot": {
+        "p50_ms": 42.520955712561985,
+        "p95_ms": 62.5158698921134
+      },
+      "ttft": {
+        "p50_ms": 3260.982813008013,
+        "p95_ms": 4885.611128964229
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "5fa4be374075b982643a9bcf21464148695f9afcb699290bebf127243e36fa29",
+      "concurrency": 1,
+      "duration_seconds": 197.47763576501166,
+      "e2el": {
+        "p50_ms": 6170.871132489992,
+        "p95_ms": 6183.808354953362
+      },
+      "ended_at": "2026-11-19T20:04:41.011089Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 82.96635685620689,
+      "measurement_ended_at": "2026-11-19T20:04:41.011077Z",
+      "measurement_started_at": "2026-11-19T20:01:16.112373Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 20.74158921405172,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.16204366573477907,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T19:59:29.189791Z",
+      "status": "valid",
+      "t32_seconds": 197.47763576501166,
+      "tpot": {
+        "p50_ms": 47.75808137801648,
+        "p95_ms": 47.87378504133956
+      },
+      "ttft": {
+        "p50_ms": 105.41731699777301,
+        "p95_ms": 108.67512234399328
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "62f5783b4340c6f2326d48fd135f8758a812e59dd968d3defa3ae5d37f519480",
+      "concurrency": 4,
+      "duration_seconds": 44.90722287399694,
+      "e2el": {
+        "p50_ms": 5612.242763498216,
+        "p95_ms": 5624.256903609785
+      },
+      "ended_at": "2026-11-19T20:06:02.763413Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 364.8410868329821,
+      "measurement_ended_at": "2026-11-19T20:06:02.763399Z",
+      "measurement_started_at": "2026-11-19T20:05:10.571627Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 91.21027170824553,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7125802477206682,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T20:04:41.020724Z",
+      "status": "valid",
+      "t32_seconds": 44.90722287399694,
+      "tpot": {
+        "p50_ms": 41.02223935433,
+        "p95_ms": 42.8187142082721
+      },
+      "ttft": {
+        "p50_ms": 402.2610704996623,
+        "p95_ms": 416.21817439445294
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "2fc222084127faf94391744b9c6bec20bd321a52aae6d90b8fde94904852213f",
+      "concurrency": 8,
+      "duration_seconds": 24.561618473002454,
+      "e2el": {
+        "p50_ms": 6131.71795301605,
+        "p95_ms": 6157.042241800809
+      },
+      "ended_at": "2026-11-19T20:06:54.248061Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 667.0570189830488,
+      "measurement_ended_at": "2026-11-19T20:06:54.248046Z",
+      "measurement_started_at": "2026-11-19T20:06:22.378981Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 166.7642547457622,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.3028457402012672,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T20:06:02.763642Z",
+      "status": "valid",
+      "t32_seconds": 24.561618473002454,
+      "tpot": {
+        "p50_ms": 42.83630756700712,
+        "p95_ms": 46.91123927680558
+      },
+      "ttft": {
+        "p50_ms": 701.9394110102439,
+        "p95_ms": 716.8062463984825
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15ae63a6ea134769cc238902a66813fd65cb09d036c25ff8d87f76a60a0c5aeb",
+      "concurrency": 1,
+      "duration_seconds": 205.88817043602467,
+      "e2el": {
+        "p50_ms": 6434.230597005808,
+        "p95_ms": 6441.773006142466
+      },
+      "ended_at": "2026-11-19T20:12:17.718769Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 318.3087200260683,
+      "measurement_ended_at": "2026-11-19T20:12:17.718758Z",
+      "measurement_started_at": "2026-11-19T20:08:44.701242Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 19.894295001629267,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.15542417970022865,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T20:06:54.248265Z",
+      "status": "valid",
+      "t32_seconds": 205.88817043602467,
+      "tpot": {
+        "p50_ms": 47.938080315017984,
+        "p95_ms": 48.02842178697309
+      },
+      "ttft": {
+        "p50_ms": 345.13372849323787,
+        "p95_ms": 352.2003293110174
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "44a83e47949fa8c147894daf57d04f75dac057e1bf486d87005b03aec5d6404f",
+      "concurrency": 4,
+      "duration_seconds": 52.68024269500165,
+      "e2el": {
+        "p50_ms": 6567.2996070061345,
+        "p95_ms": 6767.186898662476
+      },
+      "ended_at": "2026-11-19T20:13:51.523444Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1244.0337524530446,
+      "measurement_ended_at": "2026-11-19T20:13:51.523434Z",
+      "measurement_started_at": "2026-11-19T20:12:51.440667Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 77.75210952831529,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6074383556899632,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T20:12:17.718879Z",
+      "status": "valid",
+      "t32_seconds": 52.68024269500165,
+      "tpot": {
+        "p50_ms": 46.14090681496337,
+        "p95_ms": 48.50028992839539
+      },
+      "ttft": {
+        "p50_ms": 704.9275984900305,
+        "p95_ms": 1199.8192370068862
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "0fc4521154d49e9e6ad4546bbb71d3d7727ab1422d225075fe131ca283a55dc9",
+      "concurrency": 8,
+      "duration_seconds": 32.27012790099252,
+      "e2el": {
+        "p50_ms": 8007.927110491437,
+        "p95_ms": 8558.32075180224
+      },
+      "ended_at": "2026-11-19T20:14:54.568173Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2030.8565308780303,
+      "measurement_ended_at": "2026-11-19T20:14:54.568163Z",
+      "measurement_started_at": "2026-11-19T20:14:14.966115Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 126.9285331798769,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9916291654677882,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "started_at": "2026-11-19T20:13:51.523558Z",
+      "status": "valid",
+      "t32_seconds": 32.27012790099252,
+      "tpot": {
+        "p50_ms": 50.64859337014821,
+        "p95_ms": 59.75706986063179
+      },
+      "ttft": {
+        "p50_ms": 1579.8795625014463,
+        "p95_ms": 2422.1804864049773
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "5fa4be374075b982643a9bcf21464148695f9afcb699290bebf127243e36fa29",
+      "concurrency": 1,
+      "duration_seconds": 318.8726784779865,
+      "e2el": {
+        "p50_ms": 9963.529108979856,
+        "p95_ms": 9971.542209258769
+      },
+      "ended_at": "2026-11-19T20:25:32.082096Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 51.38100911687571,
+      "measurement_ended_at": "2026-11-19T20:25:32.082083Z",
+      "measurement_started_at": "2026-11-19T20:20:05.816303Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 12.845252279218927,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.10035353343139787,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:17:16.176617Z",
+      "status": "valid",
+      "t32_seconds": 318.8726784779865,
+      "tpot": {
+        "p50_ms": 77.29713220857853,
+        "p95_ms": 77.3424745672662
+      },
+      "ttft": {
+        "p50_ms": 146.69105698703788,
+        "p95_ms": 154.54955375462305
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "62f5783b4340c6f2326d48fd135f8758a812e59dd968d3defa3ae5d37f519480",
+      "concurrency": 4,
+      "duration_seconds": 79.99002871999983,
+      "e2el": {
+        "p50_ms": 9999.027566984296,
+        "p95_ms": 10004.623079911107
+      },
+      "ended_at": "2026-11-19T20:27:45.830472Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 204.82552965884264,
+      "measurement_ended_at": "2026-11-19T20:27:45.830460Z",
+      "measurement_started_at": "2026-11-19T20:26:18.814346Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 51.20638241471066,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.40004986261492703,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:25:32.082921Z",
+      "status": "valid",
+      "t32_seconds": 79.99002871999983,
+      "tpot": {
+        "p50_ms": 73.87769609455049,
+        "p95_ms": 76.4828588326226
+      },
+      "ttft": {
+        "p50_ms": 616.5831269900082,
+        "p95_ms": 633.2598585024243
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "2fc222084127faf94391744b9c6bec20bd321a52aae6d90b8fde94904852213f",
+      "concurrency": 8,
+      "duration_seconds": 42.6536265629984,
+      "e2el": {
+        "p50_ms": 10660.044408999966,
+        "p95_ms": 10674.418829659407
+      },
+      "ended_at": "2026-11-19T20:29:05.768248Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 384.1173968127006,
+      "measurement_ended_at": "2026-11-19T20:29:05.768236Z",
+      "measurement_started_at": "2026-11-19T20:28:13.910234Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 96.02934920317514,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7502292906498058,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:27:45.830715Z",
+      "status": "valid",
+      "t32_seconds": 42.6536265629984,
+      "tpot": {
+        "p50_ms": 75.46722642916043,
+        "p95_ms": 81.62558093342992
+      },
+      "ttft": {
+        "p50_ms": 1078.4300899831578,
+        "p95_ms": 1091.9839462643722
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15ae63a6ea134769cc238902a66813fd65cb09d036c25ff8d87f76a60a0c5aeb",
+      "concurrency": 1,
+      "duration_seconds": 333.84918801599997,
+      "e2el": {
+        "p50_ms": 10385.598215012578,
+        "p95_ms": 10600.729128906096
+      },
+      "ended_at": "2026-11-19T20:37:39.120344Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 196.30420666729054,
+      "measurement_ended_at": "2026-11-19T20:37:39.120332Z",
+      "measurement_started_at": "2026-11-19T20:31:58.494770Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 12.269012916705659,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.09585166341176296,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:29:05.768475Z",
+      "status": "valid",
+      "t32_seconds": 333.84918801599997,
+      "tpot": {
+        "p50_ms": 77.63292668508751,
+        "p95_ms": 79.26678140903228
+      },
+      "ttft": {
+        "p50_ms": 525.9323674981715,
+        "p95_ms": 549.8112621484324
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "44a83e47949fa8c147894daf57d04f75dac057e1bf486d87005b03aec5d6404f",
+      "concurrency": 4,
+      "duration_seconds": 91.37978626499535,
+      "e2el": {
+        "p50_ms": 11385.759245007648,
+        "p95_ms": 11720.749125357543
+      },
+      "ended_at": "2026-11-19T20:40:11.144336Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 717.1826798757214,
+      "measurement_ended_at": "2026-11-19T20:40:11.144327Z",
+      "measurement_started_at": "2026-11-19T20:38:33.007646Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 44.82391749223259,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.3501868554080671,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:37:39.120545Z",
+      "status": "valid",
+      "t32_seconds": 91.37978626499535,
+      "tpot": {
+        "p50_ms": 81.26531311816822,
+        "p95_ms": 84.8265393578913
+      },
+      "ttft": {
+        "p50_ms": 1063.152500995784,
+        "p95_ms": 1821.4637189521452
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "0fc4521154d49e9e6ad4546bbb71d3d7727ab1422d225075fe131ca283a55dc9",
+      "concurrency": 8,
+      "duration_seconds": 54.48011401100666,
+      "e2el": {
+        "p50_ms": 13542.933221004205,
+        "p95_ms": 14360.77429110155
+      },
+      "ended_at": "2026-11-19T20:41:46.632211Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1202.9343401660228,
+      "measurement_ended_at": "2026-11-19T20:41:46.632198Z",
+      "measurement_started_at": "2026-11-19T20:40:45.351056Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 75.18339626037643,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.5873702832841908,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "started_at": "2026-11-19T20:40:11.144448Z",
+      "status": "valid",
+      "t32_seconds": 54.48011401100666,
+      "tpot": {
+        "p50_ms": 87.55498345678683,
+        "p95_ms": 101.30289573579665
+      },
+      "ttft": {
+        "p50_ms": 2437.5126119994093,
+        "p95_ms": 3729.14131443249
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15016cb4ec786f56ecbd23458f9dcabc8976cf8656d8b1afa320ff5e3b90dc8c",
+      "concurrency": 1,
+      "duration_seconds": 117.09398800801137,
+      "e2el": {
+        "p50_ms": 3656.36280750914,
+        "p95_ms": 3672.28218845994
+      },
+      "ended_at": "2026-11-19T20:46:24.558433Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 139.9217865812123,
+      "measurement_ended_at": "2026-11-19T20:46:24.558419Z",
+      "measurement_started_at": "2026-11-19T20:44:18.521523Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 34.980446645303076,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2732847394164303,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:43:09.867553Z",
+      "status": "valid",
+      "t32_seconds": 117.09398800801137,
+      "tpot": {
+        "p50_ms": 27.44338008268978,
+        "p95_ms": 27.558484505843666
+      },
+      "ttft": {
+        "p50_ms": 171.25150249921717,
+        "p95_ms": 172.38743363122921
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9d2f62433fb48fd9af68dedb307a3379bca40fa54c429fd52c17013e8222ca56",
+      "concurrency": 4,
+      "duration_seconds": 29.129703040991444,
+      "e2el": {
+        "p50_ms": 3655.2064970019273,
+        "p95_ms": 3673.8046717990073
+      },
+      "ended_at": "2026-11-19T20:47:25.600033Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 562.4499493504745,
+      "measurement_ended_at": "2026-11-19T20:47:25.600020Z",
+      "measurement_started_at": "2026-11-19T20:46:47.685066Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 140.61248733761863,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.0985350573251456,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:46:24.558654Z",
+      "status": "valid",
+      "t32_seconds": 29.129703040991444,
+      "tpot": {
+        "p50_ms": 23.5560359448189,
+        "p95_ms": 27.17098361181414
+      },
+      "ttft": {
+        "p50_ms": 665.9836975159124,
+        "p95_ms": 682.1903228090378
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "03f3eb00bf4e187707bec48e69227fdfc1d18922b106f2c267e8d612564d3337",
+      "concurrency": 8,
+      "duration_seconds": 17.563104299013503,
+      "e2el": {
+        "p50_ms": 4384.002927996335,
+        "p95_ms": 4403.118361103407
+      },
+      "ended_at": "2026-11-19T20:48:08.463322Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 932.8646986922619,
+      "measurement_ended_at": "2026-11-19T20:48:08.463307Z",
+      "measurement_started_at": "2026-11-19T20:47:42.760240Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 233.21617467306547,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.822001364633324,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:47:25.600240Z",
+      "status": "valid",
+      "t32_seconds": 17.563104299013503,
+      "tpot": {
+        "p50_ms": 24.369012960530707,
+        "p95_ms": 32.873076782642045
+      },
+      "ttft": {
+        "p50_ms": 1294.7817090025637,
+        "p95_ms": 1308.2437039061915
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "283849dd054e87ed73fbba17228740d20e24f0ef80d0c006aa58e9cbf9b175f1",
+      "concurrency": 1,
+      "duration_seconds": 133.29736523202155,
+      "e2el": {
+        "p50_ms": 4163.044296001317,
+        "p95_ms": 4188.521641655825
+      },
+      "ended_at": "2026-11-19T20:51:45.788413Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 491.6526285866641,
+      "measurement_ended_at": "2026-11-19T20:51:45.788402Z",
+      "measurement_started_at": "2026-11-19T20:49:23.832173Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.728289286666506,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.24006476005208208,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:48:08.463556Z",
+      "status": "valid",
+      "t32_seconds": 133.29736523202155,
+      "tpot": {
+        "p50_ms": 27.681897236235937,
+        "p95_ms": 27.877534325298758
+      },
+      "ttft": {
+        "p50_ms": 648.008819000097,
+        "p95_ms": 653.0272473974037
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "79536366a5d641ad7735e0f91f456d5bbed5a1289c1d2a945f49a338d162df22",
+      "concurrency": 4,
+      "duration_seconds": 44.80928523201146,
+      "e2el": {
+        "p50_ms": 5595.403617000557,
+        "p95_ms": 5918.083553049655
+      },
+      "ended_at": "2026-11-19T20:53:10.259752Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1462.5540144340778,
+      "measurement_ended_at": "2026-11-19T20:53:10.259741Z",
+      "measurement_started_at": "2026-11-19T20:52:16.648993Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 91.40962590212986,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7141377023603895,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:51:45.788520Z",
+      "status": "valid",
+      "t32_seconds": 44.80928523201146,
+      "tpot": {
+        "p50_ms": 33.70477231487533,
+        "p95_ms": 38.66599915030332
+      },
+      "ttft": {
+        "p50_ms": 1301.7511595098767,
+        "p95_ms": 2249.0336799382926
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4afec31fc2b7b2b5b0623c894d8f921f3e09eb519a185d033925a1485226196c",
+      "concurrency": 8,
+      "duration_seconds": 33.59039794799173,
+      "e2el": {
+        "p50_ms": 8385.5230784975,
+        "p95_ms": 9310.854634513089
+      },
+      "ended_at": "2026-11-19T20:54:17.782397Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1951.033747842758,
+      "measurement_ended_at": "2026-11-19T20:54:17.782387Z",
+      "measurement_started_at": "2026-11-19T20:53:35.315182Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 121.93960924017237,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9526531971888467,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "started_at": "2026-11-19T20:53:10.259864Z",
+      "status": "valid",
+      "t32_seconds": 33.59039794799173,
+      "tpot": {
+        "p50_ms": 40.97579385433071,
+        "p95_ms": 60.342285088889064
+      },
+      "ttft": {
+        "p50_ms": 3174.4463890063344,
+        "p95_ms": 4765.311389256385
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15016cb4ec786f56ecbd23458f9dcabc8976cf8656d8b1afa320ff5e3b90dc8c",
+      "concurrency": 1,
+      "duration_seconds": 157.11098493999452,
+      "e2el": {
+        "p50_ms": 4909.032010502415,
+        "p95_ms": 4921.066514852282
+      },
+      "ended_at": "2026-11-19T21:00:03.597603Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 104.2829691778557,
+      "measurement_ended_at": "2026-11-19T21:00:03.597594Z",
+      "measurement_started_at": "2026-11-19T20:57:18.848380Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 26.070742294463926,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.20367767417549942,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T20:55:52.708335Z",
+      "status": "valid",
+      "t32_seconds": 157.11098493999452,
+      "tpot": {
+        "p50_ms": 37.920057204575826,
+        "p95_ms": 37.993106316130216
+      },
+      "ttft": {
+        "p50_ms": 95.20136949140579,
+        "p95_ms": 98.13283323892392
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9d2f62433fb48fd9af68dedb307a3379bca40fa54c429fd52c17013e8222ca56",
+      "concurrency": 4,
+      "duration_seconds": 41.5039253020077,
+      "e2el": {
+        "p50_ms": 5190.125704510137,
+        "p95_ms": 5196.742396915215
+      },
+      "ended_at": "2026-11-19T21:01:20.636445Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 394.75784231925275,
+      "measurement_ended_at": "2026-11-19T21:01:20.636434Z",
+      "measurement_started_at": "2026-11-19T21:00:31.601101Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 98.68946057981319,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7710114107797905,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T21:00:03.597719Z",
+      "status": "valid",
+      "t32_seconds": 41.5039253020077,
+      "tpot": {
+        "p50_ms": 38.06167377175499,
+        "p95_ms": 39.6316884518656
+      },
+      "ttft": {
+        "p50_ms": 353.2642124919221,
+        "p95_ms": 364.60320276673883
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "03f3eb00bf4e187707bec48e69227fdfc1d18922b106f2c267e8d612564d3337",
+      "concurrency": 8,
+      "duration_seconds": 22.43214124700171,
+      "e2el": {
+        "p50_ms": 5601.98180952284,
+        "p95_ms": 5625.792925148562
+      },
+      "ended_at": "2026-11-19T21:02:08.764521Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 730.3805650826977,
+      "measurement_ended_at": "2026-11-19T21:02:08.764509Z",
+      "measurement_started_at": "2026-11-19T21:01:39.115188Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 182.59514127067442,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.426524541177144,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T21:01:20.636561Z",
+      "status": "valid",
+      "t32_seconds": 22.43214124700171,
+      "tpot": {
+        "p50_ms": 39.54336212995631,
+        "p95_ms": 42.84658006214359
+      },
+      "ttft": {
+        "p50_ms": 583.2313155115116,
+        "p95_ms": 597.7908309039776
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "283849dd054e87ed73fbba17228740d20e24f0ef80d0c006aa58e9cbf9b175f1",
+      "concurrency": 1,
+      "duration_seconds": 166.28578223698423,
+      "e2el": {
+        "p50_ms": 5197.3540735198185,
+        "p95_ms": 5206.552089154138
+      },
+      "ended_at": "2026-11-19T21:06:33.011395Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 394.1166774354801,
+      "measurement_ended_at": "2026-11-19T21:06:33.011385Z",
+      "measurement_started_at": "2026-11-19T21:03:39.346933Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 24.632292339717505,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.192439783904043,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T21:02:08.764639Z",
+      "status": "valid",
+      "t32_seconds": 166.28578223698423,
+      "tpot": {
+        "p50_ms": 38.46254705118683,
+        "p95_ms": 38.57975356394469
+      },
+      "ttft": {
+        "p50_ms": 309.53853750543203,
+        "p95_ms": 316.9117334415205
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "79536366a5d641ad7735e0f91f456d5bbed5a1289c1d2a945f49a338d162df22",
+      "concurrency": 4,
+      "duration_seconds": 49.590182596002705,
+      "e2el": {
+        "p50_ms": 6181.667714510695,
+        "p95_ms": 6367.779420351144
+      },
+      "ended_at": "2026-11-19T21:08:02.396849Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1321.5518993729745,
+      "measurement_ended_at": "2026-11-19T21:08:02.396835Z",
+      "measurement_started_at": "2026-11-19T21:07:05.306362Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 82.5969937108109,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6452890133657102,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T21:06:33.011507Z",
+      "status": "valid",
+      "t32_seconds": 49.590182596002705,
+      "tpot": {
+        "p50_ms": 43.80775783068911,
+        "p95_ms": 45.89767616684915
+      },
+      "ttft": {
+        "p50_ms": 614.1857069887919,
+        "p95_ms": 1047.4494197958845
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4afec31fc2b7b2b5b0623c894d8f921f3e09eb519a185d033925a1485226196c",
+      "concurrency": 8,
+      "duration_seconds": 30.65802270898712,
+      "e2el": {
+        "p50_ms": 7613.957518507959,
+        "p95_ms": 8084.734437157749
+      },
+      "ended_at": "2026-11-19T21:09:03.344410Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2137.6460126630645,
+      "measurement_ended_at": "2026-11-19T21:09:03.344398Z",
+      "measurement_started_at": "2026-11-19T21:08:25.305601Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 133.60287579144153,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.043772467120637,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "started_at": "2026-11-19T21:08:02.397068Z",
+      "status": "valid",
+      "t32_seconds": 30.65802270898712,
+      "tpot": {
+        "p50_ms": 48.94548598422548,
+        "p95_ms": 56.9892033967822
+      },
+      "ttft": {
+        "p50_ms": 1394.5474224892678,
+        "p95_ms": 2139.914748350566
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "15016cb4ec786f56ecbd23458f9dcabc8976cf8656d8b1afa320ff5e3b90dc8c",
+      "concurrency": 1,
+      "duration_seconds": 291.71805559599306,
+      "e2el": {
+        "p50_ms": 9114.78765650827,
+        "p95_ms": 9124.863078800263
+      },
+      "ended_at": "2026-11-19T21:18:56.301110Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 56.16381874795769,
+      "measurement_ended_at": "2026-11-19T21:18:56.301102Z",
+      "measurement_started_at": "2026-11-19T21:13:57.743225Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 14.040954686989423,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.10969495849210487,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:11:24.477769Z",
+      "status": "valid",
+      "t32_seconds": 291.71805559599306,
+      "tpot": {
+        "p50_ms": 70.75906868904416,
+        "p95_ms": 70.8503413203518
+      },
+      "ttft": {
+        "p50_ms": 126.9146720005665,
+        "p95_ms": 131.08781569462735
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "9d2f62433fb48fd9af68dedb307a3379bca40fa54c429fd52c17013e8222ca56",
+      "concurrency": 4,
+      "duration_seconds": 74.0361781489919,
+      "e2el": {
+        "p50_ms": 9250.295506499242,
+        "p95_ms": 9276.482692806167
+      },
+      "ended_at": "2026-11-19T21:21:01.414432Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 221.29721454595494,
+      "measurement_ended_at": "2026-11-19T21:21:01.414421Z",
+      "measurement_started_at": "2026-11-19T21:19:40.538331Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 55.324303636488736,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.43222112216006825,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:18:56.301218Z",
+      "status": "valid",
+      "t32_seconds": 74.0361781489919,
+      "tpot": {
+        "p50_ms": 68.62732757494315,
+        "p95_ms": 70.87157525944406
+      },
+      "ttft": {
+        "p50_ms": 538.5072770004626,
+        "p95_ms": 546.0673315581516
+      }
+    },
+    {
+      "block": 2,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "03f3eb00bf4e187707bec48e69227fdfc1d18922b106f2c267e8d612564d3337",
+      "concurrency": 8,
+      "duration_seconds": 39.412080460984726,
+      "e2el": {
+        "p50_ms": 9847.455276496476,
+        "p95_ms": 9862.586546705279
+      },
+      "ended_at": "2026-11-19T21:22:14.092136Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 415.7101022925964,
+      "measurement_ended_at": "2026-11-19T21:22:14.092127Z",
+      "measurement_started_at": "2026-11-19T21:21:27.944744Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 103.9275255731491,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.8119337935402273,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:21:01.414659Z",
+      "status": "valid",
+      "t32_seconds": 39.412080460984726,
+      "tpot": {
+        "p50_ms": 70.26640704329267,
+        "p95_ms": 75.50489974807897
+      },
+      "ttft": {
+        "p50_ms": 925.4435349866981,
+        "p95_ms": 938.959842301847
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "283849dd054e87ed73fbba17228740d20e24f0ef80d0c006aa58e9cbf9b175f1",
+      "concurrency": 1,
+      "duration_seconds": 305.8383928370022,
+      "e2el": {
+        "p50_ms": 9557.168147992343,
+        "p95_ms": 9564.881623450492
+      },
+      "ended_at": "2026-11-19T21:30:06.500086Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 214.28310354392843,
+      "measurement_ended_at": "2026-11-19T21:30:06.500074Z",
+      "measurement_started_at": "2026-11-19T21:24:53.773456Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 13.392693971495527,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.1046304216523088,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:22:14.092227Z",
+      "status": "valid",
+      "t32_seconds": 305.8383928370022,
+      "tpot": {
+        "p50_ms": 71.57481921649736,
+        "p95_ms": 71.67963526059513
+      },
+      "ttft": {
+        "p50_ms": 464.862725493731,
+        "p95_ms": 470.0312897504773
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "79536366a5d641ad7735e0f91f456d5bbed5a1289c1d2a945f49a338d162df22",
+      "concurrency": 4,
+      "duration_seconds": 87.3632117639936,
+      "e2el": {
+        "p50_ms": 10902.207364997594,
+        "p95_ms": 11151.323112894897
+      },
+      "ended_at": "2026-11-19T21:32:31.147225Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 750.1555709403349,
+      "measurement_ended_at": "2026-11-19T21:32:31.147214Z",
+      "measurement_started_at": "2026-11-19T21:30:56.946946Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 46.88472318377093,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.3662868998732104,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:30:06.500192Z",
+      "status": "valid",
+      "t32_seconds": 87.3632117639936,
+      "tpot": {
+        "p50_ms": 78.04067540152079,
+        "p95_ms": 81.08655157871178
+      },
+      "ttft": {
+        "p50_ms": 989.4561115070246,
+        "p95_ms": 1635.73121275258
+      }
+    },
+    {
+      "block": 2,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "4afec31fc2b7b2b5b0623c894d8f921f3e09eb519a185d033925a1485226196c",
+      "concurrency": 8,
+      "duration_seconds": 52.88974150098511,
+      "e2el": {
+        "p50_ms": 13137.101844491553,
+        "p95_ms": 13881.885958347993
+      },
+      "ended_at": "2026-11-19T21:34:04.307017Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1239.1060750179568,
+      "measurement_ended_at": "2026-11-19T21:34:04.307007Z",
+      "measurement_started_at": "2026-11-19T21:33:04.420331Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 77.4441296886223,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6050322631923617,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "started_at": "2026-11-19T21:32:31.147445Z",
+      "status": "valid",
+      "t32_seconds": 52.88974150098511,
+      "tpot": {
+        "p50_ms": 86.28368445667053,
+        "p95_ms": 98.48987929411618
+      },
+      "ttft": {
+        "p50_ms": 2185.01104900497,
+        "p95_ms": 3332.043775748752
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "416d04560d8645c39f75ffd7902e6425d4a65baddafb59191647a28431f60958",
+      "concurrency": 1,
+      "duration_seconds": 121.81139371698373,
+      "e2el": {
+        "p50_ms": 3782.1801635000156,
+        "p95_ms": 3908.656240598066
+      },
+      "ended_at": "2026-11-19T21:39:47.396544Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 134.5030173291223,
+      "measurement_ended_at": "2026-11-19T21:39:47.396530Z",
+      "measurement_started_at": "2026-11-19T21:37:36.766283Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 33.62575433228057,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.26270120572094197,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:36:27.272828Z",
+      "status": "valid",
+      "t32_seconds": 121.81139371698373,
+      "tpot": {
+        "p50_ms": 28.38374723223823,
+        "p95_ms": 28.90804557238135
+      },
+      "ttft": {
+        "p50_ms": 177.1495115099242,
+        "p95_ms": 251.60251075139968
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "240db000b4bb51186cade61f32430375d3399ee311e55d1aaf62f8d0707df28e",
+      "concurrency": 4,
+      "duration_seconds": 31.004853849997744,
+      "e2el": {
+        "p50_ms": 3861.7896159994416,
+        "p95_ms": 3966.783263394609
+      },
+      "ended_at": "2026-11-19T21:40:50.304218Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 528.4333891482347,
+      "measurement_ended_at": "2026-11-19T21:40:50.304204Z",
+      "measurement_started_at": "2026-11-19T21:40:10.729891Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 132.10834728705868,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.032096463180146,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:39:47.396649Z",
+      "status": "valid",
+      "t32_seconds": 31.004853849997744,
+      "tpot": {
+        "p50_ms": 26.676873586531986,
+        "p95_ms": 27.885431950402218
+      },
+      "ttft": {
+        "p50_ms": 523.3209665020695,
+        "p95_ms": 676.3284418804687
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "7bf680d5e46bc244f263749cc5c9a93078349ab07290a264e9ca716e82ac2a5e",
+      "concurrency": 8,
+      "duration_seconds": 19.148472437023884,
+      "e2el": {
+        "p50_ms": 4775.442839498282,
+        "p95_ms": 4823.391917352274
+      },
+      "ended_at": "2026-11-19T21:41:35.122067Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 855.6296098231454,
+      "measurement_ended_at": "2026-11-19T21:41:35.122056Z",
+      "measurement_started_at": "2026-11-19T21:41:07.964982Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 213.90740245578635,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.671151581685831,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:40:50.304430Z",
+      "status": "valid",
+      "t32_seconds": 19.148472437023884,
+      "tpot": {
+        "p50_ms": 26.977387692904884,
+        "p95_ms": 35.80316786768188
+      },
+      "ttft": {
+        "p50_ms": 1349.070281998138,
+        "p95_ms": 1362.9670461887144
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ee4a56272638a69dc4403d2d9f3f801a48fa806150c8666c960bab6d63377c82",
+      "concurrency": 1,
+      "duration_seconds": 135.9881158520002,
+      "e2el": {
+        "p50_ms": 4248.308486989117,
+        "p95_ms": 4269.823290541535
+      },
+      "ended_at": "2026-11-19T21:45:15.977243Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 481.9244651593285,
+      "measurement_ended_at": "2026-11-19T21:45:15.977229Z",
+      "measurement_started_at": "2026-11-19T21:42:51.470250Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.120279072458032,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.23531468025357838,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:41:35.122174Z",
+      "status": "valid",
+      "t32_seconds": 135.9881158520002,
+      "tpot": {
+        "p50_ms": 28.20926135821602,
+        "p95_ms": 28.396824776313238
+      },
+      "ttft": {
+        "p50_ms": 664.8372739873594,
+        "p95_ms": 667.2267815069063
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "a9147fa027fa8fb36cffedf90ee5ed7b95b18b2cc0cda61dcebc928afefbe180",
+      "concurrency": 4,
+      "duration_seconds": 47.0675335820124,
+      "e2el": {
+        "p50_ms": 5839.139982505003,
+        "p95_ms": 6364.087496197317
+      },
+      "ended_at": "2026-11-19T21:46:43.436970Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1392.3822858873066,
+      "measurement_ended_at": "2026-11-19T21:46:43.436957Z",
+      "measurement_started_at": "2026-11-19T21:45:47.604924Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 87.02389286795666,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6798741630309114,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:45:15.977439Z",
+      "status": "valid",
+      "t32_seconds": 47.0675335820124,
+      "tpot": {
+        "p50_ms": 35.275673999966266,
+        "p95_ms": 40.84285419643077
+      },
+      "ttft": {
+        "p50_ms": 1341.0460445011267,
+        "p95_ms": 2316.812318156007
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "8d9c0ab727d51df6e2865d43a018cd508a91fe6f5f0aceb21bf778a67d9aad5f",
+      "concurrency": 8,
+      "duration_seconds": 34.94177838700125,
+      "e2el": {
+        "p50_ms": 8710.333314011223,
+        "p95_ms": 9710.84330054582
+      },
+      "ended_at": "2026-11-19T21:47:52.588001Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1875.5771178601533,
+      "measurement_ended_at": "2026-11-19T21:47:52.587989Z",
+      "measurement_started_at": "2026-11-19T21:47:09.041168Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 4,
+      "output_tokens_per_second": 117.22356986625958,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.915809139580153,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "started_at": "2026-11-19T21:46:43.437178Z",
+      "status": "valid",
+      "t32_seconds": 34.94177838700125,
+      "tpot": {
+        "p50_ms": 42.869366700719766,
+        "p95_ms": 62.991321204731136
+      },
+      "ttft": {
+        "p50_ms": 3259.537214486045,
+        "p95_ms": 4898.90000805317
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "416d04560d8645c39f75ffd7902e6425d4a65baddafb59191647a28431f60958",
+      "concurrency": 1,
+      "duration_seconds": 198.0781668619893,
+      "e2el": {
+        "p50_ms": 6188.510479507386,
+        "p95_ms": 6205.720931891119
+      },
+      "ended_at": "2026-11-19T21:55:37.610067Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 82.71482041438485,
+      "measurement_ended_at": "2026-11-19T21:55:37.610057Z",
+      "measurement_started_at": "2026-11-19T21:52:12.163167Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 20.67870510359621,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.1615523836218454,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T21:50:25.683757Z",
+      "status": "valid",
+      "t32_seconds": 198.0781668619893,
+      "tpot": {
+        "p50_ms": 47.90094392119786,
+        "p95_ms": 48.02464483221937
+      },
+      "ttft": {
+        "p50_ms": 106.14786599762738,
+        "p95_ms": 109.09899561374914
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "240db000b4bb51186cade61f32430375d3399ee311e55d1aaf62f8d0707df28e",
+      "concurrency": 4,
+      "duration_seconds": 45.060132888989756,
+      "e2el": {
+        "p50_ms": 5626.705871996819,
+        "p95_ms": 5650.266610660765
+      },
+      "ended_at": "2026-11-19T21:57:00.173025Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 363.60301112213006,
+      "measurement_ended_at": "2026-11-19T21:57:00.173010Z",
+      "measurement_started_at": "2026-11-19T21:56:07.571233Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 90.90075278053251,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7101621310979103,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T21:55:37.610179Z",
+      "status": "valid",
+      "t32_seconds": 45.060132888989756,
+      "tpot": {
+        "p50_ms": 41.14001917716494,
+        "p95_ms": 43.00457530976484
+      },
+      "ttft": {
+        "p50_ms": 406.5550550003536,
+        "p95_ms": 416.62728820956545
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "7bf680d5e46bc244f263749cc5c9a93078349ab07290a264e9ca716e82ac2a5e",
+      "concurrency": 8,
+      "duration_seconds": 24.595789116981905,
+      "e2el": {
+        "p50_ms": 6141.386121496907,
+        "p95_ms": 6164.1207940047025
+      },
+      "ended_at": "2026-11-19T21:57:52.208528Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 666.1302844188008,
+      "measurement_ended_at": "2026-11-19T21:57:52.208515Z",
+      "measurement_started_at": "2026-11-19T21:57:19.513112Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 166.5325711047002,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.3010357117554703,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T21:57:00.173269Z",
+      "status": "valid",
+      "t32_seconds": 24.595789116981905,
+      "tpot": {
+        "p50_ms": 42.85044474795362,
+        "p95_ms": 46.94246849693462
+      },
+      "ttft": {
+        "p50_ms": 701.6680285014445,
+        "p95_ms": 722.0738329502637
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ee4a56272638a69dc4403d2d9f3f801a48fa806150c8666c960bab6d63377c82",
+      "concurrency": 1,
+      "duration_seconds": 206.36597130799782,
+      "e2el": {
+        "p50_ms": 6450.194346500211,
+        "p95_ms": 6458.146426307212
+      },
+      "ended_at": "2026-11-19T22:03:16.653048Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 317.57173716488654,
+      "measurement_ended_at": "2026-11-19T22:03:16.653038Z",
+      "measurement_started_at": "2026-11-19T21:59:42.709235Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 19.84823357280541,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.15506432478754226,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T21:57:52.208743Z",
+      "status": "valid",
+      "t32_seconds": 206.36597130799782,
+      "tpot": {
+        "p50_ms": 48.046646082606976,
+        "p95_ms": 48.1126590642673
+      },
+      "ttft": {
+        "p50_ms": 348.1978950003395,
+        "p95_ms": 351.9920106846257
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "a9147fa027fa8fb36cffedf90ee5ed7b95b18b2cc0cda61dcebc928afefbe180",
+      "concurrency": 4,
+      "duration_seconds": 52.85078055298072,
+      "e2el": {
+        "p50_ms": 6587.24177350814,
+        "p95_ms": 6789.347966144851
+      },
+      "ended_at": "2026-11-19T22:04:50.686784Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1240.0195288374762,
+      "measurement_ended_at": "2026-11-19T22:04:50.686773Z",
+      "measurement_started_at": "2026-11-19T22:03:50.347193Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 77.50122055234226,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6054782855651739,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T22:03:16.653159Z",
+      "status": "valid",
+      "t32_seconds": 52.85078055298072,
+      "tpot": {
+        "p50_ms": 46.19270496072218,
+        "p95_ms": 48.72015269878128
+      },
+      "ttft": {
+        "p50_ms": 717.9244130238658,
+        "p95_ms": 1206.3772956505998
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "8d9c0ab727d51df6e2865d43a018cd508a91fe6f5f0aceb21bf778a67d9aad5f",
+      "concurrency": 8,
+      "duration_seconds": 32.47268578899093,
+      "e2el": {
+        "p50_ms": 8066.653239482548,
+        "p95_ms": 8586.494642848265
+      },
+      "ended_at": "2026-11-19T22:05:53.880233Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2018.188468482591,
+      "measurement_ended_at": "2026-11-19T22:05:53.880223Z",
+      "measurement_started_at": "2026-11-19T22:05:13.902692Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 2,
+      "output_tokens_per_second": 126.13677928016193,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9854435881262651,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "started_at": "2026-11-19T22:04:50.686904Z",
+      "status": "valid",
+      "t32_seconds": 32.47268578899093,
+      "tpot": {
+        "p50_ms": 50.940267811002265,
+        "p95_ms": 60.13365685696875
+      },
+      "ttft": {
+        "p50_ms": 1598.9093495009001,
+        "p95_ms": 2440.784451509535
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "416d04560d8645c39f75ffd7902e6425d4a65baddafb59191647a28431f60958",
+      "concurrency": 1,
+      "duration_seconds": 323.66833827100345,
+      "e2el": {
+        "p50_ms": 10115.036550996592,
+        "p95_ms": 10120.500621164683
+      },
+      "ended_at": "2026-11-19T22:16:32.454552Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 50.61971797279066,
+      "measurement_ended_at": "2026-11-19T22:16:32.454525Z",
+      "measurement_started_at": "2026-11-19T22:11:01.801944Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 12.654929493197665,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.09886663666560676,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:08:11.697016Z",
+      "status": "valid",
+      "t32_seconds": 323.66833827100345,
+      "tpot": {
+        "p50_ms": 78.50104405516738,
+        "p95_ms": 78.55174129500648
+      },
+      "ttft": {
+        "p50_ms": 143.6035954975523,
+        "p95_ms": 149.04487440217054
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "240db000b4bb51186cade61f32430375d3399ee311e55d1aaf62f8d0707df28e",
+      "concurrency": 4,
+      "duration_seconds": 80.6249528269982,
+      "e2el": {
+        "p50_ms": 10074.854463498923,
+        "p95_ms": 10103.67164351046
+      },
+      "ended_at": "2026-11-19T22:18:46.927524Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 203.21252199869355,
+      "measurement_ended_at": "2026-11-19T22:18:46.927517Z",
+      "measurement_started_at": "2026-11-19T22:17:19.484653Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 50.80313049967339,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.39689945702869833,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:16:32.454807Z",
+      "status": "valid",
+      "t32_seconds": 80.6249528269982,
+      "tpot": {
+        "p50_ms": 74.49990067313385,
+        "p95_ms": 77.12880519205451
+      },
+      "ttft": {
+        "p50_ms": 614.2785870033549,
+        "p95_ms": 633.1280361977406
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "7bf680d5e46bc244f263749cc5c9a93078349ab07290a264e9ca716e82ac2a5e",
+      "concurrency": 8,
+      "duration_seconds": 42.98187237000093,
+      "e2el": {
+        "p50_ms": 10736.634276006953,
+        "p95_ms": 10760.98258116399
+      },
+      "ended_at": "2026-11-19T22:20:06.235002Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 381.1839525966106,
+      "measurement_ended_at": "2026-11-19T22:20:06.234991Z",
+      "measurement_started_at": "2026-11-19T22:19:15.782534Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 95.29598814915265,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7444999074152551,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:18:46.927636Z",
+      "status": "valid",
+      "t32_seconds": 42.98187237000093,
+      "tpot": {
+        "p50_ms": 76.1923101220984,
+        "p95_ms": 82.28502020123645
+      },
+      "ttft": {
+        "p50_ms": 1064.349799999036,
+        "p95_ms": 1079.4657498059678
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "ee4a56272638a69dc4403d2d9f3f801a48fa806150c8666c960bab6d63377c82",
+      "concurrency": 1,
+      "duration_seconds": 337.04194948400254,
+      "e2el": {
+        "p50_ms": 10532.720925009926,
+        "p95_ms": 10540.035147237359
+      },
+      "ended_at": "2026-11-19T22:28:45.712374Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 194.4446384206267,
+      "measurement_ended_at": "2026-11-19T22:28:45.712364Z",
+      "measurement_started_at": "2026-11-19T22:23:01.356487Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 12.152789901289168,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.09494367110382163,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:20:06.235197Z",
+      "status": "valid",
+      "t32_seconds": 337.04194948400254,
+      "tpot": {
+        "p50_ms": 78.76764766138146,
+        "p95_ms": 78.82730878026071
+      },
+      "ttft": {
+        "p50_ms": 528.0081585078733,
+        "p95_ms": 534.2720722095692
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "a9147fa027fa8fb36cffedf90ee5ed7b95b18b2cc0cda61dcebc928afefbe180",
+      "concurrency": 4,
+      "duration_seconds": 92.13559505299781,
+      "e2el": {
+        "p50_ms": 11477.266524991137,
+        "p95_ms": 11824.226226891915
+      },
+      "ended_at": "2026-11-19T22:31:17.551920Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 711.2994707670003,
+      "measurement_ended_at": "2026-11-19T22:31:17.551910Z",
+      "measurement_started_at": "2026-11-19T22:29:38.608384Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 44.45621692293752,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.3473141947104494,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:28:45.712572Z",
+      "status": "valid",
+      "t32_seconds": 92.13559505299781,
+      "tpot": {
+        "p50_ms": 81.95463640170307,
+        "p95_ms": 85.49896802795146
+      },
+      "ttft": {
+        "p50_ms": 1065.8510105131427,
+        "p95_ms": 1822.5587104985605
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "8d9c0ab727d51df6e2865d43a018cd508a91fe6f5f0aceb21bf778a67d9aad5f",
+      "concurrency": 8,
+      "duration_seconds": 54.88236062199576,
+      "e2el": {
+        "p50_ms": 13638.237813996966,
+        "p95_ms": 14462.157629351714
+      },
+      "ended_at": "2026-11-19T22:32:53.632803Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1194.117732132216,
+      "measurement_ended_at": "2026-11-19T22:32:53.632791Z",
+      "measurement_started_at": "2026-11-19T22:31:51.905977Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "qwen35-9b",
+      "node_count": 1,
+      "output_tokens_per_second": 74.6323582582635,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.5830652988926835,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "started_at": "2026-11-19T22:31:17.552023Z",
+      "status": "valid",
+      "t32_seconds": 54.88236062199576,
+      "tpot": {
+        "p50_ms": 88.26061710623628,
+        "p95_ms": 102.06298276616579
+      },
+      "ttft": {
+        "p50_ms": 2439.012897986686,
+        "p95_ms": 3735.168978394358
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "593481d8d31c0e2c41d8b4f6575fd5d766c1df6a811efa2cf8155ad67ccebb67",
+      "concurrency": 1,
+      "duration_seconds": 117.33332591300132,
+      "e2el": {
+        "p50_ms": 3655.9378940000897,
+        "p95_ms": 3709.104620241851
+      },
+      "ended_at": "2026-11-19T22:37:32.778361Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 139.63637246717255,
+      "measurement_ended_at": "2026-11-19T22:37:32.778351Z",
+      "measurement_started_at": "2026-11-19T22:35:25.538364Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 34.90909311679314,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.2727272899749464,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:34:17.340360Z",
+      "status": "valid",
+      "t32_seconds": 117.33332591300132,
+      "tpot": {
+        "p50_ms": 27.424139369991387,
+        "p95_ms": 27.83082052515306
+      },
+      "ttft": {
+        "p50_ms": 172.6621200068621,
+        "p95_ms": 176.050247537205
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f671ca392fdd0399f86bd48993bb483d9f0b9b4184ef86a05bea65cedb4ee32b",
+      "concurrency": 4,
+      "duration_seconds": 29.098072958004195,
+      "e2el": {
+        "p50_ms": 3581.128075995366,
+        "p95_ms": 3818.1236452568555
+      },
+      "ended_at": "2026-11-19T22:38:33.456927Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 563.0613416787502,
+      "measurement_ended_at": "2026-11-19T22:38:33.456913Z",
+      "measurement_started_at": "2026-11-19T22:37:55.411825Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 140.76533541968755,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.099729182966309,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:37:32.778464Z",
+      "status": "valid",
+      "t32_seconds": 29.098072958004195,
+      "tpot": {
+        "p50_ms": 23.311111137846588,
+        "p95_ms": 27.327908342532304
+      },
+      "ttft": {
+        "p50_ms": 665.7192215061514,
+        "p95_ms": 791.3385462103179
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "3a25581505f9605ed96084ae1c74ac75b20801650cffea6bf7ee552c1a3b041f",
+      "concurrency": 8,
+      "duration_seconds": 18.3915914260142,
+      "e2el": {
+        "p50_ms": 4608.738287497545,
+        "p95_ms": 4806.290032308607
+      },
+      "ended_at": "2026-11-19T22:39:18.122285Z",
+      "group": "four",
+      "input_tokens": 512,
+      "input_tokens_per_second": 890.8418864082344,
+      "measurement_ended_at": "2026-11-19T22:39:18.122275Z",
+      "measurement_started_at": "2026-11-19T22:38:51.310226Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 222.7104716020586,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.7399255593910827,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:38:33.457133Z",
+      "status": "valid",
+      "t32_seconds": 18.3915914260142,
+      "tpot": {
+        "p50_ms": 26.617352157399445,
+        "p95_ms": 34.09044222912419
+      },
+      "ttft": {
+        "p50_ms": 1311.9329205073882,
+        "p95_ms": 1368.1842794583645
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "28ce490214db8860f5ab88562efdde91e9cf2801511883f4591c645e9d7d0a66",
+      "concurrency": 1,
+      "duration_seconds": 132.86384059500415,
+      "e2el": {
+        "p50_ms": 4152.1966900036205,
+        "p95_ms": 4161.989279903355
+      },
+      "ended_at": "2026-11-19T22:42:55.073902Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 493.2568538325411,
+      "measurement_ended_at": "2026-11-19T22:42:55.073887Z",
+      "measurement_started_at": "2026-11-19T22:40:33.332584Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 30.828553364533818,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.24084807316042045,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:39:18.122393Z",
+      "status": "valid",
+      "t32_seconds": 132.86384059500415,
+      "tpot": {
+        "p50_ms": 27.61751840552902,
+        "p95_ms": 27.688774928772787
+      },
+      "ttft": {
+        "p50_ms": 645.3859460016247,
+        "p95_ms": 647.6413113283343
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "e6b6908524c0c70e062e7878492074ffd78050509d0b93a1fdee25a933020fd6",
+      "concurrency": 4,
+      "duration_seconds": 45.56130612100242,
+      "e2el": {
+        "p50_ms": 5584.396743506659,
+        "p95_ms": 6313.494775288564
+      },
+      "ended_at": "2026-11-19T22:44:20.345345Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1438.4135482408797,
+      "measurement_ended_at": "2026-11-19T22:44:20.345331Z",
+      "measurement_started_at": "2026-11-19T22:43:25.896946Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 89.90084676505498,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.702350365351992,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:42:55.074115Z",
+      "status": "valid",
+      "t32_seconds": 45.56130612100242,
+      "tpot": {
+        "p50_ms": 33.67364040163884,
+        "p95_ms": 39.36519006812142
+      },
+      "ttft": {
+        "p50_ms": 1302.9004279960645,
+        "p95_ms": 2251.8076274078335
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "32f5087683e760c5c27aa37c001b9c97a4fa60dbd25106be43db5fd2fcdaee4a",
+      "concurrency": 8,
+      "duration_seconds": 33.46282846500981,
+      "e2el": {
+        "p50_ms": 8322.14803151146,
+        "p95_ms": 9309.80283839017
+      },
+      "ended_at": "2026-11-19T22:45:28.061328Z",
+      "group": "four",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1958.4716237758353,
+      "measurement_ended_at": "2026-11-19T22:45:28.061314Z",
+      "measurement_started_at": "2026-11-19T22:44:45.541491Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 4,
+      "output_tokens_per_second": 122.4044764859897,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.9562849725467946,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "started_at": "2026-11-19T22:44:20.345569Z",
+      "status": "valid",
+      "t32_seconds": 33.46282846500981,
+      "tpot": {
+        "p50_ms": 40.61812475975878,
+        "p95_ms": 60.121898048185635
+      },
+      "ttft": {
+        "p50_ms": 3163.6899425066076,
+        "p95_ms": 4758.574872692407
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "593481d8d31c0e2c41d8b4f6575fd5d766c1df6a811efa2cf8155ad67ccebb67",
+      "concurrency": 1,
+      "duration_seconds": 157.75053539301734,
+      "e2el": {
+        "p50_ms": 4924.927972984733,
+        "p95_ms": 4965.045412545442
+      },
+      "ended_at": "2026-11-19T22:51:12.204845Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 103.86018633268753,
+      "measurement_ended_at": "2026-11-19T22:51:12.204832Z",
+      "measurement_started_at": "2026-11-19T22:48:27.049210Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 25.965046583171883,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.20285192643103034,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:47:00.888424Z",
+      "status": "valid",
+      "t32_seconds": 157.75053539301734,
+      "tpot": {
+        "p50_ms": 38.03406130315325,
+        "p95_ms": 38.35828793033459
+      },
+      "ttft": {
+        "p50_ms": 92.9862935008714,
+        "p95_ms": 97.27477119595278
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f671ca392fdd0399f86bd48993bb483d9f0b9b4184ef86a05bea65cedb4ee32b",
+      "concurrency": 4,
+      "duration_seconds": 41.55804686501506,
+      "e2el": {
+        "p50_ms": 5190.560718503548,
+        "p95_ms": 5206.495783949504
+      },
+      "ended_at": "2026-11-19T22:52:29.168366Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 394.2437442552815,
+      "measurement_ended_at": "2026-11-19T22:52:29.168355Z",
+      "measurement_started_at": "2026-11-19T22:51:40.302949Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 98.56093606382038,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.7700073129985967,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:51:12.205049Z",
+      "status": "valid",
+      "t32_seconds": 41.55804686501506,
+      "tpot": {
+        "p50_ms": 38.103844224306656,
+        "p95_ms": 39.65286039723236
+      },
+      "ttft": {
+        "p50_ms": 350.04388249944896,
+        "p95_ms": 369.94183208880713
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "3a25581505f9605ed96084ae1c74ac75b20801650cffea6bf7ee552c1a3b041f",
+      "concurrency": 8,
+      "duration_seconds": 22.51801419397816,
+      "e2el": {
+        "p50_ms": 5628.240822508815,
+        "p95_ms": 5657.293399842456
+      },
+      "ended_at": "2026-11-19T22:53:17.861608Z",
+      "group": "pair",
+      "input_tokens": 512,
+      "input_tokens_per_second": 727.5952425849994,
+      "measurement_ended_at": "2026-11-19T22:53:17.861598Z",
+      "measurement_started_at": "2026-11-19T22:52:47.754488Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 181.89881064624984,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.421084458173827,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:52:29.168478Z",
+      "status": "valid",
+      "t32_seconds": 22.51801419397816,
+      "tpot": {
+        "p50_ms": 39.92697439377845,
+        "p95_ms": 43.019728808249916
+      },
+      "ttft": {
+        "p50_ms": 575.1314430090133,
+        "p95_ms": 586.7616478994023
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "28ce490214db8860f5ab88562efdde91e9cf2801511883f4591c645e9d7d0a66",
+      "concurrency": 1,
+      "duration_seconds": 167.09115723602008,
+      "e2el": {
+        "p50_ms": 5204.716882988578,
+        "p95_ms": 5259.40705674584
+      },
+      "ended_at": "2026-11-19T22:57:44.599149Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 392.2170453785828,
+      "measurement_ended_at": "2026-11-19T22:57:44.599138Z",
+      "measurement_started_at": "2026-11-19T22:54:49.671342Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 24.513565336161424,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.19151222918876112,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:53:17.861722Z",
+      "status": "valid",
+      "t32_seconds": 167.09115723602008,
+      "tpot": {
+        "p50_ms": 38.545888917351974,
+        "p95_ms": 38.84698467761806
+      },
+      "ttft": {
+        "p50_ms": 308.6950249999063,
+        "p95_ms": 315.86398754589027
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "e6b6908524c0c70e062e7878492074ffd78050509d0b93a1fdee25a933020fd6",
+      "concurrency": 4,
+      "duration_seconds": 49.508044602000155,
+      "e2el": {
+        "p50_ms": 6163.922594016185,
+        "p95_ms": 6358.187223733694
+      },
+      "ended_at": "2026-11-19T22:59:14.798913Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1323.744464699628,
+      "measurement_ended_at": "2026-11-19T22:59:14.798898Z",
+      "measurement_started_at": "2026-11-19T22:58:17.725508Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 82.73402904372675,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6463596019041152,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:57:44.599263Z",
+      "status": "valid",
+      "t32_seconds": 49.508044602000155,
+      "tpot": {
+        "p50_ms": 43.76798209057769,
+        "p95_ms": 45.87865235425136
+      },
+      "ttft": {
+        "p50_ms": 603.6228220182238,
+        "p95_ms": 1042.3753830444182
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "32f5087683e760c5c27aa37c001b9c97a4fa60dbd25106be43db5fd2fcdaee4a",
+      "concurrency": 8,
+      "duration_seconds": 30.579794997989666,
+      "e2el": {
+        "p50_ms": 7618.498796000495,
+        "p95_ms": 8061.167360340187
+      },
+      "ended_at": "2026-11-19T23:00:15.909761Z",
+      "group": "pair",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 2143.114432399183,
+      "measurement_ended_at": "2026-11-19T23:00:15.909746Z",
+      "measurement_started_at": "2026-11-19T22:59:37.622807Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 2,
+      "output_tokens_per_second": 133.94465202494894,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 1.0464425939449136,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "started_at": "2026-11-19T22:59:14.799140Z",
+      "status": "valid",
+      "t32_seconds": 30.579794997989666,
+      "tpot": {
+        "p50_ms": 48.862957988231344,
+        "p95_ms": 56.76926617281682
+      },
+      "ttft": {
+        "p50_ms": 1385.080031992402,
+        "p95_ms": 2118.3731292985613
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "593481d8d31c0e2c41d8b4f6575fd5d766c1df6a811efa2cf8155ad67ccebb67",
+      "concurrency": 1,
+      "duration_seconds": 293.14521583900205,
+      "e2el": {
+        "p50_ms": 9161.295507510658,
+        "p95_ms": 9168.963074489147
+      },
+      "ended_at": "2026-11-19T23:10:11.104437Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 55.890388499460414,
+      "measurement_ended_at": "2026-11-19T23:10:11.104428Z",
+      "measurement_started_at": "2026-11-19T23:05:10.875435Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 13.972597124865104,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.10916091503800862,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:02:36.034605Z",
+      "status": "valid",
+      "t32_seconds": 293.14521583900205,
+      "tpot": {
+        "p50_ms": 71.14854969284094,
+        "p95_ms": 71.22208651246441
+      },
+      "ttft": {
+        "p50_ms": 124.37580550613347,
+        "p95_ms": 127.51576725713676
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "f671ca392fdd0399f86bd48993bb483d9f0b9b4184ef86a05bea65cedb4ee32b",
+      "concurrency": 4,
+      "duration_seconds": 74.29675215302268,
+      "e2el": {
+        "p50_ms": 9285.67779250443,
+        "p95_ms": 9300.723535462748
+      },
+      "ended_at": "2026-11-19T23:12:16.167082Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 220.52107965978476,
+      "measurement_ended_at": "2026-11-19T23:12:16.167072Z",
+      "measurement_started_at": "2026-11-19T23:10:54.995728Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 55.13026991494619,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.4307052337105171,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:10:11.104547Z",
+      "status": "valid",
+      "t32_seconds": 74.29675215302268,
+      "tpot": {
+        "p50_ms": 68.94698709443828,
+        "p95_ms": 71.11282067209085
+      },
+      "ttft": {
+        "p50_ms": 529.091727512423,
+        "p95_ms": 543.9122216150281
+      }
+    },
+    {
+      "block": 3,
+      "cell": "512-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "3a25581505f9605ed96084ae1c74ac75b20801650cffea6bf7ee552c1a3b041f",
+      "concurrency": 8,
+      "duration_seconds": 39.54054339899449,
+      "e2el": {
+        "p50_ms": 9879.814657499082,
+        "p95_ms": 9895.994172205974
+      },
+      "ended_at": "2026-11-19T23:13:29.231292Z",
+      "group": "single",
+      "input_tokens": 512,
+      "input_tokens_per_second": 414.3595052468764,
+      "measurement_ended_at": "2026-11-19T23:13:29.231278Z",
+      "measurement_started_at": "2026-11-19T23:12:42.869838Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 103.5898763117191,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 16384,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.8092959086853054,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:12:16.167179Z",
+      "status": "valid",
+      "t32_seconds": 39.54054339899449,
+      "tpot": {
+        "p50_ms": 70.5961506220459,
+        "p95_ms": 75.7617250492216
+      },
+      "ttft": {
+        "p50_ms": 917.4575234937947,
+        "p95_ms": 931.1996316042496
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c1",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "28ce490214db8860f5ab88562efdde91e9cf2801511883f4591c645e9d7d0a66",
+      "concurrency": 1,
+      "duration_seconds": 307.31931692297803,
+      "e2el": {
+        "p50_ms": 9602.892085516942,
+        "p95_ms": 9611.371711705578
+      },
+      "ended_at": "2026-11-19T23:21:23.841902Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 213.25050652909323,
+      "measurement_ended_at": "2026-11-19T23:21:23.841893Z",
+      "measurement_started_at": "2026-11-19T23:16:09.676079Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 13.328156658068327,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.1041262238911588,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:13:29.231532Z",
+      "status": "valid",
+      "t32_seconds": 307.31931692297803,
+      "tpot": {
+        "p50_ms": 71.9625145119228,
+        "p95_ms": 72.03413007714911
+      },
+      "ttft": {
+        "p50_ms": 463.31345349608455,
+        "p95_ms": 469.3607082517701
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c4",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "e6b6908524c0c70e062e7878492074ffd78050509d0b93a1fdee25a933020fd6",
+      "concurrency": 4,
+      "duration_seconds": 87.61682297801599,
+      "e2el": {
+        "p50_ms": 10933.471739510424,
+        "p95_ms": 11177.923907106742
+      },
+      "ended_at": "2026-11-19T23:23:49.244078Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 747.9842086541267,
+      "measurement_ended_at": "2026-11-19T23:23:49.244068Z",
+      "measurement_started_at": "2026-11-19T23:22:14.535765Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 46.74901304088292,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.3652266643818978,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:21:23.841994Z",
+      "status": "valid",
+      "t32_seconds": 87.61682297801599,
+      "tpot": {
+        "p50_ms": 78.32700208663174,
+        "p95_ms": 81.41016396629719
+      },
+      "ttft": {
+        "p50_ms": 988.1373895041179,
+        "p95_ms": 1623.2778627541845
+      }
+    },
+    {
+      "block": 3,
+      "cell": "2048-c8",
+      "client_saturation": "undetermined: vLLM result has no client CPU/event-loop timing",
+      "comparison_key": "32f5087683e760c5c27aa37c001b9c97a4fa60dbd25106be43db5fd2fcdaee4a",
+      "concurrency": 8,
+      "duration_seconds": 52.84441333799623,
+      "e2el": {
+        "p50_ms": 13126.109353004722,
+        "p95_ms": 13848.64125620079
+      },
+      "ended_at": "2026-11-19T23:25:22.493221Z",
+      "group": "single",
+      "input_tokens": 2048,
+      "input_tokens_per_second": 1240.1689385938978,
+      "measurement_ended_at": "2026-11-19T23:25:22.493209Z",
+      "measurement_started_at": "2026-11-19T23:24:22.695218Z",
+      "metric_source": "vllm-bench-serve-client-reported",
+      "model_key": "llama31-8b",
+      "node_count": 1,
+      "output_tokens_per_second": 77.51055866211861,
+      "raw_counts": {
+        "completed": 32,
+        "failed": 0,
+        "input_tokens": 65536,
+        "output_tokens": 4096,
+        "requested": 32
+      },
+      "requests_per_second": 0.6055512395478017,
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "started_at": "2026-11-19T23:23:49.244182Z",
+      "status": "valid",
+      "t32_seconds": 52.84441333799623,
+      "tpot": {
+        "p50_ms": 86.50144858273869,
+        "p95_ms": 98.42605156247416
+      },
+      "ttft": {
+        "p50_ms": 2141.367142496165,
+        "p95_ms": 3262.4402045577876
+      }
+    }
+  ],
+  "excluded_cells": [],
+  "limitations": [
+    "Referencia contemporánea Pegasus-only; speedup únicamente entre pares viables y comparables del mismo bloque 4/2/1.",
+    "Carga sintética de sistemas: no evalúa calidad, SLO ni capacidad máxima.",
+    "La limitación NCCL f0 de cuatro nodos y las diferencias de driver/kernel permanecen como confusores observados.",
+    "La ejecución de la campaña requiere autorización específica. La disponibilidad y TP1 se verifican con evidencia de hosts y ranks en cada corrida.",
+    "p50/p95 descriptivos con32solicitudes por celda; no inferir p99 poblacional.",
+    "Cliente en Pegasus compartido con servicio; saturación del cliente no descartada solo por benchmark JSON."
+  ],
+  "paired_comparisons": [
+    {
+      "block": 1,
+      "concurrency": 1,
+      "e2_1": 0.7851004075311651,
+      "e4_1": 0.6492413288942983,
+      "e4_2": 0.8269532440263397,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.5702008150623301,
+      "s4_1": 2.5969653155771932,
+      "s4_2": 1.6539064880526795
+    },
+    {
+      "block": 1,
+      "concurrency": 4,
+      "e2_1": 0.8518762469111398,
+      "e4_1": 0.6180201767952822,
+      "e4_2": 0.7254811705763509,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.7037524938222797,
+      "s4_1": 2.472080707181129,
+      "s4_2": 1.4509623411527017
+    },
+    {
+      "block": 1,
+      "concurrency": 8,
+      "e2_1": 0.8250176911891715,
+      "e4_1": 0.5333689947480164,
+      "e4_2": 0.6464940090911555,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.650035382378343,
+      "s4_1": 2.1334759789920654,
+      "s4_2": 1.292988018182311
+    },
+    {
+      "block": 1,
+      "concurrency": 1,
+      "e2_1": 0.786187606377184,
+      "e4_1": 0.5980054138823974,
+      "e4_2": 0.7606395840276021,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.572375212754368,
+      "s4_1": 2.3920216555295895,
+      "s4_2": 1.5212791680552042
+    },
+    {
+      "block": 1,
+      "concurrency": 4,
+      "e2_1": 0.8292922373994078,
+      "e4_1": 0.4708929950250323,
+      "e4_2": 0.5678251571505286,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.6585844747988157,
+      "s4_1": 1.8835719801001292,
+      "s4_2": 1.1356503143010572
+    },
+    {
+      "block": 1,
+      "concurrency": 8,
+      "e2_1": 0.8140072121810984,
+      "e4_1": 0.38320103024061164,
+      "e4_2": 0.4707587654092652,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.6280144243621968,
+      "s4_1": 1.5328041209624466,
+      "s4_2": 0.9415175308185304
+    },
+    {
+      "block": 1,
+      "concurrency": 1,
+      "e2_1": 0.9175337415997691,
+      "e4_1": 0.6163192474865764,
+      "e4_2": 0.671712896805289,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.8350674831995382,
+      "s4_1": 2.4652769899463056,
+      "s4_2": 1.343425793610578
+    },
+    {
+      "block": 1,
+      "concurrency": 4,
+      "e2_1": 0.8748922751131143,
+      "e4_1": 0.6333794769457772,
+      "e4_2": 0.7239513880310442,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.7497845502262286,
+      "s4_1": 2.533517907783109,
+      "s4_2": 1.4479027760620884
+    },
+    {
+      "block": 1,
+      "concurrency": 8,
+      "e2_1": 0.8731220140110227,
+      "e4_1": 0.5583204623469552,
+      "e4_2": 0.6394529669250862,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.7462440280220455,
+      "s4_1": 2.233281849387821,
+      "s4_2": 1.2789059338501725
+    },
+    {
+      "block": 1,
+      "concurrency": 1,
+      "e2_1": 0.9180115594618081,
+      "e4_1": 0.5743872986552513,
+      "e4_2": 0.6256863464682194,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.8360231189236162,
+      "s4_1": 2.297549194621005,
+      "s4_2": 1.2513726929364388
+    },
+    {
+      "block": 1,
+      "concurrency": 4,
+      "e2_1": 0.8731657964135616,
+      "e4_1": 0.4876420502123414,
+      "e4_2": 0.5584758956606876,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.7463315928271232,
+      "s4_1": 1.9505682008493657,
+      "s4_2": 1.1169517913213751
+    },
+    {
+      "block": 1,
+      "concurrency": 8,
+      "e2_1": 0.8561978428365471,
+      "e4_1": 0.39643263529403994,
+      "e4_2": 0.4630152231879906,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.7123956856730942,
+      "s4_1": 1.5857305411761597,
+      "s4_2": 0.9260304463759812
+    },
+    {
+      "block": 2,
+      "concurrency": 1,
+      "e2_1": 0.8073640269256331,
+      "e4_1": 0.6637000739692307,
+      "e4_2": 0.8220580207128358,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.6147280538512663,
+      "s4_1": 2.654800295876923,
+      "s4_2": 1.6441160414256717
+    },
+    {
+      "block": 2,
+      "concurrency": 4,
+      "e2_1": 0.8906142887575131,
+      "e4_1": 0.6443892413703632,
+      "e4_2": 0.7235334639300971,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.7812285775150263,
+      "s4_1": 2.577556965481453,
+      "s4_2": 1.4470669278601942
+    },
+    {
+      "block": 2,
+      "concurrency": 8,
+      "e2_1": 0.8682983698709075,
+      "e4_1": 0.5589070344562416,
+      "e4_2": 0.6436808519395654,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.736596739741815,
+      "s4_1": 2.2356281378249663,
+      "s4_2": 1.2873617038791307
+    },
+    {
+      "block": 2,
+      "concurrency": 1,
+      "e2_1": 0.8107536904839718,
+      "e4_1": 0.6163827271932347,
+      "e4_2": 0.7602589225653612,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.6215073809679437,
+      "s4_1": 2.465530908772939,
+      "s4_2": 1.5205178451307224
+    },
+    {
+      "block": 2,
+      "concurrency": 4,
+      "e2_1": 0.867306048626704,
+      "e4_1": 0.48796983256962595,
+      "e4_2": 0.5626270372981711,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.734612097253408,
+      "s4_1": 1.9518793302785038,
+      "s4_2": 1.1252540745963422
+    },
+    {
+      "block": 2,
+      "concurrency": 8,
+      "e2_1": 0.8441260936144451,
+      "e4_1": 0.3918146763424886,
+      "e4_2": 0.46416605209393047,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.6882521872288903,
+      "s4_1": 1.5672587053699545,
+      "s4_2": 0.9283321041878609
+    },
+    {
+      "block": 2,
+      "concurrency": 1,
+      "e2_1": 0.9283821106061078,
+      "e4_1": 0.6228288500517085,
+      "e4_2": 0.6708755402935173,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.8567642212122155,
+      "s4_1": 2.491315400206834,
+      "s4_2": 1.3417510805870345
+    },
+    {
+      "block": 2,
+      "concurrency": 4,
+      "e2_1": 0.8919177838030959,
+      "e4_1": 0.6354010719299804,
+      "e4_2": 0.7123987025134311,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.7838355676061919,
+      "s4_1": 2.5416042877199216,
+      "s4_2": 1.4247974050268621
+    },
+    {
+      "block": 2,
+      "concurrency": 8,
+      "e2_1": 0.8784734374444205,
+      "e4_1": 0.5610067529918167,
+      "e4_2": 0.6386154994325717,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.756946874888841,
+      "s4_1": 2.2440270119672667,
+      "s4_2": 1.2772309988651434
+    },
+    {
+      "block": 2,
+      "concurrency": 1,
+      "e2_1": 0.9196167847986331,
+      "e4_1": 0.573601721805698,
+      "e4_2": 0.6237399439499124,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.8392335695972661,
+      "s4_1": 2.294406887222792,
+      "s4_2": 1.2474798878998248
+    },
+    {
+      "block": 2,
+      "concurrency": 4,
+      "e2_1": 0.880851886306985,
+      "e4_1": 0.4874169009372074,
+      "e4_2": 0.5533471727928367,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.76170377261397,
+      "s4_1": 1.9496676037488296,
+      "s4_2": 1.1066943455856735
+    },
+    {
+      "block": 2,
+      "concurrency": 8,
+      "e2_1": 0.8625758745602495,
+      "e4_1": 0.39363735421410234,
+      "e4_2": 0.4563509898938257,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.725151749120499,
+      "s4_1": 1.5745494168564094,
+      "s4_2": 0.9127019797876514
+    },
+    {
+      "block": 3,
+      "concurrency": 1,
+      "e2_1": 0.8170217429781621,
+      "e4_1": 0.6642817399803618,
+      "e4_2": 0.8130527072131019,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.6340434859563242,
+      "s4_1": 2.657126959921447,
+      "s4_2": 1.6261054144262037
+    },
+    {
+      "block": 3,
+      "concurrency": 4,
+      "e2_1": 0.8946373174888987,
+      "e4_1": 0.6500994426313355,
+      "e4_2": 0.7266625591430265,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.7892746349777975,
+      "s4_1": 2.600397770525342,
+      "s4_2": 1.453325118286053
+    },
+    {
+      "block": 3,
+      "concurrency": 8,
+      "e2_1": 0.8737648579919833,
+      "e4_1": 0.5611658124605122,
+      "e4_2": 0.6422389357133665,
+      "input_tokens": 512,
+      "model": "qwen35-9b",
+      "s2_1": 1.7475297159839667,
+      "s4_1": 2.244663249842049,
+      "s4_2": 1.284477871426733
+    },
+    {
+      "block": 3,
+      "concurrency": 1,
+      "e2_1": 0.8166122237783403,
+      "e4_1": 0.619616551366178,
+      "e4_2": 0.758764727399385,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.6332244475566806,
+      "s4_1": 2.478466205464712,
+      "s4_2": 1.51752945479877
+    },
+    {
+      "block": 3,
+      "concurrency": 4,
+      "e2_1": 0.8716578458158786,
+      "e4_1": 0.48937977009384276,
+      "e4_2": 0.5614356280310647,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.7433156916317571,
+      "s4_1": 1.957519080375371,
+      "s4_2": 1.1228712560621295
+    },
+    {
+      "block": 3,
+      "concurrency": 8,
+      "e2_1": 0.845054224627799,
+      "e4_1": 0.3926700582762313,
+      "e4_2": 0.46466847550425694,
+      "input_tokens": 2048,
+      "model": "qwen35-9b",
+      "s2_1": 1.690108449255598,
+      "s4_1": 1.5706802331049252,
+      "s4_2": 0.9293369510085139
+    },
+    {
+      "block": 3,
+      "concurrency": 1,
+      "e2_1": 0.9291417462028398,
+      "e4_1": 0.6245992209757169,
+      "e4_2": 0.6722324376536638,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.8582834924056797,
+      "s4_1": 2.4983968839028674,
+      "s4_2": 1.3444648753073276
+    },
+    {
+      "block": 3,
+      "concurrency": 4,
+      "e2_1": 0.8938912889042453,
+      "e4_1": 0.6383305198616718,
+      "e4_2": 0.7141030769459153,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.7877825778084906,
+      "s4_1": 2.553322079446687,
+      "s4_2": 1.4282061538918307
+    },
+    {
+      "block": 3,
+      "concurrency": 8,
+      "e2_1": 0.8779758076884183,
+      "e4_1": 0.5374812663447098,
+      "e4_2": 0.612182319419278,
+      "input_tokens": 512,
+      "model": "llama31-8b",
+      "s2_1": 1.7559516153768366,
+      "s4_1": 2.1499250653788393,
+      "s4_2": 1.224364638838556
+    },
+    {
+      "block": 3,
+      "concurrency": 1,
+      "e2_1": 0.9196157415107326,
+      "e4_1": 0.5782598853584051,
+      "e4_2": 0.6288059884756294,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.839231483021465,
+      "s4_1": 2.3130395414336204,
+      "s4_2": 1.2576119769512588
+    },
+    {
+      "block": 3,
+      "concurrency": 4,
+      "e2_1": 0.8848746065652149,
+      "e4_1": 0.48076334085617456,
+      "e4_2": 0.5433123939699613,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.7697492131304298,
+      "s4_1": 1.9230533634246982,
+      "s4_2": 1.0866247879399227
+    },
+    {
+      "block": 3,
+      "concurrency": 8,
+      "e2_1": 0.8640413276392183,
+      "e4_1": 0.3947993621732593,
+      "e4_2": 0.4569218503146743,
+      "input_tokens": 2048,
+      "model": "llama31-8b",
+      "s2_1": 1.7280826552784365,
+      "s4_1": 1.5791974486930371,
+      "s4_2": 0.9138437006293486
+    }
+  ],
+  "pending_jobs": [],
+  "protocol_id": "inference-4-2-1-v1",
+  "runs": [
+    {
+      "block": 1,
+      "errors": [],
+      "group": "four",
+      "job": "b1-qwen35-9b-four",
+      "manifest_sha256": "e9a52624a3ad7e604b83f077f819fe3a3e8c49acf4b8ccab56d5ac8c56170611",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T175239.667886Z-fe8377b2",
+      "status": "complete"
+    },
+    {
+      "block": 1,
+      "errors": [],
+      "group": "pair",
+      "job": "b1-qwen35-9b-pair",
+      "manifest_sha256": "bdd46a0debd55817763450bdee01611ba240345f499f70ebbfcc8ee4902af786",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T180633.081944Z-5e583420",
+      "status": "complete"
+    },
+    {
+      "block": 1,
+      "errors": [],
+      "group": "single",
+      "job": "b1-qwen35-9b-single",
+      "manifest_sha256": "ab8a4913a93bd972b22925d197c3d49790708d6fdf9e3a81481b9668d00f16e9",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T182431.880248Z-0d23c724",
+      "status": "complete"
+    },
+    {
+      "block": 1,
+      "errors": [],
+      "group": "four",
+      "job": "b1-llama31-8b-four",
+      "manifest_sha256": "c86e4481b8c3aa40de8244fa3526be5f41c32f975c8567e9bf386889ab867d25",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T185035.806986Z-6fee9426",
+      "status": "complete"
+    },
+    {
+      "block": 1,
+      "errors": [],
+      "group": "pair",
+      "job": "b1-llama31-8b-pair",
+      "manifest_sha256": "c29d1910d99d5dd4fa56d97d042fb17e4e5bc9abf6afba87010083bf46ccb58c",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T190315.307456Z-e9950307",
+      "status": "complete"
+    },
+    {
+      "block": 1,
+      "errors": [],
+      "group": "single",
+      "job": "b1-llama31-8b-single",
+      "manifest_sha256": "686887c073645ec9cab3a5752d8ccbde8e412cb8585ec6faea92cd10412b5917",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T191805.054588Z-e24087b4",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "four",
+      "job": "b2-qwen35-9b-four",
+      "manifest_sha256": "3f706d72ceadf0e12eb61220418d31ebb8c3f1a77fba2cb0a9ead018ba2b96c1",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T194304.755428Z-1e5f8663",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "pair",
+      "job": "b2-qwen35-9b-pair",
+      "manifest_sha256": "26b42f7d3ee63e287b15098cf50e7f7b71c8cc89526bf584650ab4ed8b173b8f",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T195659.762442Z-2a065815",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "single",
+      "job": "b2-qwen35-9b-single",
+      "manifest_sha256": "92011dbf08ce4907e4b266a8d7abc1ba6d3f5904a8c98de193febb8aa4ac5d3b",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T201459.276587Z-233a8173",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "four",
+      "job": "b2-llama31-8b-four",
+      "manifest_sha256": "841f6ec50e9ddbc2a244f093dac83aa27367f11a3ee09b28694e0964d0b20c47",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T204148.387307Z-94e8df2a",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "pair",
+      "job": "b2-llama31-8b-pair",
+      "manifest_sha256": "3a1b06034c354459ef2661e74cd45511e79a3a598a7dd200bfb7c54c5c53f8df",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T205423.405885Z-f6f5d201",
+      "status": "complete"
+    },
+    {
+      "block": 2,
+      "errors": [],
+      "group": "single",
+      "job": "b2-llama31-8b-single",
+      "manifest_sha256": "15c91654386f2f9794caece0bd2e7e133c92a29d199ce877c229c82ce2db2911",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T210906.748434Z-179c6c17",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "four",
+      "job": "b3-qwen35-9b-four",
+      "manifest_sha256": "842bfc48ec48bc4e66ed0ffbd36516e46ba58b34d3b2ea2af524876d2b20bbcc",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T213405.996132Z-d0dc4484",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "pair",
+      "job": "b3-qwen35-9b-pair",
+      "manifest_sha256": "e1e40f8faad50f70d998e0f5f117a4a4b72aa26e2802d90509de6506f775a489",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T214758.069447Z-f785b7b8",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "single",
+      "job": "b3-qwen35-9b-single",
+      "manifest_sha256": "526e1558532a11c96c304dcdd86b6185919494e70bc37ab050dc2cdf857685f8",
+      "model_key": "qwen35-9b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T220558.002618Z-effea9d0",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "four",
+      "job": "b3-llama31-8b-four",
+      "manifest_sha256": "4040a5bd7416644f799de2d62df486222f97ca8c8e35cd29e55710389f32a167",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T223255.656078Z-3be31aea",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "pair",
+      "job": "b3-llama31-8b-pair",
+      "manifest_sha256": "46fbc7df2b4545ed1b1e19d13db80423c5cf25a00a189beb483f92e4bb704b4e",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T224533.520573Z-040c5f16",
+      "status": "complete"
+    },
+    {
+      "block": 3,
+      "errors": [],
+      "group": "single",
+      "job": "b3-llama31-8b-single",
+      "manifest_sha256": "126eb61326796f60da4741a1240ac2c3932a8c97f7bb622399427a9ead3f62b8",
+      "model_key": "llama31-8b",
+      "run_dir": "/home/bastiangl/ipre-rendimiento/resultados/raw/inference-serving/20261119T230019.250409Z-e0788c14",
+      "status": "complete"
+    }
+  ],
+  "status": "complete"
+}
