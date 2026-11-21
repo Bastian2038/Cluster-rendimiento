@@ -1,13 +1,13 @@
 # Protocolo de inferencia y serving 4/2/1
 
-La próxima campaña medirá cuánto tarda el mismo lote en cuatro nodos (Pegasus, Octopus, Griffin y Draggon), dos (Pegasus + Octopus) y uno (Pegasus). Para obtener una referencia contemporánea se vuelven a medir las tres topologías en cada bloque. La campaña del 6 de noviembre ya aporta tres bloques 4/2. La ejecución con Pegasus solo sigue pendiente. [Resultados históricos](resultados/inference-20261106-analysis.md)
+La campaña del 19 de noviembre midió cuánto tarda el mismo lote en cuatro nodos (Pegasus, Octopus, Griffin y Draggon), dos (Pegasus + Octopus) y uno (Pegasus). Repitió las tres topologías en cada bloque. A 2048 tokens y concurrencia 8, dos nodos terminaron antes en cada uno de los tres bloques de ambos modelos. Ese resultado motiva el diagnóstico que figura al final de este protocolo. [Resultados 4/2 del 6 de noviembre](resultados/inference-20261106-analysis.md) y [referencia 4/2/1 del 19 de noviembre](resultados/inference-20261119-analysis.md).
 
 ## Diseño fijado
 
 | Configuración | Orden dentro de cada uno de los tres bloques | Corridas | Celdas | Solicitudes de warmup | Solicitudes medidas |
 | --- | --- | ---: | ---: | ---: | ---: |
 | [4/2 histórica, por defecto](../experimentos/configs/inferencia-4-2.json) | Qwen 4 → 2, luego Llama 4 → 2 | 12 | 72 | 1152 | 2304 |
-| [4/2/1 propuesta](../experimentos/configs/inferencia-4-2-1.json) | Qwen 4 → 2 → 1, luego Llama 4 → 2 → 1 | 18 | 108 | 1728 | 3456 |
+| [4/2/1 del 19 de noviembre](../experimentos/configs/inferencia-4-2-1.json) | Qwen 4 → 2 → 1, luego Llama 4 → 2 → 1 | 18 | 108 | 1728 | 3456 |
 
 Cada corrida combina 512 y 2048 tokens de entrada con concurrencias 1, 4 y 8. Cada celda envía 16 solicitudes de warmup y después mide un lote de 32, con salida de 128 tokens por solicitud, semilla `20261106`, temperatura 0 e `ignore_eos` activo. Los totales de la segunda fila corresponden a la matriz completa si las dos variantes, Qwen3.5-9B y Llama-3.1-8B-Instruct, son viables con las tres topologías.
 
@@ -97,12 +97,7 @@ prefill; no atribuir sus diferencias a un kernel sin instrumentación adicional.
 Los speedups se calculan por bloque y después se resumen sus medianas/rangos;
 la mediana de razones no tiene por qué coincidir con la razón de medianas.
 
-Al cerrar la campaña 4/2/1, revisar en particular la celda de 2048 tokens y
-concurrencia 8. En los tres bloques históricos, ambos modelos tardaron más con
-cuatro nodos que con dos en esa celda. Contrastar T32 y TTFT con 2048 tokens
-a concurrencia 4 y con 512 tokens a concurrencia 8 permite observar qué cambia
-al variar un solo factor. La nueva referencia de Pegasus permitirá situar el
-coste de pasar de uno a dos nodos donde exista un par válido. [Resultados por celda](resultados/inference-20261106-analysis.md)
+Los controles de 2048 tokens a concurrencia 4 y de 512 tokens a concurrencia 8 permiten observar qué cambia al variar un solo factor respecto de 2048/C8. En la campaña del 19 de noviembre, cuatro nodos terminaron antes que dos en ambos controles. La corrida contemporánea de Pegasus aporta también los pares 2/1 y 4/1. [Resultados por celda](resultados/inference-20261119-analysis.md).
 
 `python3 -m infraestructura.inference_telemetry_report <reporte.json> --output <nuevo.json>`
 genera un derivado verificado por celda/nodo con memoria UMA, GPU, CPU, PSI y
@@ -110,3 +105,38 @@ contadores netdev. Sus ventanas externas incluyen arranque y cierre del cliente;
 la consulta nominal de 1 s, los bordes y el desfase de reloj no medido limitan
 la precisión temporal. Los contadores netdev pueden omitir tráfico RoCE
 offloaded y no acreditan ancho de banda NCCL ni saturación del enlace.
+
+## Diagnóstico de 2048 tokens a concurrencia 8
+
+La pregunta es en qué parte de la atención de las 32 solicitudes aparece el tiempo adicional de cuatro nodos. La cronología del cliente reconstruye cada primer y último token a partir del inicio, TTFT y 127 intervalos. Las lecturas del servidor permiten comparar la espera en cola, el procesamiento de la entrada (*prefill*) y la generación (*decode*). Las trazas auxiliares miden intervalos de kernels y solapamiento con colectivas dentro de cada GPU. [Configuración y hashes de las cargas](../experimentos/configs/inferencia-diagnostico-2048-c8.json).
+
+| Serie | Orden y controles | Arranques | Celdas | Solicitudes medidas |
+| --- | --- | ---: | ---: | ---: |
+| Primaria | En cada bloque Qwen y luego Llama, cada uno en 4 → 2 → 1. El orden de las cargas rota ABC, BCA y CAB. | 18 | 54 | 1728 |
+| Auxiliar | Bloque 4, Qwen y luego Llama en 4 → 2. En el mismo arranque se miden ABC con el profiler apagado y después ABC con el profiler encendido. | 4 | 24 | 768 |
+
+A corresponde a 2048/C8, B a 2048/C4 y C a 512/C8. Cada celda calienta con 16 solicitudes y mide otras 32. Las ocho cargas JSONL de entrada y salida esperada se comprueban contra los hashes del 19 de noviembre. Cada solicitud genera 128 tokens. Se fijan la imagen ARM64, los dos modelos y sus tokenizers, BF16, una réplica, PP1 y TP4/2/1. El runner verifica que el servidor esté listo antes del warmup. El diagnóstico fija `--ready-check-timeout-sec 0` de forma explícita. Ese era el valor por defecto en la imagen y los 216 logs históricos de cliente confirman que omitieron la solicitud de prueba. Los cocientes de escalabilidad se calculan dentro de cada bloque primario de la nueva sesión.
+
+Las dos capturas de `/metrics` por celda se toman por loopback en Pegasus después del warmup y al drenar el lote. El analizador comprueba identidad de proceso y modelo, etiquetas, unidades, límites de buckets y deltas. Cada histograma válido aumenta en 32 tanto el conteo como el bucket `+Inf`. La media resulta de dividir el incremento de la suma por 32. El cliente auxiliar registra creación, adquisición de plaza e inicio HTTP por solicitud, así como primer y último token. La espera por la plaza sucede antes del TTFT. [Métricas de vLLM 0.24](https://docs.vllm.ai/en/v0.24.0/design/metrics/).
+
+Cada una de las doce ventanas ON permite hasta 32 iteraciones y 60 s de captura. El cliente abre la ventana cuando ya preparó la carga, antes de iniciar el cronómetro de T32. Las marcas de al menos una solicitud medida deben solaparse con el intervalo confirmado por START y STOP. El informe distingue cuántas solicitudes se solaparon y cuántas quedaron completamente dentro. Si falta el acuse de START o STOP o un worker registra un fallo explícito de parada, el runner cierra sus contenedores, termina la sesión con la evidencia obtenida y registra los trabajos pendientes.
+
+Los cuatro nodos y el par aportan hasta 36 trazas en total, con un límite de 32 MiB comprimidos por archivo. La atribución por rank exige vincular el artefacto al host y GPU observados. Se calculan uniones de intervalos de kernels y su intersección en el reloj local. La atribución de una colectiva a contexto, generación o iteración mixta requiere una relación comprobable con el lanzamiento CPU. Cada par OFF/ON mide el cambio al solicitar la captura dentro de un mismo arranque. El orden fijo y el único bloque auxiliar limitan la interpretación. [Profiler de vLLM 0.24](https://docs.vllm.ai/en/v0.24.0/contributing/profiling/).
+
+La sesión reserva hasta cuatro GPU durante un máximo de cuatro horas después de preparar los datos. Los últimos 300 s se reservan para el cierre. Los comandos se ejecutan desde Pegasus, con un commit limpio del protocolo y la autorización de la sesión. El plan y el preflight se guardan en un directorio nuevo.
+
+```bash
+config=experimentos/configs/inferencia-diagnostico-2048-c8.json
+revision_dir=$(mktemp -d)
+python3 -m infraestructura.inference plan --config "$config" --output "$revision_dir/plan.json"
+python3 -m infraestructura.inference preflight --config "$config" --container-probe --output "$revision_dir/preflight.json"
+python3 -m infraestructura.inference run --config "$config" --execute --session-limit-seconds 14400
+```
+
+La verificación parte del directorio de campaña indicado por `campaign_closed`. El primer informe contiene los cocientes primarios. El segundo enlaza las cronologías y fases, la calibración y la cobertura efectiva de las trazas. Con un cierre `PARTIAL`, cada instrumento conserva sus comprobaciones y los pares primarios que se hayan podido validar. La misma orden de cronología aplicada al cierre del 19 de noviembre permite reconstruir retrospectivamente las 54 celdas de estos tres perfiles.
+
+```bash
+read -r -p 'Directorio de campaña cerrada > ' campaign_dir
+python3 -m infraestructura.inference report "$campaign_dir" --output "$revision_dir/rendimiento.md"
+python3 -m infraestructura.inference_diagnosis_report "$campaign_dir" --output "$revision_dir/diagnostico.md" --timeline-pdf
+```

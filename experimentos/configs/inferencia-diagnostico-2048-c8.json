@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.0",
+  "protocol_id": "inference-diagnosis-2048-c8-v1",
+  "cluster_config": "experimentos/configs/cluster.json",
+  "models": [
+    {
+      "key": "qwen35-9b",
+      "id": "Qwen/Qwen3.5-9B",
+      "revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "tokenizer_id": "Qwen/Qwen3.5-9B",
+      "tokenizer_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+      "language_model_only": true,
+      "enable_thinking": false
+    },
+    {
+      "key": "llama31-8b",
+      "id": "meta-llama/Llama-3.1-8B-Instruct",
+      "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+      "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+      "language_model_only": false,
+      "enable_thinking": false
+    }
+  ],
+  "image": {
+    "reference": "ipre/vllm:26.07-ray2.48.0-bench",
+    "id": "sha256:4df9ac0696275f800e4c70fa2d459a2b77473014d3654f98c2714ae3954c42ac",
+    "architecture": "arm64",
+    "vllm_version_prefix": "0.24.0",
+    "ray_version": "2.48.0",
+    "tvm_ffi_version": "0.1.9",
+    "pandas_version": "2.3.3",
+    "base_digest": "nvcr.io/nvidia/vllm@sha256:95c498a475142c20c989c65e5d223348c09fed83ba17ddf44f117610c0bd3268",
+    "torch_patch_commit": "c5f8ebc91a8727a9056734f73329c217328b8989"
+  },
+  "paths": {
+    "hf_hub": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache",
+    "workspace": "/home/bastiangl/ipre-rendimiento/resultados/tmp/inference"
+  },
+  "network": {
+    "node_ips": {
+      "pegasus": "10.10.0.10",
+      "octopus": "10.10.0.11",
+      "griffin": "10.10.0.12",
+      "draggon": "10.10.0.13"
+    },
+    "environment": {
+      "NCCL_DEBUG": "INFO",
+      "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH",
+      "NCCL_SOCKET_IFNAME": "=enp1s0f0np0",
+      "NCCL_IB_HCA": "=rocep1s0f0:1,roceP2p1s0f0:1",
+      "GLOO_SOCKET_IFNAME": "enp1s0f0np0"
+    }
+  },
+  "runtime": {
+    "dtype": "bfloat16",
+    "quantization": null,
+    "max_model_len": 4096,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 4096,
+    "gpu_memory_utilization": 0.7,
+    "ray_object_store_bytes": 1073741824,
+    "pipeline_parallel_size": 1,
+    "prefix_caching": false,
+    "speculative_decoding": false,
+    "api_port": 18000,
+    "ray_port": 16379,
+    "ray_node_manager_port": 16380,
+    "ray_object_manager_port": 16381,
+    "ray_worker_port_min": 16400,
+    "ray_worker_port_max": 16499,
+    "minimum_available_memory_bytes": 8589934592
+  },
+  "workload": {
+    "seed": 20261106,
+    "input_tokens": [
+      512,
+      2048
+    ],
+    "output_tokens": 128,
+    "concurrencies": [
+      1,
+      4,
+      8
+    ],
+    "temperature": 0,
+    "ignore_eos": true
+  },
+  "measurement": {
+    "blocks": 3,
+    "campaign_order": [
+      "four",
+      "pair",
+      "single"
+    ],
+    "warmup_requests": 16,
+    "measured_requests": 32,
+    "telemetry_interval_seconds": 1,
+    "session_limit_seconds": 14400,
+    "startup_limit_seconds": 900,
+    "cell_limit_seconds": 900,
+    "cleanup_reserve_seconds": 300
+  },
+  "limitations": [
+    "Referencia contemporánea Pegasus-only; speedup únicamente entre pares viables y comparables del mismo bloque 4/2/1.",
+    "Carga sintética de sistemas: no evalúa calidad, SLO ni capacidad máxima.",
+    "La limitación NCCL f0 de cuatro nodos y las diferencias de driver/kernel permanecen como confusores observados.",
+    "La ejecución de la campaña requiere autorización específica. La disponibilidad y TP1 se verifican con evidencia de hosts y ranks en cada corrida.",
+    "Diagnóstico ABC con tres bloques primarios 4/2/1 y bloque auxiliar 4 OFF/ON; las celdas auxiliares nunca se usan para speedup.",
+    "Las fases y trazas son evidencia diagnóstica adicional; su fallo conserva los resultados de cliente validados y cierra PARTIAL.",
+    "Los JSONL conservan 16+32 solicitudes. El 19/11 ya omitía la sonda de readiness del cliente por defecto (216 logs); --ready-check-timeout-sec 0 lo hace explícito sin añadir ni quitar inferencias. Readiness se comprueba aparte; speedup solo dentro de la campaña.",
+    "START/STOP incierto, Failed to stop profiler o CLI abortada cierran el servidor propio y detienen operacionalmente la campaña; el intento queda FAILED, sin relanzarlo, y los jobs siguientes permanecen pendientes."
+  ],
+  "diagnosis": {
+    "capture_limit_seconds": 30,
+    "trace_collection_limit_seconds": 60,
+    "historical_campaign": "resultados/raw/inference-campaign/20261119T175208.562948Z-e2644646/campaign.json",
+    "historical_campaign_sha256": "7643c834a5105e43554df196c6a452a6aff1f5d251d47d91b3151e061e1a29f7",
+    "historical_jsonl_sha256": {
+      "workload/llama31-8b/2048/measured.jsonl": "ff9338800d9d74949cd3b3bb2b97081d544e08884dbb19b7e08f749c8cca1d03",
+      "workload/llama31-8b/2048/warmup.jsonl": "fdf5bff82a9d1219f24f6ca0684daf7e35e4c0d98a7d120a2279ac68d72ce3b8",
+      "workload/llama31-8b/512/measured.jsonl": "e5df1befb590655531c7e7d553994e4f2e98ddcaf09f4cb6113a5ce65c5e40d4",
+      "workload/llama31-8b/512/warmup.jsonl": "299746f50c8fa2ce3178d1aca46657fa101c2bbf091f2b8545f3b79ca82cb8ba",
+      "workload/qwen35-9b/2048/measured.jsonl": "306c928cf282127d259d0d603fa890385289266ca144b99e712a1b76ef2aec32",
+      "workload/qwen35-9b/2048/warmup.jsonl": "c32cb5fc67def49c30bc9fe76b2cda5c3a37beebe9d45f7b83a89c15382344bb",
+      "workload/qwen35-9b/512/measured.jsonl": "ea037683e1aed3b5b5e7479ace2cdce571c9e18a25d5b4c8d6071d1d7b3615a9",
+      "workload/qwen35-9b/512/warmup.jsonl": "6c8c9a4f71350faf71d1e0797cf6ee5048a8d47b1e436de12f95e01a015c03bf"
+    }
+  }
+}

@@ -1,4 +1,4 @@
-"""Campañas de inferencia 4/2 y 4/2/1: plan, preflight, run y report.
+"""Campañas de inferencia 4/2, 4/2/1 y diagnóstico: plan, preflight, run y report.
 
 El plan no ejecuta comandos. El runner no instala, descarga, modifica red ni
 detiene procesos ajenos. Los prerrequisitos ausentes bloquean antes de usar GPU.
@@ -27,7 +27,8 @@ from pathlib import Path
 
 from infraestructura import cluster, manifest
 from infraestructura import inference_runtime as runtime
-from infraestructura.inference_evidence import RUNNER_SOURCES, archived_job_evidence, verify_client_cell
+from infraestructura.inference_evidence import (RUNNER_SOURCES, archived_job_evidence,
+    verify_client_cell, runner_sources, cell_id, DIAGNOSIS_PROTOCOL, diagnostic_cell_issues)
 from infraestructura.inference_metrics import paired_speedup, summarize_bench_result, validate_client_identity
 from infraestructura.inference_observation import validate_worker_records
 from infraestructura.rutas import REPO_ROOT
@@ -40,11 +41,18 @@ SHA256 = re.compile(r'^sha256:[0-9a-f]{64}$')
 TOPOLOGIES = cluster.TOPOLOGIES
 PEGASUS_REFERENCE_PROTOCOL = 'inference-4-2-1-v1'
 PROTOCOL_ORDERS = {'inference-4-2-v1':['four','pair'],
-                   PEGASUS_REFERENCE_PROTOCOL:['four','pair','single']}
+                   PEGASUS_REFERENCE_PROTOCOL:['four','pair','single'],
+                   DIAGNOSIS_PROTOCOL:['four','pair','single']}
 
 
 class InferenceError(ValueError):
     pass
+
+
+class CleanupError(RuntimeError):
+    def __init__(self, receipt):
+        self.receipt = receipt
+        super().__init__('; '.join(receipt['errors']))
 
 
 def read_json(path):
@@ -97,8 +105,18 @@ def _validate_protocol(config):
     expected_measurement = {'blocks':3,'campaign_order':PROTOCOL_ORDERS[config['protocol_id']], 'warmup_requests':16,
         'measured_requests':32,'telemetry_interval_seconds':1,'session_limit_seconds':28800,
         'startup_limit_seconds':900,'cell_limit_seconds':900,'cleanup_reserve_seconds':300}
+    if config['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        expected_measurement['session_limit_seconds'] = 14400
+        diagnostic = config.get('diagnosis', {})
+        if (set(diagnostic) != {'capture_limit_seconds', 'trace_collection_limit_seconds',
+                'historical_campaign', 'historical_campaign_sha256', 'historical_jsonl_sha256'}
+                or diagnostic.get('capture_limit_seconds') != 30
+                or diagnostic.get('trace_collection_limit_seconds') != 60):
+            raise InferenceError('presupuestos de diagnóstico fuera del protocolo')
+        from infraestructura import inference_diag_protocol as diagnosis
+        diagnosis.validate_config(config)
     if m != expected_measurement:
-        raise InferenceError('medición fuera del protocolo de ocho horas')
+        raise InferenceError('medición fuera del presupuesto del protocolo')
     ports = runtime.used_ports(config)
     if any(type(p) is not int or not 1024 <= p <= 65535 for p in ports) or len(ports) != len(set(ports)):
         raise InferenceError('puertos reservados inválidos o duplicados')
@@ -132,6 +150,10 @@ def load_config(path=DEFAULT_CONFIG):
 
 
 def jobs(config):
+    if config['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        from infraestructura import inference_diag_protocol as diagnosis
+        yield from diagnosis.jobs(config)
+        return
     for block in range(1, config['measurement']['blocks']+1):
         for model in config['models']:
             for group in config['measurement']['campaign_order']:
@@ -151,9 +173,25 @@ def _plan_counts(measurement, planned_jobs):
 
 def _cell_commands(config, model, cell):
     length, concurrency = cell['input_tokens'], cell['concurrency']
-    directory = f'/work/metrics/{length}-c{concurrency}'
-    return {phase: runtime.bench_command(config, model, length, concurrency, phase, directory)
-            for phase in ('warmup', 'measured')}
+    directory = '/work/metrics/' + cell_id(cell)
+    commands = {phase: runtime.bench_command(config, model, length, concurrency, phase, directory)
+                for phase in ('warmup', 'measured')}
+    if config['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        for command in commands.values():
+            command += ['--ready-check-timeout-sec', '0']
+    if 'mode' in cell:
+        from infraestructura import inference_diag_client
+        commands['measured'] = inference_diag_client.command(commands['measured'],
+            profile_port=config['runtime']['api_port'] if cell['mode'] == 'on' else None)
+    return commands
+
+
+def _server_command(config, job, world):
+    command = runtime.server_command(config, job['model'], world)
+    if job.get('series') == 'auxiliary':
+        from infraestructura import inference_diag_traces
+        command += inference_diag_traces.server_args()
+    return command
 
 
 def make_plan(config_path=DEFAULT_CONFIG):
@@ -163,9 +201,9 @@ def make_plan(config_path=DEFAULT_CONFIG):
         nodes = cluster.selected_nodes(cluster_config, job['group'])
         preview.append({**job, 'nodes':[n['node_id'] for n in nodes],
             'ray_commands':{n['node_id']:runtime.ray_command(n, config) for n in nodes},
-            'server_command':runtime.server_command(config,job['model'],len(nodes)),
+            'server_command':_server_command(config,job,len(nodes)),
             'cells':[{**cell, 'commands':_cell_commands(config,job['model'],cell)} for cell in job['cells']]})
-    return {'status':'planned_only','protocol':config,'jobs':preview,
+    plan = {'status':'planned_only','protocol':config,'jobs':preview,
             'resources_max':{'nodes':4,'gpus':4,'replicas':1},
             **_plan_counts(config['measurement'], preview),
             'maximum_occupation_seconds':config['measurement']['session_limit_seconds'],
@@ -175,6 +213,11 @@ def make_plan(config_path=DEFAULT_CONFIG):
                 'shm_size':'8g','models_mount':'read-only','work_mount':'nuevo por corrida',
                 'cleanup':'solo IDs creados por esta campaña con etiqueta verificada'},
             'notice':'plan no abre conexiones, inicia contenedores ni escribe resultados'}
+    if config['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        plan['diagnostic_capture'] = {'scrape_limit_seconds': 30, 'trace_window_limit_seconds': 60,
+            'trace_max_iterations': 32, 'trace_collection_limit_seconds': 60,
+            'cleanup_reserve_seconds': 300, 'traces_collector': 'inference_diag_traces.collect_traces'}
+    return plan
 
 
 STAGE = r'''
@@ -198,6 +241,8 @@ root=Path(sys.argv[1]); out={}
 for subdir in ('evidence','metrics','logs'):
  for p in (root/subdir).rglob('*'):
   if p.is_file() and not p.is_symlink():
+   if p.name.endswith(('.pt.trace.json','.pt.trace.json.gz','.trace.json','.trace.json.gz')):continue
+   if any(part in ('traces','profiler') for part in p.relative_to(root).parts):continue
    if p.stat().st_size>33554432:raise ValueError('artifact exceeds32MiB')
    out[str(p.relative_to(root))]=base64.b64encode(p.read_bytes()).decode()
 for p in (root/'ray').rglob('*'):
@@ -291,16 +336,41 @@ def cleanup_container(node, name, directory):
     if len(parts) != 2 or parts[1] != name or not re.fullmatch('[0-9a-f]{64}',parts[0]):
         raise InferenceError('rechazo limpieza de contenedor sin identidad propia')
     container_id = parts[0]
-    logs = runtime.remote(node,['docker','logs',container_id],timeout=30)
-    write_new(directory / f'{name}-container-log.json', logs)
-    stopped = runtime.remote(node,['docker','stop','--time','10',container_id],timeout=20)
-    removed = runtime.remote(node,['docker','rm',container_id],timeout=15)
-    runtime.checked(stopped,'detener contenedor propio')
-    runtime.checked(removed,'retirar contenedor propio')
-    absence=runtime.remote(node,['docker','inspect','--type','container',container_id,'--format','{{.Id}}'],timeout=15)
-    if absence['returncode']==0 or not ('No such object' in absence['stderr'] or 'No such container' in absence['stderr']):
-        raise InferenceError('ausencia de contenedor propio no confirmada después de cierre')
-    return {'name':name,'id':container_id,'stop':stopped,'remove':removed}
+    started = time.monotonic()
+    receipt = {'name': name, 'id': container_id, 'started_at': manifest.utc_now(),
+               'status': 'failed', 'absence_confirmed': False, 'errors': [], 'timing_seconds': {}}
+    logs = None
+    def attempt(label, function):
+        began = time.monotonic()
+        try:
+            return function()
+        except (Exception, KeyboardInterrupt) as exc:
+            receipt['errors'].append(f'{label}: {type(exc).__name__}: {exc}')
+        finally:
+            receipt['timing_seconds'][label] = time.monotonic() - began
+    logs = attempt('logs', lambda: runtime.checked(
+        runtime.remote(node,['docker','logs',container_id],timeout=30), 'leer logs propios'))
+    # Each attempt is independent: failed capture, stop or removal must never
+    # prevent the next operation on this already verified, exact container ID.
+    receipt['stop'] = attempt('stop', lambda: runtime.checked(
+        runtime.remote(node,['docker','stop','--time','10',container_id],timeout=20), 'detener contenedor propio'))
+    receipt['remove'] = attempt('remove', lambda: runtime.checked(
+        runtime.remote(node,['docker','rm',container_id],timeout=15), 'retirar contenedor propio'))
+    def verify_absence():
+        absence = runtime.remote(node,['docker','inspect','--type','container',container_id,'--format','{{.Id}}'],timeout=15)
+        receipt['absence'] = absence
+        if absence['returncode']==0 or not ('No such object' in absence['stderr'] or 'No such container' in absence['stderr']):
+            raise InferenceError('ausencia de contenedor propio no confirmada después de cierre')
+        receipt['absence_confirmed'] = True
+    attempt('absence', verify_absence)
+    # Persist only after attempting stop/rm/absence; ENOSPC cannot skip them.
+    if logs is not None:
+        attempt('write_logs', lambda: write_new(directory / f'{name}-container-log.json', logs))
+    receipt.update(ended_at=manifest.utc_now(), duration_seconds=time.monotonic()-started)
+    if receipt['errors']:
+        raise CleanupError(receipt)
+    receipt['status'] = 'confirmed_absent'
+    return receipt
 
 
 def collect(node, workspace, directory):
@@ -313,7 +383,12 @@ def collect(node, workspace, directory):
             raise InferenceError('ruta de evidencia externa inválida')
         target = directory / node['node_id'] / path
         target.parent.mkdir(parents=True,exist_ok=True)
-        with target.open('xb') as stream: stream.write(base64.b64decode(encoded,validate=True))
+        contents = base64.b64decode(encoded,validate=True)
+        if target.exists():
+            if target.read_bytes() != contents:
+                raise InferenceError('evidencia de cliente cambió antes de la colección')
+        else:
+            with target.open('xb') as stream: stream.write(contents)
 
 
 def prepare_workloads(config, cluster_config, preflight_result, campaign_id):
@@ -378,7 +453,7 @@ def _job_shell(config, job, node, lifetime):
                  " time.sleep(.5)\nelse:raise TimeoutError('membresia Ray incompleta')\n"
                  "print(json.dumps(nodes));ray.shutdown()")
         steps.append(shlex.join(['python3','-c',barrier])+' > /work/logs/ray-membership.json 2> /work/logs/ray-membership.stderr')
-        steps.append('exec '+shlex.join(runtime.server_command(config,job['model'],world))+
+        steps.append('exec '+shlex.join(_server_command(config,job,world))+
                      ' > /work/logs/server.log 2>&1')
     else:
         # Ray subprocesses stay in this container's PID namespace.
@@ -456,19 +531,212 @@ def worker_log_window(nodes, workspace, deadline, offsets=None):
     return data
 
 
-def _experiment_inputs(workloads):
-    inputs = {name: REPO_ROOT / name for name in RUNNER_SOURCES}
+def _experiment_inputs(workloads, protocol_id=PEGASUS_REFERENCE_PROTOCOL):
+    inputs = {name: REPO_ROOT / name for name in runner_sources(protocol_id)}
     for path in sorted(workloads.rglob('*')):
         if path.is_file():
             inputs['workload/' + str(path.relative_to(workloads))] = path
     return inputs
 
 
+def _diagnostic_call(function, *args, **kwargs):
+    """A failed instrument must not discard an otherwise valid client batch."""
+    try:
+        result = function(*args, **kwargs)
+        if not isinstance(result, dict):
+            raise InferenceError('diagnóstico no devolvió un objeto JSON')
+        return result
+    except Exception as exc:
+        return {'valid': False, 'error': f'{type(exc).__name__}: {exc}'}
+
+
+EXECUTION_LOGS = r"""
+import json,sys
+from pathlib import Path
+request=json.load(sys.stdin);root=Path(request['root'])/'logs';old=request['offsets'];out={}
+for name in request['names']:
+ p=root/name;size=p.stat().st_size
+ if old is None:out[name]=size
+ else:
+  start=old[name]
+  if not 0<=start<=size or size-start>8388608:raise ValueError('log window changed or too large')
+  with p.open('rb') as f:f.seek(start);text=f.read(size-start).decode(errors='replace')
+  out[name]={'bounds':[start,size],'text':text}
+print(json.dumps(out))
+"""
+
+
+def execution_logs(nodes, workspace, deadline, ranks, offsets=None):
+    data = {}
+    by_node = {r['node_id']: r for r in ranks}
+    for node in nodes:
+        key = node['node_id']
+        names = [f"worker-rank{by_node[key]['rank']:02d}.log"]
+        if key == 'pegasus': names.append('server.log')
+        request = {'root': workspace, 'names': names,
+                   'offsets': None if offsets is None else offsets[key]}
+        result = runtime.checked(runtime.remote(node, ['python3', '-c', EXECUTION_LOGS],
+            stdin=json.dumps(request), timeout=remaining(deadline, 15)), 'ventana real de logs')
+        data[key] = json.loads(result['stdout'])
+    return data
+
+
+def _archive_client_file(directory, workspace, name, filename):
+    if any((directory / marker).exists() for marker in ('COMPLETE', 'FAILED')):
+        raise InferenceError('no se modifica ni recupera una corrida sellada')
+    target = directory / 'raw/nodes/pegasus/metrics' / name / filename
+    source = Path(workspace) / 'metrics' / name / filename
+    if source.is_file():
+        contents = source.read_bytes()
+        if target.exists():
+            if target.read_bytes() != contents:
+                raise InferenceError('artefacto nativo de cliente cambió')
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with target.open('xb') as stream: stream.write(contents)
+    return read_json(target)
+
+
+def _persist_native_client(config, model, cell, directory, workspace, phase, start, end, result):
+    """Preserve the native JSON and timestamps before optional instrument writes."""
+    name = cell_id(cell)
+    raw = _archive_client_file(directory, workspace, name, phase + '.json')
+    if phase == 'measured':
+        window = directory / 'metrics' / (name + '-client-window.json')
+        if not window.exists():
+            write_new(window, {'measurement_started_at': start, 'measurement_ended_at': end,
+                'client_returncode': result.get('returncode'), 'client_timed_out': result.get('timed_out', False)})
+    validate_client_identity(raw, model=model, concurrency=cell['concurrency'])
+    summary = summarize_bench_result(raw, expected_prompt_tokens=cell['input_tokens'],
+        expected_output_tokens=config['workload']['output_tokens'],
+        expected_count=config['measurement'][phase + '_requests'])
+    if phase != 'measured': return raw, None
+    window = read_json(window)
+    record = dict(cell, **summary, cell=name, status='valid', ended_at=manifest.utc_now(), **window)
+    path = directory / 'metrics' / (name + '.json')
+    if not path.exists(): write_new(path, record)
+    return raw, record
+
+
+def _cell_quality_issues(path, cell, ranks, *, verify_receipt=False):
+    from infraestructura import inference_diag_quality as quality
+    try:
+        issues = list(quality.cell_issues(path, cell, ranks))
+    except Exception as exc:
+        issues = [f'execution quality: {type(exc).__name__}: {exc}']
+    if cell.get('client_returncode') != 0 or cell.get('client_timed_out') is not False:
+        issues.append('client execution: missing or unsuccessful measured CLI exit')
+    if verify_receipt:
+        try:
+            receipt = read_json(Path(path)/'raw/diagnostic'/cell['cell']/'quality.json')
+            if receipt != {'valid': not issues, 'issues': issues}:
+                raise InferenceError('quality receipt differs from recomputation')
+        except (OSError, ValueError, KeyError) as exc:
+            issues.append(f'execution quality receipt: {exc}')
+    return issues
+
+
+def _run_diagnostic_cell(config, job, cell, nodes, probes, workspace, campaign_id,
+                         directory, deadline, active_clients, cleanup, ranks, seen):
+    from infraestructura import inference_diag_phases as phases
+    from infraestructura import inference_diag_client as client
+    from infraestructura import inference_diag_traces as traces
+    from infraestructura import inference_diag_quality as quality
+    model = job['model']; name = cell_id(cell)
+    dest = directory / 'raw/diagnostic' / name
+    port = config['runtime']['api_port']; errors = []; record = None
+    def budget(key):
+        return min(deadline, time.monotonic() + config['diagnosis'][key])
+    def save(path, value, kind):
+        try: write_new(path, value)
+        except Exception as exc: errors.append(f'{kind}: {type(exc).__name__}: {exc}')
+    def capture(label):
+        snapshot = _diagnostic_call(phases.capture, port, budget('capture_limit_seconds'), model['key'])
+        save(dest / (label + '.json'), snapshot, 'phases')
+        return snapshot
+    commands = _cell_commands(config, model, cell)
+    for phase in ('warmup', 'measured'):
+        left = remaining(deadline, config['measurement']['cell_limit_seconds'])
+        container = f"ipre-{campaign_id[-8:]}-{job['name']}-{name}-{phase}"
+        command = container_command(nodes[0], config, probes['pegasus'], workspace, container,
+                                    commands[phase], gpu=False, seconds=left-2)
+        command.insert(2, '--rm')
+        offsets = _diagnostic_call(execution_logs, nodes, workspace, deadline, ranks) if phase == 'measured' else None
+        if phase == 'measured': before = capture('before')
+        active_clients.append((nodes[0], container))
+        start = manifest.utc_now(); result = None; client_error = None
+        try:
+            result = runtime.remote(nodes[0], command, timeout=remaining(deadline, left))
+        except (Exception, KeyboardInterrupt) as exc:
+            client_error = exc
+        end = manifest.utc_now()
+        # Native results survive failed profile receipts and even CLI failures.
+        fallback = {'returncode': None, 'timed_out': True} if result is None else result
+        raw, record = _persist_native_client(config, model, cell, directory, workspace,
+                                             phase, start, end, fallback)
+        save(directory / 'logs' / f'{name}-{phase}.json', fallback, 'client execution')
+        if client_error is not None or result['returncode'] != 0 or result.get('timed_out'):
+            # Leave the bounded client registered for label-checked cleanup;
+            # the enclosing finally closes this server before any more clients.
+            if client_error is not None: raise client_error
+            runtime.checked(result, f'{name} {phase}')
+        active_clients.remove((nodes[0], container))
+        if phase != 'measured': continue
+        window = _diagnostic_call(execution_logs, nodes, workspace, deadline, ranks, offsets)
+        logs = {node: {filename: value['bounds'] for filename, value in files.items()}
+                for node, files in window.items()} if window.get('valid') is not False else {}
+        execution = {'cell': name, 'measurement_started_at': record['measurement_started_at'],
+                     'measurement_ended_at': record['measurement_ended_at'], 'logs': logs}
+        save(dest / 'execution-window.json', execution, 'execution quality')
+        text = '\n'.join(value['text'] for files in window.values() for value in files.values()) if logs else ''
+        text += '\n' + result.get('stdout', '') + '\n' + result.get('stderr', '')
+        control = None; events = None
+        if 'mode' in cell:
+            events = _diagnostic_call(_archive_client_file, directory, workspace, name, 'client-events.json')
+            receipt = _diagnostic_call(client.verify_events, events, raw)
+            save(dest / 'client-validation.json', receipt, 'client events')
+            if receipt.get('valid') is not True: errors.append('client events: invalid admission receipt')
+        if cell.get('mode') == 'on':
+            control = _diagnostic_call(_archive_client_file, directory, workspace, name, 'profile-control.json')
+            save(dest / 'profile-control.json', control, 'profile control')
+            coverage = _diagnostic_call(client.profile_coverage, control, events, raw)
+            save(dest / 'profile-coverage.json', coverage, 'profile coverage')
+            if coverage.get('valid') is not True: errors.append('profile coverage: no verified measured overlap')
+            # START not acknowledged or STOP not confirmed poisons this server.
+            from infraestructura.inference_evidence import _verify_profile_control
+            verified = _diagnostic_call(lambda: (_verify_profile_control(control), {'valid': True})[1])
+            if verified.get('valid') is not True: errors.append('profile control: invalid START/STOP receipt')
+            if (not isinstance(control.get('start'), dict) or not control['start'].get('ack')
+                    or control['start'].get('http_status') not in (200, 204) or control['start'].get('error')
+                    or not isinstance(control.get('stop'), dict) or not control['stop'].get('ack')
+                    or control['stop'].get('http_status') not in (200, 204)
+                    or control['stop'].get('error') or control.get('requires_server_shutdown') is not False
+                    or quality.profiler_stop_failed(text) or not logs):
+                record['server_must_close'] = 'profiler START/STOP unconfirmed or explicit stop failure'
+                errors.append('profile control: close this server before any further capture or client')
+                return record, errors
+        after = capture('after')
+        delta = _diagnostic_call(phases.phase_deltas, before, after, model['key'], expected_count=32, measured=raw)
+        save(dest / 'phases.json', delta, 'phases')
+        if delta.get('valid') is not True: errors.append('phases: invalid native measured window or counters')
+        if cell.get('mode') == 'on':
+            receipt = _diagnostic_call(traces.collect_traces, nodes, workspace, dest / 'traces',
+                                       ranks, seen, budget('trace_collection_limit_seconds'))
+            save(dest / 'traces.json', receipt, 'traces')
+            if receipt.get('valid') is not True: errors.append('traces: invalid rank capture')
+    return record, errors
+
+
 def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             preflight_result, workloads, deadline, results_root):
     model=job['model']; nodes=cluster.selected_nodes(cluster_config,job['group'])
     request={'protocol':config,'job':job,'campaign_id':campaign_id}
-    inputs={'cluster':cluster_path,'protocol':config_path,**_experiment_inputs(workloads)}
+    diagnostic = config['protocol_id'] == DIAGNOSIS_PROTOCOL
+    inputs={'cluster':cluster_path,'protocol':config_path,
+            **_experiment_inputs(workloads, config['protocol_id'])}
+    if diagnostic:
+        from infraestructura import inference_diag_protocol as diagnosis
+        inputs['diagnosis/historical-campaign.json'] = diagnosis.historical_path(config, REPO_ROOT)
     directory=manifest.start_run(kind='inference-serving',model_id=model['id'],model_revision=model['revision'],
         tokenizer_id=model['tokenizer_id'],tokenizer_revision=model['tokenizer_revision'],
         requested_config=request,requested_config_path=config_path,inputs=inputs,
@@ -476,7 +744,7 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
     print(json.dumps({'event':'job_start','job':job['name'],'run_dir':str(directory)}),flush=True)
     workspace=str(Path(config['paths']['workspace'])/campaign_id/job['name'])
     files={}
-    created=[]; active_clients=[]; errors=[]; cells=[]; cleanup=[]; launch=[]
+    created=[]; active_clients=[]; errors=[]; cells=[]; cleanup=[]; launch=[]; instrument_errors=[]; quality_errors=[]; ranks=[]
     probe_by_id={n['node_id']:n for n in preflight_result['nodes']}
     started=time.monotonic(); startup_deadline=min(deadline,started+config['measurement']['startup_limit_seconds'])
     try:
@@ -486,12 +754,14 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             contents = Path(path).read_bytes()
             with target.open('xb') as stream:
                 stream.write(contents)
-            if name in RUNNER_SOURCES:
+            if name in runner_sources(config['protocol_id']):
                 files['code/' + name] = contents
             elif name.startswith('workload/'):
                 files['workloads/' + name.removeprefix('workload/')] = contents
         write_new(directory/'raw'/'preflight.json',preflight_result)
         write_new(directory/'raw'/'requested-job.json',request)
+        if diagnostic:
+            diagnosis.verify_workloads(config, {name: manifest.sha256_file(path) for name, path in inputs.items()})
         # Launch head Ray first; vLLM waits for resources while workers join.
         for node in nodes:
             if time.monotonic()>=startup_deadline: raise TimeoutError('plazo de arranque agotado')
@@ -544,9 +814,22 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
                 if response.get('tokens')!=row['token_ids']:
                     raise InferenceError('tokenización efectiva del servidor difiere del dataset')
         write_new(directory/'raw'/'tokenization-verified.json',{'verified':True,'profiles':[512,2048]})
+        seen = {node['node_id']: {} for node in nodes}
         for cell in job['cells']:
             if time.monotonic()>=deadline: raise TimeoutError('presupuesto global agotado')
             cell_deadline=min(deadline,time.monotonic()+config['measurement']['cell_limit_seconds'])
+            if diagnostic:
+                record, issues = _run_diagnostic_cell(config, job, cell, nodes, probe_by_id, workspace,
+                    campaign_id, directory, cell_deadline, active_clients, cleanup, ranks, seen)
+                cells.append(record)
+                cell_errors = [f"{record['cell']}: {issue}" for issue in issues]
+                instrument_errors.extend(error for error, issue in zip(cell_errors, issues)
+                    if issue.startswith(('phases:', 'traces:', 'client events:', 'profile control:', 'profile coverage:')))
+                errors.extend(cell_errors)
+                if record.get('server_must_close'):
+                    errors.append(f"{record['cell']}: {record['server_must_close']}; parada operacional global, sin reintento")
+                    break
+                continue
             cell_name=f"{cell['input_tokens']}-c{cell['concurrency']}"
             record={**cell,'cell':cell_name,'status':'running','started_at':manifest.utc_now()}
             # Logs before and after the measured phase distinguish lazy compile
@@ -595,17 +878,26 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             print(json.dumps({'event':'cell_complete','job':job['name'],'cell':cell_name,
                               't32_seconds':record['t32_seconds']}),flush=True)
     except (Exception,KeyboardInterrupt) as exc:
+        if isinstance(exc, CleanupError): cleanup.append(exc.receipt)
         errors.append(f'{type(exc).__name__}: {exc}')
     finally:
-        write_new(directory/'raw'/'launch.json',launch)
+        close_deadline = min(deadline + config['measurement']['cleanup_reserve_seconds'],
+                             time.monotonic() + config['measurement']['cleanup_reserve_seconds'])
+        try: write_new(directory/'raw'/'launch.json',launch)
+        except (Exception, KeyboardInterrupt) as exc:
+            errors.append(f'launch receipt: {type(exc).__name__}: {exc}')
         for node,name in active_clients:
             try: cleanup.append(cleanup_container(node,name,directory/'logs'))
-            except Exception as exc: errors.append(f"cleanup client {name}: {exc}")
+            except Exception as exc:
+                if isinstance(exc, CleanupError): cleanup.append(exc.receipt)
+                errors.append(f"cleanup client {name}: {exc}")
         def close_node(item):
             node,name=item
             node_errors=[]; result=None
             try: result=cleanup_container(node,name,directory/'logs')
-            except Exception as exc: node_errors.append(f"cleanup {node['node_id']}: {exc}")
+            except Exception as exc:
+                if isinstance(exc, CleanupError): result = exc.receipt
+                node_errors.append(f"cleanup {node['node_id']}: {exc}")
             try: collect(node,workspace,directory/'raw'/'nodes')
             except Exception as exc: node_errors.append(f"collect {node['node_id']}: {exc}")
             return result,node_errors
@@ -615,23 +907,95 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             for result,node_errors in pool.map(close_node,reversed(created)):
                 if result: cleanup.append(result)
                 errors.extend(node_errors)
-        errors.extend(_telemetry_valid(directory,nodes,cells))
-        if len(cells)!=len(job['cells']): errors.append('matriz de seis celdas incompleta')
+        if diagnostic:
+            # A later instrument/transport failure can occur after the verified
+            # client summary was persisted. Recover it before sealing assessment.
+            by_name = {record['cell']: record for record in cells}
+            for coordinate in job['cells']:
+                name = cell_id(coordinate)
+                if coordinate.get('mode') == 'on':
+                    native = directory/'raw/nodes/pegasus/metrics'/name
+                    local = Path(workspace)/'metrics'/name
+                    if (native/'profile-control.json').is_file() or (local/'profile-control.json').is_file():
+                        from infraestructura import inference_diag_client as client
+                        try:
+                            control = _archive_client_file(directory, workspace, name, 'profile-control.json')
+                            target = directory/'raw/diagnostic'/name/'profile-control.json'
+                            if not target.exists(): write_new(target, control)
+                            target = target.with_name('profile-coverage.json')
+                            if not target.exists():
+                                events = _diagnostic_call(_archive_client_file, directory, workspace, name, 'client-events.json')
+                                measured = _diagnostic_call(_archive_client_file, directory, workspace, name, 'measured.json')
+                                write_new(target, _diagnostic_call(client.profile_coverage, control, events, measured))
+                            target = target.with_name('traces.json')
+                            if not target.exists():
+                                from infraestructura import inference_diag_traces as traces
+                                receipt = _diagnostic_call(traces.collect_traces, nodes, workspace,
+                                    target.parent/'traces', ranks, seen,
+                                    min(close_deadline, time.monotonic()+config['diagnosis']['trace_collection_limit_seconds']))
+                                write_new(target, receipt)
+                        except Exception as exc: errors.append(f'{name}: profile receipt recovery: {exc}')
+                saved = directory/'metrics'/(name+'.json')
+                if name not in by_name and saved.is_file():
+                    record = read_json(saved)
+                    if record.get('status') == 'valid': by_name[name] = record
+                elif name not in by_name:
+                    window = directory/'metrics'/(name+'-client-window.json')
+                    if window.is_file():
+                        try:
+                            receipt = read_json(window)
+                            _, record = _persist_native_client(config, model, coordinate, directory, workspace,
+                                'measured', receipt['measurement_started_at'], receipt['measurement_ended_at'],
+                                {'returncode': receipt.get('client_returncode'), 'timed_out': receipt.get('client_timed_out')})
+                            by_name[name] = record
+                        except Exception as exc: errors.append(f'{name}: native client recovery: {exc}')
+            cells = [by_name[cell_id(c)] for c in job['cells'] if cell_id(c) in by_name]
+            for record in cells:
+                issues = _cell_quality_issues(directory, record, ranks)
+                quality_errors.extend(f"{record['cell']}: {issue}" for issue in issues)
+                try:
+                    write_new(directory/'raw/diagnostic'/record['cell']/'quality.json',
+                              {'valid': not issues, 'issues': issues})
+                except Exception as exc:
+                    quality_errors.append(f"{record['cell']}: execution quality receipt: {exc}")
+            errors.extend(quality_errors)
+            errors.extend(diagnosis.cell_matrix_issues(job, cells, complete=True))
+        else:
+            errors.extend(_telemetry_valid(directory,nodes,cells))
+        if len(cells)!=len(job['cells']): errors.append('matriz de celdas incompleta')
         write_new(directory/'raw'/'cleanup.json',cleanup)
         write_new(directory/'metrics'/'assessment.json',{'valid':not errors,'errors':errors,'cells':cells})
-        manifest.finalize_run(directory,status='failed' if errors else 'complete',errors=errors)
+        try:
+            manifest.finalize_run(directory,status='failed' if errors else 'complete',errors=errors)
+        except Exception:
+            # finalize_run can seal FAILED and then raise on changed inputs.
+            # Never mutate a sealed archive or lose the real attempt's index.
+            if not (directory / 'FAILED').is_file():
+                raise
+            closed = manifest.load_run(directory)
+            errors = [e.get('message', str(e)) if isinstance(e, dict) else str(e)
+                      for e in closed['errors']] or ['cierre FAILED']
     return {'job':job['name'],'group':job['group'],'block':job['block'],'model_key':model['key'],
             'run_dir':str(directory),'status':'failed' if errors else 'complete',
-            'manifest_sha256':manifest.sha256_file(directory/'manifest.json'),'errors':errors}
+            'manifest_sha256':manifest.sha256_file(directory/'manifest.json'),'errors':errors,
+            **({'series': job['series'], 'client_cells_complete': len(cells) == len(job['cells']),
+                'cell_counts': diagnosis.cell_counts(job['series'], cells),
+                'failure_scope': 'diagnostic' if errors and all(e in instrument_errors for e in errors)
+                                else ('cell_quality' if errors and all(e in instrument_errors + quality_errors for e in errors)
+                                      else ('operational' if errors else None))}
+               if diagnostic else {})}
 
 
 def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultados/raw', session_limit_seconds=None):
     config,cluster_config,cluster_path=load_config(config_path)
+    if config['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        from infraestructura import inference_diag_protocol as diagnosis
+        diagnosis.validate_historical(config, REPO_ROOT)
     maximum=config['measurement']['session_limit_seconds']
     effective_limit=maximum if session_limit_seconds is None else session_limit_seconds
     if (type(effective_limit) is not int or
             not config['measurement']['cleanup_reserve_seconds']<effective_limit<=maximum):
-        raise InferenceError('el límite efectivo solo puede reducir las ocho horas configuradas y debe reservar el cierre')
+        raise InferenceError('el límite efectivo solo puede reducir el presupuesto configurado y debe reservar el cierre')
     check=runtime.preflight(cluster_config,config,container_probe=True)
     preflight_path=REPO_ROOT/'resultados/tmp'/f'inference-preflight-{manifest.generate_run_id()}.json'
     write_new(preflight_path,check)
@@ -643,13 +1007,22 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
     campaign_id=manifest.generate_run_id()
     workloads=prepare_workloads(config,cluster_config,check,campaign_id)
     input_hashes = {}
-    if config['protocol_id'] == PEGASUS_REFERENCE_PROTOCOL:
+    diagnostic = config['protocol_id'] == DIAGNOSIS_PROTOCOL
+    if config['protocol_id'] in (PEGASUS_REFERENCE_PROTOCOL, DIAGNOSIS_PROTOCOL):
         input_hashes = {name: manifest.sha256_file(path)
-                        for name, path in _experiment_inputs(workloads).items()}
+                        for name, path in _experiment_inputs(workloads, config['protocol_id']).items()}
+    if diagnostic:
+        from infraestructura import inference_diag_protocol as diagnosis
+        diagnosis.verify_workloads(config, input_hashes)
+        for name, path in {'cluster': cluster_path, 'protocol': Path(config_path),
+                'diagnosis/historical-campaign.json': diagnosis.historical_path(config, REPO_ROOT)}.items():
+            input_hashes[name] = manifest.sha256_file(path)
     directory=Path(results_root)/'inference-campaign'/campaign_id
     directory.mkdir(parents=True,exist_ok=False)
     write_new(directory/'plan.json',make_plan(config_path))
     write_new(directory/'preflight.json',check)
+    # CPU preparation and review artifacts precede the occupation clock in
+    # every protocol. Reserve the final 300 seconds for bounded closure.
     started=time.monotonic()
     deadline=started+effective_limit-config['measurement']['cleanup_reserve_seconds']
     records=[]; errors=[]
@@ -662,14 +1035,22 @@ def run_campaign(config_path=DEFAULT_CONFIG, *, results_root=REPO_ROOT/'resultad
                            check,workloads,deadline,results_root)
             records.append(record)
             if record['status']!='complete':
+                if diagnostic and record.get('client_cells_complete') and record.get('failure_scope') in ('diagnostic', 'cell_quality'):
+                    errors.append(f"{job['name']}: evidencia diagnóstica o cierre inválido; métricas conservadas")
+                    continue
                 errors.append('sesión detenida tras fallo; sin reintentos automáticos'); break
     except (Exception,KeyboardInterrupt) as exc: errors.append(f'{type(exc).__name__}: {exc}')
+    if diagnostic and not errors and len(records) == len(planned_jobs):
+        totals = {key: sum(ref.get('cell_counts', {}).get(key, 0) for ref in records)
+                  for key in ('primary', 'off', 'on')}
+        if totals != {'primary': 54, 'off': 12, 'on': 12}:
+            errors.append('COMPLETE requiere totales exactos 54 primary, 12 off y 12 on')
     status='complete' if len(records)==len(planned_jobs) and not errors else 'partial'
     campaign={'campaign_id':campaign_id,'status':status,'git':git,'protocol':config,
         'duration_seconds':time.monotonic()-started,'effective_session_limit_seconds':effective_limit,
         'runs':records,'errors':errors,
         'pending_jobs':[j['name'] for j in planned_jobs[len(records):]]}
-    if config['protocol_id'] == PEGASUS_REFERENCE_PROTOCOL:
+    if config['protocol_id'] in (PEGASUS_REFERENCE_PROTOCOL, DIAGNOSIS_PROTOCOL):
         campaign['input_hashes'] = input_hashes
     write_new(directory/'campaign.json',campaign)
     write_new(directory/('COMPLETE' if status=='complete' else 'PARTIAL'),
@@ -775,18 +1156,35 @@ def _validate_planned_matrix(plan, protocol, expected_jobs):
     for field, expected in _plan_counts(measurement, expected_jobs).items():
         if type(plan.get(field)) is not int or plan[field] != expected:
             raise InferenceError(f'total del plan incompatible con el protocolo: {field}')
+    if protocol['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        if (plan.get('maximum_occupation_seconds') != 14400
+                or plan.get('resources_max') != {'nodes': 4, 'gpus': 4, 'replicas': 1}
+                or plan.get('diagnostic_capture') != {
+                    'scrape_limit_seconds': 30, 'trace_window_limit_seconds': 60,
+                    'trace_max_iterations': 32, 'trace_collection_limit_seconds': 60,
+                    'cleanup_reserve_seconds': 300, 'traces_collector': 'inference_diag_traces.collect_traces'}):
+            raise InferenceError('presupuestos o recursos del plan diagnóstico incompatibles')
     for saved, expected in zip(saved_jobs, expected_jobs):
         if (not isinstance(saved, dict)
                 or any(saved.get(k) != expected[k] for k in ('name', 'block', 'model', 'group'))
                 or saved.get('nodes') != TOPOLOGIES[expected['group']]):
             raise InferenceError('identidad u orden de corridas incorrecto en el plan')
+        if protocol['protocol_id'] == DIAGNOSIS_PROTOCOL:
+            if (saved.get('series') != expected['series']
+                    or saved.get('server_command') != _server_command(protocol, expected, len(saved['nodes']))):
+                raise InferenceError('serie o flags del servidor diagnóstico incompatibles')
+            if saved.get('ray_commands') != {node: runtime.ray_command({'node_id': node}, protocol)
+                                             for node in saved['nodes']}:
+                raise InferenceError('comandos Ray del diagnóstico incompatibles')
         cells = saved.get('cells')
         if not isinstance(cells, list) or len(cells) != len(expected['cells']):
             raise InferenceError(f"matriz de celdas incompleta en el plan de {expected['name']}")
         for cell, coordinate in zip(cells, expected['cells']):
             if not isinstance(cell, dict) or any(
-                    type(cell.get(k)) is not int or cell[k] != value for k, value in coordinate.items()):
+                    type(cell.get(k)) is not type(value) or cell[k] != value for k, value in coordinate.items()):
                 raise InferenceError(f"coordenadas de celda incorrectas en el plan de {expected['name']}")
+            if protocol['protocol_id'] == DIAGNOSIS_PROTOCOL and set(cell) != {*coordinate, 'commands'}:
+                raise InferenceError('campos de celda no previstos en el plan diagnóstico')
             if cell.get('commands') != _cell_commands(protocol, expected['model'], coordinate):
                 raise InferenceError(f"comandos de celda incompatibles con el plan de {expected['name']}")
 
@@ -802,7 +1200,8 @@ def build_report(directory):
     protocol=campaign['protocol']
     _validate_protocol(protocol)
     protocol_id=protocol['protocol_id']
-    reference_protocol = protocol_id == PEGASUS_REFERENCE_PROTOCOL
+    diagnostic = protocol_id == DIAGNOSIS_PROTOCOL
+    reference_protocol = protocol_id in (PEGASUS_REFERENCE_PROTOCOL, DIAGNOSIS_PROTOCOL)
     expected_jobs={job['name']:job for job in jobs(protocol)}
     if (campaign['status'] not in ('complete','partial')
             or markers[0].name!=('COMPLETE' if campaign['status']=='complete' else 'PARTIAL')):
@@ -825,7 +1224,12 @@ def build_report(directory):
         if len(campaign_probes) != len(probe_list) or set(campaign_probes) != set(TOPOLOGIES['four']):
             raise InferenceError('preflight de campaña sin identidad única de los cuatro nodos')
     campaign_hashes = campaign.get('input_hashes', {})
-    pairs={}; rows=[]; excluded=[]; identities={}; seen_jobs=set(); seen_slots=set(); seen_paths=set()
+    if diagnostic:
+        actual = [ref['job'] for ref in campaign['runs']]
+        expected = list(expected_jobs)
+        if actual != expected[:len(actual)] or campaign['pending_jobs'] != expected[len(actual):]:
+            raise InferenceError('índice de intentos o pendientes contradictorio con el plan')
+    pairs={}; rows=[]; auxiliary_rows=[]; raw_rows=[]; excluded=[]; identities={}; seen_jobs=set(); seen_slots=set(); seen_paths=set()
     for ref in campaign['runs']:
         job_name=ref['job']; slot=(ref['model_key'],ref['block'],ref['group'])
         run_path=Path(ref['run_dir']).resolve()
@@ -848,11 +1252,25 @@ def build_report(directory):
                 or any(job[k]!=expected_job[k] for k in ('name','group','block','cells'))
                 or job['model']['key']!=expected_job['model']['key']):
             raise InferenceError('índice de campaña contradice la identidad de la corrida')
-        if run['status'] != 'complete':
+        if diagnostic and (job.get('series') != expected_job['series'] or ref.get('series') != job['series']):
+            raise InferenceError('serie del índice contradice el plan')
+        if run['status'] != 'complete' and not diagnostic:
+            continue
+        if diagnostic and not (path/'metrics/assessment.json').is_file():
+            if campaign['status'] == 'complete':
+                raise InferenceError('COMPLETE sin evaluación')
             continue
         assessment=read_json(path/'metrics'/'assessment.json')
+        if diagnostic:
+            from infraestructura import inference_diag_protocol as diagnosis
+            matrix_issues = diagnosis.cell_matrix_issues(job, assessment.get('cells'),
+                complete=campaign['status'] == 'complete' or run['status'] == 'complete' or assessment.get('valid') is True)
+            if matrix_issues:
+                raise InferenceError('; '.join(matrix_issues))
         if not assessment['valid']:
             if campaign['status']=='complete': raise InferenceError('COMPLETE contiene corrida inválida')
+            if not diagnostic: continue
+        if diagnostic and not assessment.get('cells'):
             continue
         observed,head,comparable=_observed_topology(
             path,run,job,read_json(path/'raw'/'preflight.json'),protocol,campaign_probes)
@@ -872,16 +1290,24 @@ def build_report(directory):
             code_hashes, profile_hashes, profile_issues = archived_job_evidence(path, run, job)
             if any(campaign_hashes.get(name) != digest for name, digest in code_hashes.items()):
                 run_issues.append('El código archivado difiere del fijado antes de la campaña.')
+            if diagnostic:
+                for name in ('cluster', 'protocol', 'diagnosis/historical-campaign.json'):
+                    archived = manifest._internal_file(path, 'raw/inputs/' + name)
+                    if campaign_hashes.get(name) != manifest.sha256_file(archived):
+                        run_issues.append(f'{name}: entrada archivada difiere del índice de campaña.')
         else:
             legacy_workloads = {i['name']:i['sha256'] for i in run['inputs'] if i['name'].startswith('workload/')}
         seen_cells=set()
         for cell in assessment['cells']:
             if cell['status']!='valid': continue
             slot=(cell['input_tokens'],cell['concurrency'])
+            if diagnostic: slot += (cell.get('mode'),)
             if slot in seen_cells:
                 raise InferenceError('celda de grupo duplicada en comparación pareada')
             seen_cells.add(slot)
-            if {'input_tokens':slot[0],'concurrency':slot[1]} not in job['cells']:
+            coordinate = {'input_tokens': slot[0], 'concurrency': slot[1]}
+            if diagnostic and 'mode' in cell: coordinate['mode'] = cell['mode']
+            if coordinate not in job['cells'] or (diagnostic and cell.get('cell') != cell_id(coordinate)):
                 raise InferenceError('celda fuera de la carga solicitada')
             # Identity includes source commit, protocol, model/tokenizer revision,
             # exact datasets and the trial. Node count alone differs.
@@ -908,6 +1334,25 @@ def build_report(directory):
             key=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
             summary={**cell,'comparison_key':key,'model_key':ref['model_key'],'block':ref['block'],
                      'group':ref['group'],'run_dir':str(path)}
+            if diagnostic:
+                ranks = [read_json(path / p['evidence_path']) for p in run['participants']]
+                diagnostic_issues = diagnostic_cell_issues(path, job['model'], cell, ranks)
+                quality_issues = _cell_quality_issues(path, cell, ranks, verify_receipt=True)
+                issues.extend(quality_issues)
+                summary.update(series=job['series'], diagnostic_valid=not diagnostic_issues,
+                               diagnostic_issues=diagnostic_issues, execution_valid=not quality_issues,
+                               execution_issues=quality_issues)
+                if cell.get('mode') == 'on':
+                    summary['profile_control_valid'] = not any(
+                        issue.startswith('profile control:') for issue in diagnostic_issues)
+                    summary['traces_valid'] = not any(
+                        issue.startswith('traces:') for issue in diagnostic_issues)
+                    summary['profile_coverage_valid'] = not any(
+                        issue.startswith('profile coverage:') for issue in diagnostic_issues)
+                    summary['trace_coverage'] = 'limited; START.sent to STOP.ack, at most 60s/32 iterations; may cover only a prefix of T32'
+                if campaign['status'] == 'complete' and diagnostic_issues:
+                    raise InferenceError('COMPLETE contiene evidencia diagnóstica incompleta')
+                raw_rows.append(summary)
             expected_counts={'requested':protocol['measurement']['measured_requests'],
                 'completed':protocol['measurement']['measured_requests'],'failed':0,
                 'input_tokens':protocol['measurement']['measured_requests']*cell['input_tokens'],
@@ -921,11 +1366,16 @@ def build_report(directory):
             if reference_protocol:
                 summary['node_count']=len(observed)
                 if issues:
+                    if diagnostic and campaign['status'] == 'complete':
+                        raise InferenceError('COMPLETE contiene una celda sin evidencia íntegra')
                     excluded.append({**summary,'status':'excluded','reasons':issues})
                     continue
+            if diagnostic and job['series'] == 'auxiliary':
+                auxiliary_rows.append(summary)
+                continue
             rows.append(summary)
             if not issues:
-                pairs.setdefault((ref['model_key'],ref['block'],*slot),{})[ref['group']] = summary
+                pairs.setdefault((ref['model_key'],ref['block'],*slot[:2]),{})[ref['group']] = summary
         if campaign['status']=='complete' and len(seen_cells)!=len(job['cells']):
             raise InferenceError('COMPLETE contiene una matriz de celdas incompleta')
     comparisons=[]
@@ -953,6 +1403,16 @@ def build_report(directory):
                  'Cliente en Pegasus compartido con servicio; saturación del cliente no descartada solo por benchmark JSON.']}
     if reference_protocol:
         report.update(protocol_id=protocol_id, excluded_cells=excluded)
+    if diagnostic:
+        if campaign['status'] == 'complete' and diagnosis.cell_counts('primary', rows) != {
+                'primary': 54, 'off': 0, 'on': 0}:
+            raise InferenceError('COMPLETE requiere exactamente 54 celdas primarias válidas')
+        if campaign['status'] == 'complete' and diagnosis.cell_counts('auxiliary', auxiliary_rows) != {
+                'primary': 0, 'off': 12, 'on': 12}:
+            raise InferenceError('COMPLETE requiere exactamente 12 OFF y 12 ON válidas')
+        report['auxiliary_cells'] = auxiliary_rows
+        report['raw_cells'] = raw_rows
+        report['limitations'].append('La traza ON cubre como máximo 60 s entre START.sent y STOP.ack y 32 iteraciones; puede ser solo un prefijo de T32.')
     return report
 
 
@@ -985,7 +1445,7 @@ def markdown_report(report):
         lines += ['', f"Celdas excluidas de medianas y comparaciones: {len(report['excluded_cells'])}. "
                   'El JSON conserva sus observaciones y motivos en `excluded_cells`.']
     metric_columns=['s4_2','e4_2']
-    if (report.get('protocol_id')==PEGASUS_REFERENCE_PROTOCOL
+    if (report.get('protocol_id') in (PEGASUS_REFERENCE_PROTOCOL, DIAGNOSIS_PROTOCOL)
             or any(run['group']=='single' for run in report['runs'])):
         metric_columns+=['s2_1','e2_1','s4_1','e4_1']
     titles={'s4_2':'S4/2','e4_2':'E4/2','s2_1':'S2/1','e2_1':'E2/1','s4_1':'S4/1','e4_1':'E4/1'}
@@ -1015,7 +1475,7 @@ def main(argv=None):
         if name=='run':
             p.add_argument('--execute',action='store_true',help='ejecutar campaña; requiere autorización específica de comandos, duración, recursos y salidas')
             p.add_argument('--session-limit-seconds',type=int,
-                help='reducir el presupuesto de ocupación; nunca amplía el máximo configurado de ocho horas')
+                help='reducir el presupuesto de ocupación; nunca amplía el máximo del protocolo configurado')
     p=sub.add_parser('report');p.add_argument('directory',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--plot',action='store_true',help='añadir SVG científico con Matplotlib ya instalado')
     args=parser.parse_args(argv)

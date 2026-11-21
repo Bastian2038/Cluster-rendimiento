@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from collections import defaultdict
 from pathlib import Path
 
@@ -25,6 +26,31 @@ RUNNER_SOURCES = (
     "infraestructura/manifest.py",
     "infraestructura/rutas.py",
 )
+# Keep the historical source contract frozen. New protocols add their own inputs.
+DIAGNOSIS_PROTOCOL = 'inference-diagnosis-2048-c8-v1'
+DIAGNOSTIC_SOURCES = (
+    'infraestructura/inference_diag_protocol.py',
+    'infraestructura/inference_diag_phases.py',
+    'infraestructura/inference_diag_client.py',
+    'infraestructura/inference_diag_traces.py',
+    'infraestructura/inference_diag_quality.py',
+)
+SOURCES_BY_PROTOCOL = {
+    'inference-4-2-v1': RUNNER_SOURCES,
+    'inference-4-2-1-v1': RUNNER_SOURCES,
+    DIAGNOSIS_PROTOCOL: RUNNER_SOURCES + DIAGNOSTIC_SOURCES,
+}
+
+
+def runner_sources(protocol_id):
+    return SOURCES_BY_PROTOCOL[protocol_id]
+
+
+def cell_id(cell):
+    name = f"{cell['input_tokens']}-c{cell['concurrency']}"
+    return name + ('-' + cell['mode'] if 'mode' in cell else '')
+
+
 _GENERATOR = "infraestructura/inference_workload.py"
 _PHASES = ("warmup", "measured")
 _PROFILE_FILES = ("warmup.jsonl", "measured.jsonl", "metadata.json", "reader-validation.json")
@@ -100,7 +126,19 @@ def archived_job_evidence(path: str | Path, run: dict, job: dict) -> tuple[
             if isinstance(record, dict) and isinstance(record.get("name"), str):
                 inputs[record["name"]].append(record)
     shared_issues = []
-    code = _archived_hashes(path, inputs, RUNNER_SOURCES, shared_issues)
+    protocol = run['requested_config']['protocol']
+    code = _archived_hashes(path, inputs, runner_sources(protocol['protocol_id']), shared_issues)
+    if protocol['protocol_id'] == DIAGNOSIS_PROTOCOL:
+        _archived_hashes(path, inputs, ('cluster', 'protocol', 'diagnosis/historical-campaign.json'), shared_issues)
+        try:
+            from infraestructura import inference_diag_protocol
+            inference_diag_protocol.validate_archived_historical(
+                protocol, manifest._internal_file(path, 'raw/inputs/diagnosis/historical-campaign.json'))
+            archived_protocol = json.loads((path / 'raw/inputs/protocol').read_text(encoding='utf-8'))
+            if archived_protocol != protocol:
+                raise ValueError('archived protocol differs from requested configuration')
+        except (OSError, ValueError, KeyError) as exc:
+            shared_issues.append(f'diagnosis input pin: {exc}')
     model = job["model"]
     workloads, issues_by_length = {}, {}
     for length in (512, 2048):
@@ -108,6 +146,12 @@ def archived_job_evidence(path: str | Path, run: dict, job: dict) -> tuple[
         prefix = f"workload/{model['key']}/{length}"
         names = [f"{prefix}/{filename}" for filename in _PROFILE_FILES]
         hashes = _archived_hashes(path, inputs, names, issues)
+        if protocol['protocol_id'] == DIAGNOSIS_PROTOCOL:
+            pinned = protocol['diagnosis']['historical_jsonl_sha256']
+            for phase in _PHASES:
+                name = f'{prefix}/{phase}.jsonl'
+                if hashes.get(name) != pinned.get(name):
+                    issues.append(f'{name}: differs from pinned historical JSONL')
         if len(hashes) == len(names) and _GENERATOR in code:
             try:
                 _verify_profile(path, prefix, length, model, run["requested_config"]["protocol"],
@@ -136,7 +180,7 @@ def verify_client_cell(path: str | Path, model: dict, cell: dict, protocol: dict
 
     issues = []
     for phase in _PHASES:
-        relative = f"raw/nodes/pegasus/metrics/{length}-c{concurrency}/{phase}.json"
+        relative = f"raw/nodes/pegasus/metrics/{cell_id(cell)}/{phase}.json"
         try:
             raw = load_bench_result(manifest._internal_file(Path(path), relative))
             validate_client_identity(raw, model=model, concurrency=concurrency)
@@ -152,4 +196,87 @@ def verify_client_cell(path: str | Path, model: dict, cell: dict, protocol: dict
                     raise ValueError("measured summary differs in " + ", ".join(changed))
         except (OSError, ValueError, TypeError, KeyError, OverflowError, manifest.ManifestError) as exc:
             issues.append(f"{relative}: {exc}")
+    return issues
+
+
+def _verify_profile_control(control):
+    """Validate observed START/STOP acknowledgements independently of Kineto.
+
+    Raise ValueError for an invalid window. The context's exit can follow STOP:
+    a bounded profile may cover only a prefix of the measured client batch.
+    """
+    if control.get('valid') is not True:
+        raise ValueError('profiler control invalid')
+    stamps = []
+    for action in ('start', 'stop'):
+        command = control[action]
+        if (command.get('http_status') not in (200, 204) or command.get('error')
+                or command.get('method') != 'POST' or command.get('path') != f'/{action}_profile'):
+            raise ValueError(f'{action} acknowledgement missing')
+        for mark in ('sent', 'ack'):
+            stamp = command[mark]
+            monotonic = stamp['monotonic_ns']
+            if (type(monotonic) is not int or monotonic <= 0
+                    or datetime.fromisoformat(stamp['utc']).tzinfo is None):
+                raise ValueError(f'{action}.{mark} requires observed clock marks')
+            stamps.append(monotonic)
+    if stamps != sorted(stamps):
+        raise ValueError('profiler START/STOP clock marks out of order')
+    elapsed = (stamps[-1] - stamps[0]) / 1e9
+    if not 0 <= elapsed <= 60:
+        raise ValueError('profiler control exceeds the approved window')
+
+
+def diagnostic_cell_issues(path, model, cell, ranks):
+    """Recompute instruments using only sealed evidence, preserving basic metrics."""
+    from infraestructura import inference_diag_phases as phases
+    from infraestructura import inference_diag_client as client
+    from infraestructura import inference_diag_traces as traces
+    path = Path(path)
+    directory = path / 'raw/diagnostic' / cell_id(cell)
+    def read(name):
+        return json.loads((directory / name).read_text(encoding='utf-8'))
+    issues = []
+    raw_dir = path / 'raw/nodes/pegasus/metrics' / cell_id(cell)
+    measured = None
+    try:
+        measured = json.loads((raw_dir / 'measured.json').read_text(encoding='utf-8'))
+        delta = phases.phase_deltas(read('before.json'), read('after.json'), model['key'], expected_count=32,
+                                    measured=measured)
+        if delta.get('valid') is not True or delta != read('phases.json'):
+            raise ValueError('phase evidence is invalid or receipt differs from recomputation')
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        issues.append(f'phases: {exc}')
+    if 'mode' in cell:
+        try:
+            events = json.loads((raw_dir / 'client-events.json').read_text(encoding='utf-8'))
+            measured = json.loads((raw_dir / 'measured.json').read_text(encoding='utf-8'))
+            checked = client.verify_events(events, measured)
+            if checked.get('valid') is not True or checked != read('client-validation.json'):
+                raise ValueError('client events are invalid or validation receipt differs')
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            issues.append(f'client events: {exc}')
+    if cell.get('mode') == 'on':
+        try:
+            _verify_profile_control(read('profile-control.json'))
+        except (OSError, ValueError, TypeError, KeyError, IndexError, OverflowError, AttributeError) as exc:
+            issues.append(f'profile control: {exc}')
+        try:
+            control = read('profile-control.json')
+            events = json.loads((raw_dir / 'client-events.json').read_text(encoding='utf-8'))
+            measured = json.loads((raw_dir / 'measured.json').read_text(encoding='utf-8'))
+            coverage = client.profile_coverage(control, events, measured)
+            if coverage.get('valid') is not True or coverage.get('count', 0) < 1 or coverage != read('profile-coverage.json'):
+                raise ValueError('measured requests do not overlap profile or coverage receipt differs')
+        except (OSError, ValueError, TypeError, KeyError, IndexError, OverflowError, AttributeError) as exc:
+            issues.append(f'profile coverage: {exc}')
+        # Rehash/identity verification must run even with an invalid control
+        # receipt, and a missing rank file must not invalidate good acuses.
+        try:
+            receipt = read('traces.json')
+            checked = traces.validate_traces(directory / 'traces', receipt, ranks)
+            if checked.get('valid') is not True or checked != receipt:
+                raise ValueError('traces invalid or receipt differs from recomputation')
+        except (OSError, ValueError, TypeError, KeyError, IndexError, OverflowError) as exc:
+            issues.append(f'traces: {exc}')
     return issues

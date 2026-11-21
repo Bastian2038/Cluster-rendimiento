@@ -88,6 +88,8 @@ independientes; `N/A` en nvidia-smi no significa cero. Para serving, medir carga
 capacidad máxima bajo un SLO definido antes de la prueba. Que un modelo quepa
 en memoria no implica que cumpla el SLO.
 
+La campaña 4/2/1 del 19 de noviembre identificó un caso en que dos nodos terminan el lote antes que cuatro, con 2048 tokens y concurrencia 8. El diagnóstico compara ese caso con 2048/C4 y 512/C8. Usa bloques primarios para las razones de escalamiento, y un bloque auxiliar por modelo y topología para medir la perturbación del profiler. Los tiempos de cola, prefill y decode son medias por solicitud. Para relacionarlos con T32 hay que considerar las solicitudes que se atienden al mismo tiempo. [Resultado inicial](resultados/inference-20261119-analysis.md) y [diseño diagnóstico](protocolo-inferencia.md#diagnóstico-de-2048-tokens-a-concurrencia-8).
+
 ## D. SFT completo
 
 Caracterizar, cuando esté soportado, el ajuste supervisado
