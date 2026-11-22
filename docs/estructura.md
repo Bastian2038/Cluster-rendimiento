@@ -1,12 +1,13 @@
 # Estructura y estado
 
-El inventario pasivo verificó los cuatro nodos. La sesión NCCL con f0 completó 31 pruebas en cuatro, dos y un nodo. La primera campaña de inferencia completó 12 corridas en cuatro y dos nodos. El siguiente hito es medir la referencia contemporánea de Pegasus con el protocolo 4/2/1. Siguen pendientes la corroboración física y administrativa del switch y el runner de SFT completo. [Clúster](cluster-cuatro-nodos.md) · [Resultado NCCL](resultados/nccl-20261106-f0-analysis.md) · [Resultado de inferencia](resultados/inference-20261106-analysis.md)
+El inventario pasivo verificó los cuatro nodos. La sesión NCCL con f0 completó 31 pruebas en cuatro, dos y un nodo. La inferencia 4/2/1 del 19 de noviembre incluyó a Pegasus solo y el diagnóstico del 21 midió fases y comunicación. El siguiente hito experimental es la capacidad de serving con llegadas regulares. Siguen pendientes la corroboración física y administrativa del switch y el runner de SFT completo. [Clúster](cluster-cuatro-nodos.md), [resultados](resultados/README.md) y [hoja de ruta](hoja-de-ruta.md).
 
 | Ruta | Función |
 | --- | --- |
 | `experimentos/configs/cluster.json` | Nodos y grupos declarados `four`, `pair`, `single`; la configuración no es evidencia observada. |
 | `experimentos/configs/nccl-diagnostic.json` | Presupuesto, operaciones, tamaños e iteraciones propuestos para NCCL. |
-| `experimentos/configs/inferencia-4-2.json`, `experimentos/configs/inferencia-4-2-1.json` | Protocolo histórico de serving y nueva matriz con Pegasus como referencia de un nodo. |
+| `experimentos/configs/inferencia-4-2.json`, `experimentos/configs/inferencia-4-2-1.json` | Protocolos medidos de inferencia con comparación 4/2 y referencia de un nodo. |
+| `experimentos/configs/serving-capacidad-slo.json`, `infraestructura/serving_capacity.py` | Protocolo y CLI de carga abierta. Plan, preflight, ejecución autorizada e informe de capacidad. |
 | `infraestructura/cluster_inventory.py` | Plan, captura e informe de inventario distribuido. |
 | `infraestructura/nccl.py` | Plan, ejecución e informe de diagnóstico NCCL. |
 | `infraestructura/inference.py` | Plan local, preflight, ejecución y reporte pareado de serving para Qwen y Llama. |
@@ -17,4 +18,4 @@ El inventario pasivo verificó los cuatro nodos. La sesión NCCL con f0 complet�
 | `docs/resultados/` | Informes derivados e índice de evidencia. |
 | `.codex/` | Perfiles y reglas locales; ver [agentes](agentes-codex.md). |
 
-El protocolo de inferencia incluye los comandos para revisar la próxima campaña y los criterios de validez de cada comparación. [Protocolo de inferencia](protocolo-inferencia.md)
+Las guías describen los comandos y criterios de cada tipo de carga. [Inferencia en lotes](protocolo-inferencia.md) y [capacidad de serving](capacidad-serving.md).

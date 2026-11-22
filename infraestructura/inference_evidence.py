@@ -28,6 +28,7 @@ RUNNER_SOURCES = (
 )
 # Keep the historical source contract frozen. New protocols add their own inputs.
 DIAGNOSIS_PROTOCOL = 'inference-diagnosis-2048-c8-v1'
+SERVING_CAPACITY_PROTOCOL = 'serving-slo-4-2-1-v1'
 DIAGNOSTIC_SOURCES = (
     'infraestructura/inference_diag_protocol.py',
     'infraestructura/inference_diag_phases.py',
@@ -35,10 +36,22 @@ DIAGNOSTIC_SOURCES = (
     'infraestructura/inference_diag_traces.py',
     'infraestructura/inference_diag_quality.py',
 )
+SERVING_CAPACITY_SOURCES = (
+    'infraestructura/serving_capacity.py',
+    'infraestructura/serving_capacity_protocol.py',
+    'infraestructura/serving_capacity_runner.py',
+    'infraestructura/serving_capacity_client.py',
+    'infraestructura/serving_capacity_metrics.py',
+    'infraestructura/serving_capacity_report.py',
+    'infraestructura/inference_diag_phases.py',
+    'infraestructura/inference_diag_quality.py',
+    'infraestructura/inference_telemetry_report.py',
+)
 SOURCES_BY_PROTOCOL = {
     'inference-4-2-v1': RUNNER_SOURCES,
     'inference-4-2-1-v1': RUNNER_SOURCES,
     DIAGNOSIS_PROTOCOL: RUNNER_SOURCES + DIAGNOSTIC_SOURCES,
+    SERVING_CAPACITY_PROTOCOL: RUNNER_SOURCES + SERVING_CAPACITY_SOURCES,
 }
 
 

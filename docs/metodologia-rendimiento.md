@@ -88,7 +88,9 @@ independientes; `N/A` en nvidia-smi no significa cero. Para serving, medir carga
 capacidad máxima bajo un SLO definido antes de la prueba. Que un modelo quepa
 en memoria no implica que cumpla el SLO.
 
-La campaña 4/2/1 del 19 de noviembre identificó un caso en que dos nodos terminan el lote antes que cuatro, con 2048 tokens y concurrencia 8. El diagnóstico compara ese caso con 2048/C4 y 512/C8. Usa bloques primarios para las razones de escalamiento, y un bloque auxiliar por modelo y topología para medir la perturbación del profiler. Los tiempos de cola, prefill y decode son medias por solicitud. Para relacionarlos con T32 hay que considerar las solicitudes que se atienden al mismo tiempo. [Resultado inicial](resultados/inference-20261119-analysis.md) y [diseño diagnóstico](protocolo-inferencia.md#diagnóstico-de-2048-tokens-a-concurrencia-8).
+La campaña 4/2/1 del 19 de noviembre identificó un caso en que dos nodos terminan el lote antes que cuatro, con 2048 tokens y concurrencia 8. El diagnóstico del 21 comparó ese caso con 2048/C4 y 512/C8 y midió la perturbación del perfilador en un bloque auxiliar. Los tiempos de cola, prefill y decode son medias por solicitud. Para relacionarlos con T32 hay que considerar las solicitudes que se atienden al mismo tiempo. [Resultado inicial](resultados/inference-20261119-analysis.md) y [fases y comunicación observadas](resultados/inference-20261121-analysis.md).
+
+Para el siguiente estudio, la tasa ofrecida viene de un calendario regular. Cada modelo recibe una mezcla 50/50 de entradas de 512 y 2048 tokens con 128 tokens de salida. Una solicitud debe cumplir a la vez TTFT ≤ 3 s y latencia total ≤ 12 s desde la llegada prevista. Los errores, rechazos y timeouts permanecen en el denominador del 95 %. El informe caracteriza la mayor tasa probada, la cobertura de los tres bloques y la evolución de las solicitudes pendientes. [Protocolo de capacidad](capacidad-serving.md).
 
 ## D. SFT completo
 
@@ -117,7 +119,6 @@ documentación aplicable o validación experimental. Priorizar fuentes oficiales
 de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
-La primera campaña de inferencia midió Qwen3.5-9B y Llama-3.1-8B-Instruct en
-tres bloques 4 → 2. El runner también prepara la matriz 4 → 2 → 1. Medir
-el rendimiento con un nodo y ejecutar SFT completo siguen pendientes.
-[Resultado de inferencia](resultados/inference-20261106-analysis.md) · [Protocolo de inferencia](protocolo-inferencia.md) · [Reproducibilidad](reproducibilidad.md)
+La inferencia ya cuenta con bloques contemporáneos 4 → 2 → 1 para ambos modelos.
+La capacidad bajo objetivos de latencia y el SFT completo tienen criterios de cierre propios.
+[Resultados 4/2/1](resultados/inference-20261119-analysis.md), [hoja de ruta](hoja-de-ruta.md) y [reproducibilidad](reproducibilidad.md).

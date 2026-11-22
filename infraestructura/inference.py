@@ -10,6 +10,7 @@ import argparse
 import base64
 import concurrent.futures
 from datetime import datetime
+import errno
 import hashlib
 import json
 import os
@@ -23,12 +24,14 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
 
 from infraestructura import cluster, manifest
 from infraestructura import inference_runtime as runtime
 from infraestructura.inference_evidence import (RUNNER_SOURCES, archived_job_evidence,
-    verify_client_cell, runner_sources, cell_id, DIAGNOSIS_PROTOCOL, diagnostic_cell_issues)
+    verify_client_cell, runner_sources, cell_id, DIAGNOSIS_PROTOCOL, diagnostic_cell_issues,
+    SERVING_CAPACITY_PROTOCOL)
 from infraestructura.inference_metrics import paired_speedup, summarize_bench_result, validate_client_identity
 from infraestructura.inference_observation import validate_worker_records
 from infraestructura.rutas import REPO_ROOT
@@ -61,10 +64,20 @@ def read_json(path):
 
 def write_new(path, data):
     path = Path(path)
+    if os.path.lexists(path):
+        raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), str(path))
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open('x', encoding='utf-8') as stream:
-        json.dump(data, stream, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
-        stream.write('\n')
+    temporary = path.with_name(f'.ipre-json-{uuid.uuid4().hex}.tmp')
+    # open('x') applies the same 0666 & umask permissions as the historical
+    # destination. Publish only a fully flushed JSON, without replacing a name.
+    stream = temporary.open('x', encoding='utf-8')
+    try:
+        with stream:
+            json.dump(data, stream, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
+            stream.write('\n')
+        os.link(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _validate_protocol(config):
@@ -728,25 +741,33 @@ def _run_diagnostic_cell(config, job, cell, nodes, probes, workspace, campaign_i
 
 
 def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
-            preflight_result, workloads, deadline, results_root):
+            preflight_result, workloads, deadline, results_root, *, run_id=None, occupation_deadline=None):
     model=job['model']; nodes=cluster.selected_nodes(cluster_config,job['group'])
     request={'protocol':config,'job':job,'campaign_id':campaign_id}
     diagnostic = config['protocol_id'] == DIAGNOSIS_PROTOCOL
+    capacity = config['protocol_id'] == SERVING_CAPACITY_PROTOCOL
     inputs={'cluster':cluster_path,'protocol':config_path,
             **_experiment_inputs(workloads, config['protocol_id'])}
     if diagnostic:
         from infraestructura import inference_diag_protocol as diagnosis
         inputs['diagnosis/historical-campaign.json'] = diagnosis.historical_path(config, REPO_ROOT)
+    if capacity:
+        from infraestructura import serving_capacity_protocol as capacity_protocol
+        from infraestructura import serving_capacity_runner as capacity_runner
+        inputs['reference/campaign.json'] = capacity_protocol.reference_index_path(config)
+        inputs['reference/preflight.json'] = capacity_protocol.historical_preflight_path(config)
     directory=manifest.start_run(kind='inference-serving',model_id=model['id'],model_revision=model['revision'],
         tokenizer_id=model['tokenizer_id'],tokenizer_revision=model['tokenizer_revision'],
         requested_config=request,requested_config_path=config_path,inputs=inputs,
-        repo_path=REPO_ROOT,results_root=results_root)
+        repo_path=REPO_ROOT,results_root=results_root, **({'run_id': run_id} if run_id is not None else {}))
     print(json.dumps({'event':'job_start','job':job['name'],'run_dir':str(directory)}),flush=True)
     workspace=str(Path(config['paths']['workspace'])/campaign_id/job['name'])
     files={}
     created=[]; active_clients=[]; errors=[]; cells=[]; cleanup=[]; launch=[]; instrument_errors=[]; quality_errors=[]; ranks=[]
     probe_by_id={n['node_id']:n for n in preflight_result['nodes']}
-    started=time.monotonic(); startup_deadline=min(deadline,started+config['measurement']['startup_limit_seconds'])
+    started=time.monotonic(); occupation_started_at=manifest.utc_now()
+    occupation=None
+    startup_deadline=min(deadline,started+config['measurement']['startup_limit_seconds'])
     try:
         for name,path in inputs.items():
             target=directory/'raw'/'inputs'/name
@@ -760,6 +781,11 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
                 files['workloads/' + name.removeprefix('workload/')] = contents
         write_new(directory/'raw'/'preflight.json',preflight_result)
         write_new(directory/'raw'/'requested-job.json',request)
+        if capacity:
+            capacity_protocol.validate_reference_index(config, directory/'raw/inputs/reference/campaign.json')
+            capacity_protocol.verify_hardware(config, directory/'raw/inputs/reference/preflight.json', preflight_result)
+            if read_json(directory/'raw/inputs/protocol') != config:
+                raise InferenceError('configuración efectiva difiere del protocolo archivado')
         if diagnostic:
             diagnosis.verify_workloads(config, {name: manifest.sha256_file(path) for name, path in inputs.items()})
         # Launch head Ray first; vLLM waits for resources while workers join.
@@ -818,6 +844,10 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
         for cell in job['cells']:
             if time.monotonic()>=deadline: raise TimeoutError('presupuesto global agotado')
             cell_deadline=min(deadline,time.monotonic()+config['measurement']['cell_limit_seconds'])
+            if capacity:
+                cells.append(capacity_runner.run_point(config, job, cell, nodes, probe_by_id,
+                    workspace, campaign_id, directory, cell_deadline, active_clients, ranks))
+                continue
             if diagnostic:
                 record, issues = _run_diagnostic_cell(config, job, cell, nodes, probe_by_id, workspace,
                     campaign_id, directory, cell_deadline, active_clients, cleanup, ranks, seen)
@@ -898,8 +928,9 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             except Exception as exc:
                 if isinstance(exc, CleanupError): result = exc.receipt
                 node_errors.append(f"cleanup {node['node_id']}: {exc}")
-            try: collect(node,workspace,directory/'raw'/'nodes')
-            except Exception as exc: node_errors.append(f"collect {node['node_id']}: {exc}")
+            if not capacity:
+                try: collect(node,workspace,directory/'raw'/'nodes')
+                except Exception as exc: node_errors.append(f"collect {node['node_id']}: {exc}")
             return result,node_errors
         # Each host has <=140s of bounded cleanup and collection; parallel hosts
         # fit inside the reserved300s instead of multiplying by four.
@@ -907,6 +938,31 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
             for result,node_errors in pool.map(close_node,reversed(created)):
                 if result: cleanup.append(result)
                 errors.extend(node_errors)
+        if capacity:
+            # Stop the occupation clock immediately after resource retirement,
+            # before collection, point assessment and manifest hashing.
+            retired=time.monotonic(); retired_at=manifest.utc_now()
+            expected={name for _,name in created+active_clients}
+            confirmed={r.get('name') for r in cleanup if r.get('status')=='confirmed_absent'
+                       or r.get('absence_confirmed') is True}
+            removal_confirmed=expected<=confirmed
+            stop_limit=occupation_deadline if occupation_deadline is not None else deadline+config['measurement']['cleanup_reserve_seconds']
+            occupation={'started_at':occupation_started_at,'started_monotonic_s':started,
+                'ended_at':retired_at if removal_confirmed else None,
+                'ended_monotonic_s':retired if removal_confirmed else None,
+                'observed_until_at':retired_at,'observed_until_monotonic_s':retired,
+                'duration_seconds':retired-started,'removal_confirmed':removal_confirmed,
+                'limit_exceeded':retired>stop_limit}
+            if not removal_confirmed: errors.append('retirada de recursos sin confirmar; ocupación abierta')
+            if occupation['limit_exceeded']: errors.append('ocupación excedió el límite efectivo')
+            try: write_new(directory/'raw/occupation.json',occupation)
+            except (Exception,KeyboardInterrupt) as exc: errors.append(f'occupation receipt: {type(exc).__name__}: {exc}')
+            def collect_capacity(item):
+                node,_=item
+                try: collect(node,workspace,directory/'raw'/'nodes'); return None
+                except Exception as exc: return f"collect {node['node_id']}: {exc}"
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+                errors.extend(issue for issue in pool.map(collect_capacity,reversed(created)) if issue)
         if diagnostic:
             # A later instrument/transport failure can occur after the verified
             # client summary was persisted. Recover it before sealing assessment.
@@ -960,6 +1016,15 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
                     quality_errors.append(f"{record['cell']}: execution quality receipt: {exc}")
             errors.extend(quality_errors)
             errors.extend(diagnosis.cell_matrix_issues(job, cells, complete=True))
+        elif capacity:
+            try:
+                capacity_runner.require_tokenization(directory, config)
+                cells, issues = capacity_runner.assess_job(directory, config, job, ranks)
+                errors.extend(issues)
+            except Exception as exc:
+                # Never leave partially checked client cells marked valid.
+                cells = []
+                errors.append(f'capacity quality: {type(exc).__name__}: {exc}')
         else:
             errors.extend(_telemetry_valid(directory,nodes,cells))
         if len(cells)!=len(job['cells']): errors.append('matriz de celdas incompleta')
@@ -978,6 +1043,7 @@ def run_job(config, cluster_config, config_path, cluster_path, job, campaign_id,
     return {'job':job['name'],'group':job['group'],'block':job['block'],'model_key':model['key'],
             'run_dir':str(directory),'status':'failed' if errors else 'complete',
             'manifest_sha256':manifest.sha256_file(directory/'manifest.json'),'errors':errors,
+            **({'occupation':occupation} if capacity else {}),
             **({'series': job['series'], 'client_cells_complete': len(cells) == len(job['cells']),
                 'cell_counts': diagnosis.cell_counts(job['series'], cells),
                 'failure_scope': 'diagnostic' if errors and all(e in instrument_errors for e in errors)
