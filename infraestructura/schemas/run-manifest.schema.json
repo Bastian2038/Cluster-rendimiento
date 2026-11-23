@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ipre.local/schemas/run-manifest.schema.json",
-  "title": "Manifiesto compacto IPRE 2.0 / 2.1",
-  "description": "Lectura compatible 2.0; escritura 2.1 con participantes verificados en contexto. load_run valida integridad y relaciones entre documentos.",
+  "title": "Manifiesto compacto IPRE 2.0 / 2.1 / 2.2",
+  "description": "El SFT completo usa 2.2 con modelo fijado y participantes observados. load_run verifica la integridad y las relaciones entre documentos.",
   "$defs": {
     "dateTime": {
       "type": "string",
@@ -94,7 +94,8 @@
         "schema_version": {
           "enum": [
             "2.0",
-            "2.1"
+            "2.1",
+            "2.2"
           ]
         },
         "run_id": {
@@ -106,7 +107,7 @@
           "type": "string",
           "minLength": 1,
           "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
-          "description": "Tipo de corrida; system-baseline, cluster-inventory y nccl-test no tienen modelo en 2.1. inference-serving requiere modelo y tokenizer con revisiones SHA completas."
+          "description": "Tipo de corrida. Inferencia distribuida 2.1 y SFT completo 2.2 requieren modelo y tokenizer con revisiones SHA completas."
         },
         "status": {
           "enum": [
@@ -199,6 +200,14 @@
       },
       "allOf": [
         {
+          "if": {"properties": {"schema_version": {"const": "2.2"}}},
+          "then": {
+            "properties": {"kind": {"const": "full-sft"}, "model": {"$ref": "#/$defs/pinnedModel"}},
+            "if": {"properties": {"status": {"const": "complete"}}},
+            "then": {"properties": {"hosts": {"minItems": 1}}}
+          }
+        },
+        {
           "if": {
             "properties": {
               "schema_version": {"const": "2.1"},
@@ -289,26 +298,15 @@
         },
         {
           "if": {
-            "properties": {
-              "schema_version": {
-                "const": "2.1"
-              },
-              "kind": {
-                "enum": [
-                  "cluster-inventory",
-                  "nccl-test",
-                  "inference-serving"
-                ]
-              }
-            }
+            "anyOf": [
+              {"properties": {"schema_version": {"const": "2.2"}}},
+              {"properties": {
+                "schema_version": {"const": "2.1"},
+                "kind": {"enum": ["cluster-inventory", "nccl-test", "inference-serving"]}
+              }}
+            ]
           },
-          "else": {
-            "properties": {
-              "hosts": {
-                "minItems": 1
-              }
-            }
-          }
+          "else": {"properties": {"hosts": {"minItems": 1}}}
         }
       ]
     }

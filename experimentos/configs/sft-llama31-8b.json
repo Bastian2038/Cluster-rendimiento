@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "protocol_id": "llama31-full-sft-4-2-1-v1",
+  "cluster_config": "experimentos/configs/cluster.json",
+  "reference_preflight": "resultados/raw/serving-capacity-campaign/20261122T140741.033775Z-0cdcd86f/preflight.json",
+  "reference_preflight_sha256": "85c9eaa46ce1126ebabbaacbc678735735caaf822b5ab74f6f11309723319e2f",
+  "model": {
+    "key": "llama31-8b", "id": "meta-llama/Llama-3.1-8B-Instruct",
+    "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tokenizer_id": "meta-llama/Llama-3.1-8B-Instruct",
+    "tokenizer_revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+    "tensor_count": 291, "parameter_count": 8030261248,
+    "tensor_shapes_sha256": "ed8c135dde19a11c0ea4201c6bc54fa36cdc42d3d219b536c8f79751b9861733"
+  },
+  "image": {
+    "reference": "ipre/vllm:26.07-ray2.48.0-bench",
+    "id": "sha256:4df9ac0696275f800e4c70fa2d459a2b77473014d3654f98c2714ae3954c42ac",
+    "architecture": "arm64",
+    "torch_version": "2.13.0a0+9186a08b2c.nv26.7.59513937",
+    "torch_runtime_version": "2.13.0a0+9186a08b2c.nv26.07",
+    "transformers_version": "5.6.1",
+    "tokenizers_version": "0.22.2"
+  },
+  "paths": {
+    "hf_hub": "/home/bastiangl/ipre-rendimiento/resultados/tmp/model-cache",
+    "workspace": "/home/bastiangl/ipre-rendimiento/resultados/tmp/sft"
+  },
+  "network": {
+    "node_ips": {"pegasus":"10.10.0.10","octopus":"10.10.0.11","griffin":"10.10.0.12","draggon":"10.10.0.13"},
+    "master_port": 29500,
+    "environment": {
+      "NCCL_DEBUG": "INFO", "NCCL_DEBUG_SUBSYS": "INIT,BOOTSTRAP,NET,GRAPH",
+      "NCCL_SOCKET_IFNAME": "=enp1s0f0np0", "NCCL_IB_HCA": "=rocep1s0f0:1,roceP2p1s0f0:1",
+      "GLOO_SOCKET_IFNAME": "enp1s0f0np0"
+    }
+  },
+  "workload": {
+    "examples": 100, "context_tokens": 384, "supervised_tokens": 128, "sequence_length": 512,
+    "corpus_sha256": "c9229d2e8ad8ec84da91d2f30b9cf2d0f18213f405995e053fd81588c2eacaaf",
+    "tokens_sha256": "33ed6a6646bc673718436893862133523c07f0269790f426d72776f88db61907"
+  },
+  "training": {
+    "strategy": "fsdp2", "tensor_parallel_size": 1, "pipeline_parallel_size": 1,
+    "global_batch": 4, "microbatch": 1, "optimizer": "SGD", "learning_rate": 0.001,
+    "momentum": 0, "weight_decay": 0, "seed": 17,
+    "compute_dtype": "bfloat16", "master_dtype": "float32", "gradient_dtype": "float32",
+    "activation_checkpointing": true, "use_cache": false, "quantization": null
+  },
+  "measurement": {
+    "blocks": 3, "warmup_steps": 5, "measured_steps": 20, "pilot_steps": 4,
+    "checkpoint_step": 2, "loss_atol": 0.0001, "loss_rtol": 0.001,
+    "pilot_limit_seconds": 7200, "run_limit_seconds": 28800, "cleanup_reserve_seconds": 300,
+    "projection_margin": 0.25
+  }
+}

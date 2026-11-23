@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ipre.local/schemas/run-context.schema.json",
-  "title": "Contexto técnico IPRE 2.0 / 2.1",
+  "title": "Contexto técnico IPRE 2.0 / 2.1 / 2.2",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -21,7 +21,8 @@
     "schema_version": {
       "enum": [
         "2.0",
-        "2.1"
+        "2.1",
+        "2.2"
       ]
     },
     "run_id": {
@@ -93,10 +94,26 @@
       "items": {
         "$ref": "#/$defs/participant"
       },
-      "description": "Roster observado, nunca deducido de configuración. Ausente en 2.0; obligatorio para inventario distribuido, NCCL e inferencia distribuida 2.1."
+      "description": "Participantes observados de inventario, NCCL e inferencia distribuida 2.1 y de SFT completo 2.2."
     }
   },
   "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"const": "2.2"}}},
+      "then": {
+        "required": ["participants"],
+        "properties": {
+          "participants": {
+            "items": {
+              "properties": {
+                "gpu_uuid": {"type": "string", "minLength": 1},
+                "rank": {"type": "integer", "minimum": 0}
+              }
+            }
+          }
+        }
+      }
+    },
     {
       "if": {
         "properties": {

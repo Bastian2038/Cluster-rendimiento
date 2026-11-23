@@ -90,7 +90,7 @@ en memoria no implica que cumpla el SLO.
 
 La campaña 4/2/1 del 19 de noviembre identificó un caso en que dos nodos terminan el lote antes que cuatro, con 2048 tokens y concurrencia 8. El diagnóstico del 21 comparó ese caso con 2048/C4 y 512/C8 y midió la perturbación del perfilador en un bloque auxiliar. Los tiempos de cola, prefill y decode son medias por solicitud. Para relacionarlos con T32 hay que considerar las solicitudes que se atienden al mismo tiempo. [Resultado inicial](resultados/inference-20261119-analysis.md) y [fases y comunicación observadas](resultados/inference-20261121-analysis.md).
 
-Para el siguiente estudio, la tasa ofrecida viene de un calendario regular. Cada modelo recibe una mezcla 50/50 de entradas de 512 y 2048 tokens con 128 tokens de salida. Una solicitud debe cumplir a la vez TTFT ≤ 3 s y latencia total ≤ 12 s desde la llegada prevista. Los errores, rechazos y timeouts permanecen en el denominador del 95 %. El informe caracteriza la mayor tasa probada, la cobertura de los tres bloques y la evolución de las solicitudes pendientes. [Protocolo de capacidad](capacidad-serving.md).
+La campaña de capacidad del 22 de noviembre aplicó un calendario regular con una mezcla 50/50 de entradas de 512 y 2048 tokens y 128 tokens de salida. El SLO exige TTFT ≤ 3 s y latencia total ≤ 12 s desde la llegada prevista en al menos el 95 % de las ofertas, con errores, rechazos y timeouts en el denominador. Se verificaron 126 puntos en 18 corridas con 16.128 solicitudes medidas. Cuatro y dos nodos alcanzaron 1,00 solicitudes/s con Qwen y 1,25 con Llama en los tres bloques. Pegasus alcanzó 0,50 con ambos. Cada frontera quedó acotada por un primer incumplimiento a 0,25 solicitudes/s del último cumplimiento. [Protocolo de capacidad y refinamiento opcional](capacidad-serving.md).
 
 ## D. SFT completo
 
@@ -108,6 +108,8 @@ activation checkpointing, dataset y semilla. Las opciones de entrenamiento
 pueden cambiar convergencia o semántica; declararlo antes de interpretar una
 diferencia de rendimiento.
 
+El protocolo inicial fija Llama-3.1-8B-Instruct y FSDP2 con cuatro ejemplos por paso global. El piloto debe demostrar gradientes finitos y cambios de pesos para todo el modelo y reproducir la pérdida de los pasos 3 y 4 tras restaurar el checkpoint del paso 2. Las topologías calificadas pasan a tres bloques pareados con cinco pasos de calentamiento y veinte medidos. El corpus sintético permite controlar el trabajo para medir rendimiento. La calidad del modelo tras el ajuste queda fuera del protocolo. [Receta, presupuesto y evidencia de SFT](sft-completo.md).
+
 ## E. Paralelización
 
 Tratar como variables experimentales número e identidad de nodos, world size,
@@ -120,5 +122,5 @@ de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
 La inferencia ya cuenta con bloques contemporáneos 4 → 2 → 1 para ambos modelos.
-La capacidad bajo objetivos de latencia y el SFT completo tienen criterios de cierre propios.
+La campaña de capacidad bajo objetivos de latencia también cerró. El piloto y la matriz de SFT completo esperan autorización específica.
 [Resultados 4/2/1](resultados/inference-20261119-analysis.md), [hoja de ruta](hoja-de-ruta.md) y [reproducibilidad](reproducibilidad.md).

@@ -69,18 +69,57 @@ class InferenceManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(manifest.ManifestError, "modelo/tokenizer"):
             manifest.load_run(run)
 
+    def test_full_sft_requires_observed_distributed_participants_and_fixed_model(self):
+        with self.assertRaises(manifest.ManifestError):
+            self.start(kind="full-sft", model_revision="main", allow_floating_revision=True)
+        run = self.start(kind="full-sft")
+        self.assertEqual(manifest.load_run(run)["schema_version"], "2.2")
+        with self.assertRaisesRegex(manifest.ManifestError, "sin participantes"):
+            manifest.finalize_run(run)
+        with self.assertRaisesRegex(manifest.ManifestError, "GPU y rank"):
+            manifest.register_participants(run, [self.evidence(run, gpu=None)])
+        manifest.register_participants(run, [self.evidence(run)])
+        manifest.finalize_run(run)
+        self.assertEqual(manifest.load_run(run)["hosts"], ["host-pegasus"])
+
+    def test_legacy_generic_kind_named_full_sft_keeps_its_v21_contract(self):
+        run = self.start(kind="sft")
+        compact = run / "manifest.json"
+        value = json.loads(compact.read_text())
+        value["kind"] = "full-sft"
+        compact.write_text(json.dumps(value))
+        manifest.finalize_run(run)
+        historical = manifest.load_run(run)
+        self.assertEqual(historical["schema_version"], "2.1")
+        self.assertNotIn("participants", historical)
+
     def test_schema_rejects_null_model_and_unpinned_revision(self):
         try:
             import jsonschema
         except ImportError:
             self.skipTest("jsonschema no instalado")
-        run = self.start()
-        data = json.loads((run / "manifest.json").read_text())
-        schema = json.loads((Path(manifest.__file__).parent / "schemas/run-manifest.schema.json").read_text())
-        validator = jsonschema.Draft202012Validator(schema)
-        validator.validate(data)
-        self.assertFalse(validator.is_valid({**data, "model": None}))
-        self.assertFalse(validator.is_valid({**data, "model": {**data["model"], "revision": "main"}}))
+        schemas = Path(manifest.__file__).parent / "schemas"
+        compact = jsonschema.Draft202012Validator(json.loads((schemas / "run-manifest.schema.json").read_bytes()))
+        context = jsonschema.Draft202012Validator(json.loads((schemas / "run-context.schema.json").read_bytes()))
+        for kind in ("inference-serving", "full-sft"):
+            with self.subTest(kind=kind):
+                run = self.start(kind=kind)
+                data = json.loads((run / "manifest.json").read_bytes())
+                detail = json.loads((run / "raw/context.json").read_bytes())
+                compact.validate(data)
+                context.validate(detail)
+                self.assertFalse(compact.is_valid({**data, "model": None}))
+                self.assertFalse(compact.is_valid({**data, "model": {**data["model"], "revision": "main"}}))
+                if kind == "full-sft":
+                    self.assertFalse(compact.is_valid({**data, "kind": "inference-serving"}))
+                    self.assertFalse(context.is_valid({key: value for key, value in detail.items()
+                                                       if key != "participants"}))
+                    manifest.register_participants(run, [self.evidence(run)])
+                    detail = json.loads((run / "raw/context.json").read_bytes())
+                    context.validate(detail)
+                    for key in ("gpu_uuid", "rank"):
+                        invalid = {**detail["participants"][0], key: None}
+                        self.assertFalse(context.is_valid({**detail, "participants": [invalid]}))
 
 
 if __name__ == "__main__":

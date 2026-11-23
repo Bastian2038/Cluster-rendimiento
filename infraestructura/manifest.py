@@ -25,7 +25,8 @@ from typing import Any, Iterable, Mapping, Sequence
 
 
 SCHEMA_VERSION = "2.1"
-SUPPORTED_VERSIONS = frozenset({"2.0", SCHEMA_VERSION})
+SFT_SCHEMA_VERSION = "2.2"
+SUPPORTED_VERSIONS = frozenset({"2.0", SCHEMA_VERSION, SFT_SCHEMA_VERSION})
 MODEL_FREE_KINDS = frozenset({"system-baseline", "cluster-inventory", "nccl-test"})
 DISTRIBUTED_KINDS = frozenset({"cluster-inventory", "nccl-test", "inference-serving"})
 _CONTEXT_PATH = "raw/context.json"
@@ -331,7 +332,7 @@ def start_run(
         raise ManifestError(
             "el worktree está dirty; confirme los cambios o use --allow-dirty solo para smoke"
         )
-    if not system_baseline and (not allow_floating_revision or kind == "inference-serving"):
+    if not system_baseline and (not allow_floating_revision or kind in {"inference-serving", "full-sft"}):
         _validate_revision(model_revision, "model_revision")
         _validate_revision(tokenizer_revision, "tokenizer_revision")
 
@@ -364,7 +365,7 @@ def start_run(
         exceptions.append("missing_git")
 
     manifest: dict[str, Any] = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": SFT_SCHEMA_VERSION if kind == "full-sft" else SCHEMA_VERSION,
         "run_id": selected_run_id,
         "kind": kind,
         "status": "running",
@@ -388,7 +389,7 @@ def start_run(
         "artifacts": [],
         "errors": [],
     }
-    if kind in DISTRIBUTED_KINDS:
+    if _distributed_run(manifest):
         manifest["participants"] = []
     try:
         _write_compact_run(run_directory, manifest)
@@ -404,8 +405,14 @@ def start_run(
     return run_directory
 
 
+def _distributed_run(run: Mapping[str, Any]) -> bool:
+    version, kind = run.get("schema_version"), run.get("kind")
+    return ((version == SCHEMA_VERSION and kind in DISTRIBUTED_KINDS)
+            or (version == SFT_SCHEMA_VERSION and kind == "full-sft"))
+
+
 def _observed_hosts(run: Mapping[str, Any]) -> list[str]:
-    if run.get("schema_version") == "2.1" and run.get("kind") in DISTRIBUTED_KINDS:
+    if _distributed_run(run):
         return [item["hostname"] for item in run.get("participants", [])]
     return [run["system"].get("hostname")]
 
@@ -444,7 +451,7 @@ def _validate_participants(directory: Path, participants: Any, kind: str) -> Non
             raise ManifestError("gpu_uuid inválido")
         if rank is not None and (isinstance(rank, bool) or not isinstance(rank, int) or rank < 0):
             raise ManifestError("rank inválido")
-        if kind in {"nccl-test", "inference-serving"} and (gpu is None or rank is None):
+        if kind in {"nccl-test", "inference-serving", "full-sft"} and (gpu is None or rank is None):
             raise ManifestError(f"{kind} requiere GPU y rank observados")
         for key in identity:
             value = item[key]
@@ -465,7 +472,7 @@ def register_participants(
 ) -> None:
     """Registra un roster completo corroborado por evidencia JSON interna.
 
-    Solo modifica manifiestos abiertos 2.1. El coordinador no se convierte en
+    Solo modifica manifiestos distribuidos abiertos. El coordinador no se convierte en
     participante por iniciar la corrida. El runner valida identidad esperada y
     registra por separado cambios de ranks entre trabajos.
     """
@@ -473,8 +480,8 @@ def register_participants(
     run = load_run(directory)
     if run["status"] != "running":
         raise ManifestError("no se puede registrar en corrida cerrada")
-    if run["schema_version"] != "2.1" or run["kind"] not in DISTRIBUTED_KINDS:
-        raise ManifestError("participantes requieren corrida distribuida 2.1")
+    if not _distributed_run(run):
+        raise ManifestError("participantes requieren corrida distribuida")
     if not isinstance(participants, list):
         raise ManifestError("participants debe ser una lista")
     records = []
@@ -540,16 +547,18 @@ def _write_compact_run(directory: Path, run: Mapping[str, Any]) -> None:
 
 
 def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
-    """Lee una corrida 2.0/2.1 sin migrarla ni reescribir evidencia.
+    """Lee una corrida 2.0/2.1/2.2 sin migrarla ni reescribir evidencia.
 
     Verifica consistencia del cierre, identidad y SHA-256 del contexto.
-    Valida evidencia de participantes 2.1; el informe verifica además todos los
+    Valida evidencia de participantes; el informe verifica además todos los
     artefactos mediante ``verify_artifacts``. No revalida entradas externas.
     """
 
     directory = Path(run_directory).resolve()
     core = _load_json_object(directory / "manifest.json")
     version = core.get("schema_version")
+    if version == SFT_SCHEMA_VERSION and core.get("kind") != "full-sft":
+        raise ManifestError("el manifiesto 2.2 requiere kind=full-sft")
     if version not in SUPPORTED_VERSIONS:
         raise ManifestError(f"schema_version no soportada: {version!r}")
     reference = core.get("context")
@@ -568,12 +577,13 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
     if (context.get("schema_version") != version
             or context.get("run_id") != core.get("run_id")):
         raise ManifestError("identidad del contexto no coincide con manifest.json")
-    allowed = _CONTEXT_FIELDS if version == "2.1" else _CONTEXT_FIELDS - {"participants"}
+    distributed = _distributed_run(core)
+    allowed = _CONTEXT_FIELDS if version != "2.0" else _CONTEXT_FIELDS - {"participants"}
     unexpected = set(context) - allowed - {"schema_version", "run_id"}
     if unexpected:
         raise ManifestError(f"campos inesperados en contexto: {sorted(unexpected)}")
     required = _CONTEXT_FIELDS - {"packages", "services", "participants"}
-    if version == "2.1" and core.get("kind") in DISTRIBUTED_KINDS:
+    if distributed:
         required = required | {"participants"}
     if not required.issubset(context):
         raise ManifestError(f"contexto incompleto: faltan {sorted(required - set(context))}")
@@ -582,7 +592,7 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
     }:
         raise ManifestError("Git del contexto no coincide con manifest.json")
     if "participants" in context:
-        if core.get("kind") not in DISTRIBUTED_KINDS:
+        if not distributed:
             raise ManifestError("participants solo aplica a corridas distribuidas")
         _validate_participants(directory, context["participants"], core["kind"])
     if not isinstance(context["system"], dict) or core.get("hosts") != _observed_hosts({**context, "kind": core.get("kind")}):
@@ -594,21 +604,21 @@ def load_run(run_directory: str | os.PathLike[str]) -> dict[str, Any]:
         raise ManifestError("política de contexto inconsistente")
     model = core.get("model")
     model_free = {"system-baseline"} if version == "2.0" else MODEL_FREE_KINDS
+    pinned_model = distributed and core["kind"] not in model_free
     if core.get("kind") in model_free:
         if model is not None or "floating_revision" in policy["exceptions"]:
             raise ManifestError(f"{core['kind']} requiere modelo null sin floating_revision")
     elif not isinstance(model, dict) or not isinstance(model.get("tokenizer"), dict):
         raise ManifestError("metadatos de modelo/tokenizer inválidos")
-    elif (version == "2.1" and core.get("kind") == "inference-serving") or "floating_revision" not in policy["exceptions"]:
+    elif pinned_model or "floating_revision" not in policy["exceptions"]:
         _validate_revision(model.get("revision"), "model_revision")
         _validate_revision(model["tokenizer"].get("revision"), "tokenizer_revision")
-    if (version == "2.1" and core.get("kind") == "inference-serving"
+    if (pinned_model
             and (not isinstance(model.get("id"), str) or not model["id"]
                  or not isinstance(model["tokenizer"].get("id"), str)
                  or not model["tokenizer"]["id"])):
         raise ManifestError("model_id y tokenizer_id son obligatorios")
-    if (version == "2.1" and core.get("kind") in DISTRIBUTED_KINDS
-            and core.get("status") == "complete" and not context.get("participants")):
+    if distributed and core.get("status") == "complete" and not context.get("participants"):
         raise ManifestError("corrida distribuida sin participantes observados no puede completar")
     _validate_completion(directory, core)
     normalized = dict(core)
@@ -703,8 +713,7 @@ def finalize_run(
         raise ManifestError(
             f"estado inesperado del manifiesto: {manifest.get('status')!r}"
         )
-    if (status == "complete" and manifest.get("schema_version") == "2.1"
-            and manifest.get("kind") in DISTRIBUTED_KINDS and not manifest.get("participants")):
+    if status == "complete" and _distributed_run(manifest) and not manifest.get("participants"):
         raise ManifestError("corrida distribuida sin participantes observados no puede completar")
 
     ended_at = utc_now()
