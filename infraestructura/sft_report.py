@@ -15,7 +15,7 @@ from statistics import median
 from . import cluster as cluster_inventory, manifest, sft_protocol
 from .rutas import REPO_ROOT
 from .serving_capacity_protocol import _hardware_roster
-from .sft_runtime import GIB, resource_limits
+from .sft_runtime import GIB, gpu_idle_diagnosis, resource_limits
 
 
 _GROUPS = ("four", "pair", "single")
@@ -144,6 +144,16 @@ def _validate_manifest(run_directory, run, job, config):
     return request["campaign_id"]
 
 
+def _check_idle_evidence(record, location):
+    _expect(record, {"ports_in_use": []}, location)
+    _require({"gpu_apps", "gpu_summary"} <= record.keys(), f"{location}: faltan gpu_apps o gpu_summary")
+    try:
+        diagnosis = gpu_idle_diagnosis(record)
+    except (ValueError, TypeError, AttributeError) as exc:
+        raise ValueError(f"{location}: {exc}") from exc
+    _expect(record, {"gpu_idle_assessment": diagnosis}, location)
+
+
 def _preflight_environment(preflight, config):
     _expect(preflight, {"status": "ready", "errors": []}, "preflight")
     nodes, roster = _hardware_roster(preflight)
@@ -152,6 +162,7 @@ def _preflight_environment(preflight, config):
     versions = (*_TORCH_VERSIONS, "transformers_version", "tokenizers_version")
     environment = {}
     for node, row in nodes.items():
+        _check_idle_evidence(row, f"preflight en {node}")
         image = row["image"]
         _require(image["returncode"] == 0 and shlex.split(image["stdout"]) ==
                  [config["image"]["id"], config["image"]["architecture"]], f"{node}: imagen observada distinta")
@@ -296,6 +307,7 @@ def _phase_control(root, job, config, campaign_id, phase, oom_nodes):
 
 def _phase_resources(receipt, node, phase, workspace, limit):
     _expect(receipt, {"node_id": node, "phase": phase}, "sonda de recursos")
+    _check_idle_evidence(receipt, f"recursos en {node}/{phase}")
     _timestamp(receipt["observed_at"])
     host, assessment = receipt["resources"], receipt["assessment"]
     _expect(host, {"workspace": workspace, "workspace_writable": True}, f"workspace en {node}")

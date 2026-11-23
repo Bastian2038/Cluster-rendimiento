@@ -151,14 +151,16 @@ gpu = call(['nvidia-smi', '--query-gpu=uuid,name,driver_version', '--format=csv,
 apps = call(['nvidia-smi', '--query-compute-apps=pid,process_name', '--format=csv,noheader,nounits'])
 network = call(['ip', '-j', 'address', 'show', 'dev', 'enp1s0f0np0'])
 port = int(sys.argv[1])
+ports = set()
 for name in ('tcp', 'tcp6'):
     for row in (Path('/proc/net') / name).read_text().splitlines()[1:]:
         fields = row.split()
         if fields[3] != '06' and int(fields[1].split(':')[1], 16) == port:
-            raise RuntimeError('puerto de rendezvous ocupado')
+            ports.add(port)
 available = next(int(line.split()[1]) * 1024 for line in Path('/proc/meminfo').read_text().splitlines()
                  if line.startswith('MemAvailable:'))
 print(json.dumps({'gpu': gpu, 'apps': apps, 'summary': summary, 'network': network,
+                  'ports_in_use': sorted(ports),
                   'memory_bytes': {'MemAvailable': available}, 'resources': workspace_resources(sys.argv[2])}))
 '''
 
@@ -261,15 +263,28 @@ def _cpu_probe(node, config, probe, campaign_id, owner, deadline):
         *_labels(campaign_id, owner), "--network=none", "--read-only",
         "--tmpfs", "/tmp:rw,nosuid,size=256m", *_user_options(probe),
         "--env", "NVIDIA_VISIBLE_DEVICES=void", "--env", "CUDA_VISIBLE_DEVICES=",
+        "--env", f"USER={probe['user']}", "--env", f"LOGNAME={probe['user']}",
         "--env", "PYTHONDONTWRITEBYTECODE=1", "--env", "HOME=/tmp", "--entrypoint", "timeout",
         config["image"]["id"], "--kill-after=2s", "55s", "python3", "-B", "-c", CPU_PROBE]
     cid = create(node, argv, campaign_id, owner, deadline)
     start(node, cid, deadline)
     stopped = checked(node, ["docker", "wait", cid], deadline, cap=64)
-    if stopped["stdout"].strip() != "0":
-        raise RuntimeError("el contenedor de preflight CPU terminó con fallo")
-    result = logs(node, cid, deadline)
-    return json.loads(result["stdout"].splitlines()[-1])
+    exit_code = stopped["stdout"].strip()[:64]
+    try:
+        result = logs(node, cid, deadline)
+    except Exception as exc:
+        raise RuntimeError(f"sonda CPU exit={exit_code!r}; logs no disponibles: {_describe(exc)[-2048:]}") from exc
+    diagnostics = (f"exit={exit_code!r}; stdout={result['stdout'][-2048:]!r}; "
+                   f"stderr={result['stderr'][-2048:]!r}")
+    if exit_code != "0":
+        raise RuntimeError(f"el contenedor de preflight CPU terminó con {diagnostics}")
+    try:
+        payload = json.loads(result["stdout"].splitlines()[-1])
+        if not isinstance(payload, dict):
+            raise ValueError("la sonda CPU debe emitir un objeto JSON")
+    except (IndexError, ValueError) as exc:
+        raise RuntimeError(f"sonda CPU sin objeto JSON interpretable; {diagnostics}") from exc
+    return payload
 
 
 def _f0(record):
@@ -279,12 +294,71 @@ def _f0(record):
             and "LOWER_UP" in interface["flags"] for address in interface["addr_info"]}
 
 
-def _gpu_empty(record):
+def _table_cells(line):
+    text = line.strip()
+    if not text.startswith("|") or not text.endswith("|"):
+        return []
+    return [" ".join(cell.split()) for cell in text[1:-1].split("|")]
+
+
+def gpu_idle_diagnosis(record):
+    """Exige consultas válidas, GPU al 0 % y solo dos ejecutables G conocidos.
+
+    Se lee la tabla completa, incluidos encabezados y cierre, para no aceptar
+    tablas truncadas ni confundir ausencia de cómputo con ausencia de clientes.
+    Las cantidades de memoria no soportadas conservan su texto observado.
+    """
     apps, summary = record["gpu_apps"], record["gpu_summary"]
-    if apps["returncode"] != 0 or apps["stdout"].strip() or summary["returncode"] != 0:
-        return False
-    return any(line.strip("| ").strip() == "No running processes found"
-               for line in summary["stdout"].splitlines())
+    for query in (apps, summary):
+        if query.get("returncode") != 0 or query.get("timed_out") or not isinstance(query.get("stdout"), str):
+            raise ValueError("consulta GPU fallida o sin verificar")
+    if apps["stdout"].strip():
+        raise ValueError("aplicaciones de cómputo GPU observadas")
+    lines = [line.strip() for line in summary["stdout"].splitlines() if line.strip()]
+    markers = [i for i, line in enumerate(lines) if _table_cells(line) == ["Processes:"]]
+    if len(markers) != 1 or not any(line.startswith("| NVIDIA-SMI ") for line in lines):
+        raise ValueError("tabla de procesos GPU ilegible")
+    prefix, processes = lines[:markers[0]], lines[markers[0] + 1:]
+    headers = [cells for line in prefix if len(cells := _table_cells(line)) == 3
+               and any("GPU-Util" in cell for cell in cells)]
+    devices = [(i, cells) for i, line in enumerate(prefix)
+               if len(cells := _table_cells(line)) == 3 and re.match(r"^\d+\s+", cells[0])]
+    if len(headers) != 1 or len(devices) != 1:
+        raise ValueError("tabla GPU ausente, ambigua o ilegible")
+    index, device = devices[0]
+    if device[0].split()[0] != "0" or index + 1 >= len(prefix):
+        raise ValueError("se requiere exactamente la GPU local 0")
+    column = next(i for i, cell in enumerate(headers[0]) if "GPU-Util" in cell)
+    utilization = _table_cells(prefix[index + 1])
+    match = re.fullmatch(r"(\d{1,3})%\s+(?:Default|Exclusive_Process)", utilization[column]) if len(utilization) == 3 else None
+    if match is None or int(match[1]) != 0:
+        raise ValueError("GPU sin utilización 0 % demostrada")
+    if (len(processes) < 5
+            or _table_cells(processes[0]) != ["GPU GI CI PID Type Process name GPU Memory"]
+            or _table_cells(processes[1]) != ["ID ID Usage"]
+            or not re.fullmatch(r"\|=+\|", processes[2])
+            or not re.fullmatch(r"\+-+\+", processes[-1])):
+        raise ValueError("tabla de procesos GPU incompleta o ilegible")
+    rows = processes[3:-1]
+    if len(rows) == 1 and _table_cells(rows[0]) == ["No running processes found"]:
+        graphics = []
+    else:
+        graphics = []
+        for line in rows:
+            cells = _table_cells(line)
+            row = re.fullmatch(
+                r"(\d+)\s+(N/A|\d+)\s+(N/A|\d+)\s+([1-9]\d*)\s+(\S+)\s+(\S+)\s+(\d+(?:\.\d+)?MiB|N/A|Not Supported)",
+                cells[0]) if len(cells) == 1 else None
+            if (row is None or row[1] != "0" or row[5] != "G"
+                    or row[6] not in {"/usr/lib/xorg/Xorg", "/usr/bin/gnome-shell"}):
+                raise ValueError("proceso, ruta o tipo GPU no autorizado o ilegible")
+            graphics.append({"gpu_index": 0, "gi": None if row[2] == "N/A" else int(row[2]),
+                             "ci": None if row[3] == "N/A" else int(row[3]), "pid": int(row[4]),
+                             "type": row[5], "executable": row[6], "gpu_memory": row[7]})
+        if not graphics or len({row["pid"] for row in graphics}) != len(graphics):
+            raise ValueError("tabla de procesos GPU vacía sin constancia o con PIDs repetidos")
+    return {"status": "idle", "policy": "desktop-g-zero-util-v1", "gpu_index": 0,
+            "gpu_utilization_percent": 0, "compute_apps_empty": True, "graphics_processes": graphics}
 
 
 def _snapshot(record, model):
@@ -310,8 +384,9 @@ def _check_host(node, config, historic, observed):
         raise ValueError("IP f0 no observada en enlace activo")
     if not {"rdma_cm", "uverbs0"} <= set(observed["rdma_devices"]):
         raise ValueError("dispositivos RDMA requeridos ausentes")
-    if not _gpu_empty(observed) or observed["ports_in_use"]:
-        raise ValueError("GPU o puerto de rendezvous ocupado o sin verificar")
+    observed["gpu_idle_assessment"] = gpu_idle_diagnosis(observed)
+    if observed.get("ports_in_use") != []:
+        raise ValueError("puerto de rendezvous ocupado o sin verificar")
     reference = _snapshot(historic, config["model"])
     if _snapshot(observed, config["model"]) != reference:
         raise ValueError("metadatos o shards difieren del preflight de serving")
@@ -455,9 +530,11 @@ def check_ready(nodes, config, probes, deadline, *, job, phase, workspace):
         baseline = probes[name]
         if current["gpu"] != baseline["gpu"]["stdout"]:
             raise ValueError("identidad GPU cambió desde el preflight")
-        if not _gpu_empty({"gpu_apps": {"returncode": 0, "stdout": current["apps"]},
-                           "gpu_summary": {"returncode": 0, "stdout": current["summary"]}}):
-            raise ValueError("clientes GPU observados o estado desconocido")
+        gpu_evidence = {"gpu_apps": {"returncode": 0, "stdout": current["apps"]},
+                        "gpu_summary": {"returncode": 0, "stdout": current["summary"]}}
+        gpu_assessment = gpu_idle_diagnosis(gpu_evidence)
+        if current.get("ports_in_use") != []:
+            raise ValueError("puerto de rendezvous ocupado o sin verificar")
         if config["network"]["node_ips"][name] not in _f0({
             "network": {"returncode": 0, "stdout": current["network"]}
         }):
@@ -468,7 +545,10 @@ def check_ready(nodes, config, probes, deadline, *, job, phase, workspace):
         assessment = _check_resources({**baseline, **current}, limit)
         return {"node_id": name, "phase": phase, "observed_at": manifest.utc_now(),
                 "memory_bytes": current["memory_bytes"], "resources": current["resources"],
-                "assessment": assessment}
+                "assessment": assessment, "gpu_idle_assessment": gpu_assessment,
+                **gpu_evidence, "gpu": {"returncode": 0, "stdout": current["gpu"]},
+                "network": {"returncode": 0, "stdout": current["network"]},
+                "ports_in_use": current["ports_in_use"]}
     observations, failures = parallel(nodes, check)
     if failures:
         raise RuntimeError(str(failures))

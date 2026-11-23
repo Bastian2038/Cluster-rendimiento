@@ -122,5 +122,5 @@ de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
 La inferencia ya cuenta con bloques contemporáneos 4 → 2 → 1 para ambos modelos.
-La campaña de capacidad bajo objetivos de latencia también cerró. El piloto y la matriz de SFT completo esperan autorización específica.
+La campaña de capacidad bajo objetivos de latencia también cerró. El primer intento del piloto autorizado de SFT completo quedó parcial durante el preflight, antes del lanzamiento de los trabajos. Queda pendiente completar la calificación y la matriz requiere una autorización posterior. [Informe del piloto](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.md) y [JSON del cierre](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.json).
 [Resultados 4/2/1](resultados/inference-20261119-analysis.md), [hoja de ruta](hoja-de-ruta.md) y [reproducibilidad](reproducibilidad.md).

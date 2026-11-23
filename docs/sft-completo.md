@@ -1,6 +1,10 @@
 # Protocolo de SFT completo de Llama-3.1-8B-Instruct
 
-El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. Primero se publica este protocolo, luego los resultados del piloto y por último los de la matriz de rendimiento. El piloto y la matriz están pendientes y requieren autorizaciones específicas. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
+El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. La publicación comienza con este protocolo y sigue con los cierres del piloto y de la matriz. El piloto está autorizado y queda pendiente completar la calificación. La matriz requiere una autorización posterior. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
+
+## Primer intento del piloto
+
+El intento `20261123T005824.457752Z-1b711e50` cerró como `partial` en **21,249 s de sesión**, con **0 de 3 trabajos lanzados**. Durante el preflight, los cuatro nodos registraron 0 % de utilización de GPU, listas de cómputo vacías y los puertos comprobados libres. El criterio anterior bloqueó Pegasus, Griffin y Draggon por las entradas gráficas de Xorg y GNOME Shell. Octopus figuró sin procesos de GPU. El cierre verificó la limpieza de contenedores propios en los cuatro nodos. [Informe del piloto](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.md) y [JSON del cierre](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.json).
 
 ## Modelo, entorno y carga
 
@@ -42,6 +46,10 @@ La CLI carga el contrato con `sft_protocol.load_config` y `cluster_config`. `mak
 ## Recursos y ejecución autorizada
 
 El preflight operativo consulta los cuatro nodos y usa una sonda en la imagen existente con GPU ocultas. Coteja GPU y hosts, revisiones locales, imagen y versiones, red f0, puerto libre, ausencia de cargas incompatibles, CPU, memoria unificada disponible y disco para los checkpoints. La ejecución requiere un commit identificable y un árbol limpio. Ocupa una GPU por nodo seleccionado, hasta cuatro GPU, y conserva los checkpoints en el espacio de trabajo local.
+
+El criterio corregido de disponibilidad exige observar **0 % de utilización de GPU** y una consulta de procesos de cómputo exitosa y vacía. El listado general puede estar vacío o contener exclusivamente clientes gráficos de tipo `G` con ruta exacta `/usr/lib/xorg/Xorg` o `/usr/bin/gnome-shell`. El preflight registra por nodo la utilización, ambas consultas de procesos y la comprobación del puerto de rendezvous. Cualquier otro proceso, tipo o ruta, el uso de GPU por encima de 0 %, un puerto ocupado o la falta de evidencia verificable bloquean el lanzamiento.
+
+El lanzador repite la comprobación antes de cada fase. Para calificar una topología o aceptar su medición, el lector reconstruye el diagnóstico de GPU a partir de las consultas archivadas y comprueba que coincide con el registrado y que el puerto estaba libre.
 
 Cada checkpoint contiene unos **29,92 GiB** de pesos maestros FP32 repartidos entre los ranks. Si las tres topologías llegan al guardado, Pegasus conservará aproximadamente 52,35 GiB, Octopus 22,44 GiB y Griffin y Draggon 7,48 GiB cada uno. Los índices, el estado y los archivos auxiliares requieren espacio adicional.
 

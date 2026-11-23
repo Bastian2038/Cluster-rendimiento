@@ -13,6 +13,198 @@ from unittest.mock import patch
 from infraestructura import inference, manifest, sft_protocol as protocol, sft_runner as runner, sft_runtime as runtime
 
 
+GB10_SUMMARY = """Sun Nov 22 21:58:24 2026
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 580.173.02             Driver Version: 580.173.02     CUDA Version: 13.0     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA GB10                    On  |   0000000F:01:00.0 Off |                  N/A |
+| N/A   45C    P8              4W /  N/A  | Not Supported          |      {util}%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+{processes}
++-----------------------------------------------------------------------------------------+
+"""
+DESKTOP_ROWS = """|    0   N/A  N/A            2868      G   /usr/lib/xorg/Xorg                       43MiB |
+|    0   N/A  N/A            3018      G   /usr/bin/gnome-shell                     24MiB |"""
+EMPTY_PROCESSES = "|  No running processes found                                                             |"
+
+
+class SftGpuReadinessTests(unittest.TestCase):
+    def record(self, rows=DESKTOP_ROWS, util=0):
+        return {"gpu_apps": {"returncode": 0, "stdout": "", "stderr": ""},
+                "gpu_summary": {"returncode": 0, "stdout": GB10_SUMMARY.format(util=util, processes=rows),
+                                "stderr": ""}}
+
+    def test_real_format_admits_only_idle_desktop_or_explicitly_empty_table(self):
+        for rows in (DESKTOP_ROWS, EMPTY_PROCESSES, DESKTOP_ROWS.replace("43MiB", "N/A")):
+            with self.subTest(rows=rows):
+                diagnosis = runtime.gpu_idle_diagnosis(self.record(rows))
+                self.assertEqual(diagnosis["status"], "idle")
+                self.assertEqual(diagnosis["gpu_utilization_percent"], 0)
+                self.assertTrue(diagnosis["compute_apps_empty"])
+                processes = diagnosis["graphics_processes"]
+                self.assertEqual(len(processes), 0 if rows == EMPTY_PROCESSES else 2)
+                self.assertTrue(all(row["type"] == "G" for row in processes))
+                if rows != EMPTY_PROCESSES:
+                    self.assertEqual([row["executable"] for row in processes],
+                                     ["/usr/lib/xorg/Xorg", "/usr/bin/gnome-shell"])
+
+    def test_process_allowlist_requires_exact_path_and_exact_graphics_type(self):
+        for changed in (DESKTOP_ROWS.replace(" G ", " C "), DESKTOP_ROWS.replace(" G ", " C+G "),
+                        DESKTOP_ROWS.replace(" G ", " g "), DESKTOP_ROWS.replace(" G ", " X "),
+                        DESKTOP_ROWS.replace("/usr/lib/xorg/Xorg", "/usr/libexec/Xorg"),
+                        DESKTOP_ROWS.replace("/usr/bin/gnome-shell", "/tmp/gnome-shell"),
+                        DESKTOP_ROWS.replace("/usr/bin/gnome-shell", "/usr/bin/gnome-shell --extra"),
+                        DESKTOP_ROWS.replace("/usr/bin/gnome-shell", "/usr/bin/python3"),
+                        DESKTOP_ROWS + "\n|    0 N/A N/A 999 C /usr/bin/python3 100MiB |"):
+            with self.subTest(rows=changed), self.assertRaisesRegex(ValueError, "proceso, ruta o tipo"):
+                runtime.gpu_idle_diagnosis(self.record(changed))
+
+    def test_busy_unknown_utilization_failed_queries_and_compute_activity_fail(self):
+        for util in (1, 100, "N/A", "desconocida"):
+            with self.subTest(util=util), self.assertRaisesRegex(ValueError, "utilización 0"):
+                runtime.gpu_idle_diagnosis(self.record(util=util))
+        for query in ("gpu_apps", "gpu_summary"):
+            for change in ({"returncode": 1}, {"returncode": None}, {"timed_out": True}):
+                record = self.record()
+                record[query].update(change)
+                with self.subTest(query=query, change=change), self.assertRaisesRegex(ValueError, "consulta GPU"):
+                    runtime.gpu_idle_diagnosis(record)
+        record = self.record()
+        record["gpu_apps"]["stdout"] = "9001, /usr/bin/python3\n"
+        with self.assertRaisesRegex(ValueError, "cómputo"):
+            runtime.gpu_idle_diagnosis(record)
+
+    def test_unreadable_truncated_ambiguous_or_mixed_process_tables_fail(self):
+        valid = self.record()["gpu_summary"]["stdout"]
+        broken = ("No running processes found", valid.rsplit("+", 2)[0],
+                  valid.replace("GPU-Util", "GPU-????"), valid.replace("PID   Type", "PID   ???"),
+                  valid.replace(DESKTOP_ROWS, ""), valid.replace(DESKTOP_ROWS, DESKTOP_ROWS + "\n" + EMPTY_PROCESSES),
+                  valid.replace(DESKTOP_ROWS, DESKTOP_ROWS + "\n| fila ilegible |"),
+                  valid.replace("2868", "3018"), valid + "\nsalida inesperada",
+                  valid.replace("|   0  NVIDIA", "|   1  NVIDIA"))
+        for text in broken:
+            record = self.record()
+            record["gpu_summary"]["stdout"] = text
+            with self.subTest(text=text), self.assertRaises(ValueError):
+                runtime.gpu_idle_diagnosis(record)
+
+    def host(self):
+        config = protocol.load_config()
+        node = protocol.cluster_config(config)["nodes"][0]
+        network = json.dumps([{"ifname": "enp1s0f0np0", "flags": ["LOWER_UP"],
+                               "addr_info": [{"local": config["network"]["node_ips"][node["node_id"]]}]}])
+        image = {"returncode": 0, "stdout": json.dumps(config["image"]["id"]) + " " +
+                 json.dumps(config["image"]["architecture"])}
+        snapshot = {"complete": True, "metadata_sha256": {"config.json": "b" * 64},
+                    "shards": [{"name": "weights.safetensors", "blob_name": "a" * 64, "size_bytes": 16}]}
+        host = {**self.record(), "hostname": node["expected_hostname"], "uid": 1000,
+                "gpu": {"returncode": 0, "stdout": "GPU-fixture, NVIDIA GB10, 580.173.02\n"},
+                "image": image, "docker_running": {"returncode": 0, "stdout": ""},
+                "network": {"returncode": 0, "stdout": network}, "rdma_devices": ["rdma_cm", "uverbs0"],
+                "ports_in_use": [], "models": {config["model"]["key"]: snapshot},
+                "weight_sha256": {"weights.safetensors": "a" * 64},
+                "memory_bytes": {"MemAvailable": 100 * runtime.GIB},
+                "resources": {"cpu_affinity_count": 8, "workspace_writable": True,
+                              "checkpoint_disk_free_bytes": 100 * runtime.GIB, "checkpoint_disk_free_inodes": 10_000},
+                "sft_container_probe": {"memory_max": "max", "cpu_max": "max 100000", "cpu_affinity_count": 8}}
+        return config, node, host
+
+    def test_host_check_retains_original_evidence_and_same_gpu_diagnosis(self):
+        config, node, host = self.host()
+        summary = host["gpu_summary"]["stdout"]
+        runtime._check_host(node, config, host, host)
+        self.assertEqual(host["gpu_summary"]["stdout"], summary)
+        self.assertEqual(host["gpu_idle_assessment"], runtime.gpu_idle_diagnosis(host))
+        for ports in ([29500], None, ""):
+            with self.subTest(ports=ports), self.assertRaisesRegex(ValueError, "puerto"):
+                runtime._check_host(node, config, host, {**host, "ports_in_use": ports})
+
+    def test_ready_each_phase_keeps_gpu_evidence_and_rechecks_resources_and_ports(self):
+        config, node, host = self.host()
+        job = next(job for job in protocol.make_plan(config, "pilot")["jobs"] if job["group"] == "single")
+        current = {"gpu": host["gpu"]["stdout"], "apps": "", "summary": host["gpu_summary"]["stdout"],
+                   "network": host["network"]["stdout"], "ports_in_use": [],
+                   "memory_bytes": host["memory_bytes"], "resources": host["resources"]}
+
+        def ready(record, phase="pilot"):
+            with patch.object(runtime, "checked", return_value={"stdout": json.dumps(record)}):
+                return runtime.check_ready([node], config, {node["node_id"]: host}, 1000,
+                                           job=job, phase=phase, workspace=Path("/tmp/sft-fixture"))
+
+        for phase in ("pilot", "resume", "measure"):
+            observed = ready(current, phase)[node["node_id"]]
+            self.assertEqual(observed["phase"], phase)
+            self.assertEqual(observed["gpu_summary"]["stdout"], current["summary"])
+            self.assertEqual(observed["gpu_apps"]["stdout"], "")
+            self.assertEqual(observed["gpu_idle_assessment"], runtime.gpu_idle_diagnosis(host))
+            self.assertEqual(observed["ports_in_use"], [])
+            self.assertEqual(observed["assessment"]["effective_unified_available_bytes"], 100 * runtime.GIB)
+        for invalid in ({**current, "ports_in_use": [29500]}, {**current, "ports_in_use": None},
+                        {**current, "memory_bytes": {"MemAvailable": runtime.GIB}},
+                        {**current, "resources": {**current["resources"], "checkpoint_disk_free_bytes": 0}},
+                        {**current, "resources": {**current["resources"], "cpu_affinity_count": 0}},
+                        {**current, "apps": "42, python3"},
+                        {**current, "summary": current["summary"].replace("0%", "1%")},
+                        {**current, "summary": current["summary"].replace(" G ", " C+G ")}):
+            with self.subTest(invalid=invalid), self.assertRaises(RuntimeError):
+                ready(invalid)
+        with patch.object(runtime, "checked", side_effect=RuntimeError("consulta fallida")), self.assertRaises(RuntimeError):
+            runtime.check_ready([node], config, {node["node_id"]: host}, 1000,
+                                job=job, phase="pilot", workspace=Path("/tmp/sft-fixture"))
+
+    def test_cpu_probe_retains_bounded_logs_exit_code_and_host_user(self):
+        config = protocol.load_config()
+        probe = {"uid": 1000, "gid": 1000, "groups": [1000], "user": "study"}
+        with (patch.object(runtime, "create", return_value="a" * 64) as create,
+              patch.object(runtime, "start"), patch.object(runtime, "checked", return_value={"stdout": "17\n"}),
+              patch.object(runtime, "logs", return_value={"stdout": "x" * 5000 + "stdout final",
+                           "stderr": "y" * 5000 + "ImportError: fixture"}) as logs):
+            with self.assertRaisesRegex(RuntimeError, "exit='17'") as caught:
+                runtime._cpu_probe({"node_id": "pegasus"}, config, probe, "campaign", "owner", 1000)
+            message = str(caught.exception)
+            self.assertIn("ImportError: fixture", message)
+            self.assertIn("stdout final", message)
+            self.assertLess(len(message), 4300)
+            logs.assert_called_once()
+            command = create.call_args.args[1]
+            self.assertIn("USER=study", command)
+            self.assertIn("LOGNAME=study", command)
+
+    def test_cpu_probe_keeps_exit_code_when_logs_cannot_be_collected(self):
+        probe = {"uid": 1000, "gid": 1000, "groups": [1000], "user": "study"}
+        with (patch.object(runtime, "create", return_value="a" * 64), patch.object(runtime, "start"),
+              patch.object(runtime, "checked", return_value={"stdout": "23\n"}),
+              patch.object(runtime, "logs", side_effect=RuntimeError("sin logs")),
+              self.assertRaisesRegex(RuntimeError, "exit='23'.*sin logs")):
+            runtime._cpu_probe({"node_id": "pegasus"}, protocol.load_config(), probe, "campaign", "owner", 1000)
+
+    def test_cpu_probe_zero_exit_with_unreadable_json_preserves_both_log_tails(self):
+        config = protocol.load_config()
+        probe = {"uid": 1000, "gid": 1000, "groups": [1000], "user": "study"}
+        for stdout in ("", " \n", "sin JSON", "x" * 5000 + "stdout final sin JSON", "[]", "null"):
+            with (self.subTest(stdout=stdout), patch.object(runtime, "create", return_value="a" * 64),
+                  patch.object(runtime, "start"), patch.object(runtime, "checked", return_value={"stdout": "0\n"}),
+                  patch.object(runtime, "logs", return_value={"stdout": stdout,
+                               "stderr": "y" * 5000 + "stderr final conservado"}),
+                  self.assertRaisesRegex(RuntimeError, "sin objeto JSON interpretable.*exit='0'") as caught):
+                runtime._cpu_probe({"node_id": "pegasus"}, config, probe, "campaign", "owner", 1000)
+            message = str(caught.exception)
+            self.assertIn(f"stdout={stdout[-2048:]!r}", message)
+            self.assertIn("stderr final conservado", message)
+            self.assertLess(len(message), 4300)
+
+
 class SftRunnerTests(unittest.TestCase):
     def _synthetic_inputs(self, root):
         config = protocol.load_config()
@@ -276,13 +468,17 @@ assert inventory['groups']['four'] == ['pegasus', 'octopus', 'griffin', 'draggon
 
         def ready(selected, _config, _probes, _deadline, *, job, phase, workspace):
             limits = runtime.resource_limits(config, selected, [job])
-            host = {"memory_bytes": {"MemAvailable": 100 * runtime.GIB},
+            host = {"gpu_summary": {"returncode": 0, "stdout": GB10_SUMMARY.format(util=0, processes=DESKTOP_ROWS)},
+                    "gpu_apps": {"returncode": 0, "stdout": ""},
+                    "memory_bytes": {"MemAvailable": 100 * runtime.GIB},
                     "resources": {"cpu_affinity_count": 8, "workspace_writable": True,
                                   "workspace": str(workspace), "checkpoint_disk_free_inodes": 10_000,
                                   "checkpoint_disk_free_bytes": 100 * runtime.GIB},
                     "sft_container_probe": {"memory_max": "max", "cpu_max": "max 100000", "cpu_affinity_count": 8}}
             return {name: {"node_id": name, "phase": phase, "observed_at": manifest.utc_now(),
                            "memory_bytes": host["memory_bytes"], "resources": host["resources"],
+                           "gpu_summary": host["gpu_summary"], "gpu_apps": host["gpu_apps"],
+                           "gpu_idle_assessment": runtime.gpu_idle_diagnosis(host), "ports_in_use": [],
                            "assessment": runtime._check_resources(host, limits[name])}
                     for name in job["nodes"]}
 

@@ -1,0 +1,94 @@
+{
+  "campaign_id": "20261123T005824.457752Z-1b711e50",
+  "stage": "pilot",
+  "status": "partial",
+  "git": {
+    "branch": "main",
+    "changed_paths": [],
+    "commit": "5ee6c4307449dcf408874d7fefd62316fadf5026",
+    "dirty": false,
+    "error": null,
+    "root": "/home/bastiangl/ipre-rendimiento"
+  },
+  "input_hashes": {
+    "cluster.json": "27a85ba6c2e1c26919dd22ad30506b6e798622235a0549ea4a1300246f2ee024",
+    "code/experimentos/configs/cluster.json": "27a85ba6c2e1c26919dd22ad30506b6e798622235a0549ea4a1300246f2ee024",
+    "code/infraestructura/__init__.py": "02c1d5de2cb7831063639cac4094b646d4cd28c23acf6e653a149239c1a5ff69",
+    "code/infraestructura/cluster.py": "6413f381e465dd4c329bda52ee8f1be7b7cebaeb9e15da33c13956d3deb78968",
+    "code/infraestructura/inference.py": "87ae7d5239c313b56e89f31bee7277e185c70a4bd9bc9935b2dd6f40cabd4ad5",
+    "code/infraestructura/inference_evidence.py": "262140246e57a07b0f04c71bad165e037958403935d8df94271a86b02003070a",
+    "code/infraestructura/inference_metrics.py": "90084dc4f6804e1666763f5d5fac1fe6723d3b588e5d87a96ac178e40fc94ae9",
+    "code/infraestructura/inference_observation.py": "718405735b93de41b7739f08280bf626b44b5b58d6cb56950293cae91c9c4895",
+    "code/infraestructura/inference_runtime.py": "f9060b9d1e80fbe060b785b6923e3702611ba43ddeca820928a224155eb48802",
+    "code/infraestructura/manifest.py": "ce12d6f76a53e3715c8e172c996174fba3dc8663d756010486047e583012aba1",
+    "code/infraestructura/rutas.py": "ac8b93b36033c61163dd0ff9e60f923401acf0d2f8ecf659362874549a4bfd4c",
+    "code/infraestructura/serving_capacity_protocol.py": "13de45505dac7091cdb9892c1e48ebf39655c4d1d0220d068277cf056677957c",
+    "code/infraestructura/serving_capacity_runner.py": "b101fc6a0d0cb8eefdb7bb25c6f117c1ac2007f5f0e9350b2c4002f7da25bed1",
+    "code/infraestructura/sft.py": "f13d180be2057446bce7ba489a1b0e765bf103e60718bf2a6605da52c365ee49",
+    "code/infraestructura/sft_checkpoint.py": "82cc3084afb025a2b9d6b463c53e2fa364006cd6f74bf96488b5c432e3c7424c",
+    "code/infraestructura/sft_protocol.py": "72a7c3901ca4199cbf3831f8ebda2df307cdb3622982faaf335bfe0b886516c1",
+    "code/infraestructura/sft_report.py": "b5943e59cf2bd083b7a849caab4638458aaa82ab6cd79174bb9b3c8b46d94a86",
+    "code/infraestructura/sft_runner.py": "0ac57ce07bd7f2b0ab223a99ba6539e63bd3593fade8a2646824dbff1d097047",
+    "code/infraestructura/sft_runtime.py": "b8821828b8204127b4b90f2db4712c01605a06f376ee7c6cfc99f904b81590b5",
+    "code/infraestructura/sft_train.py": "23aff8265fcff59e44828e19ef68b3c2558d75b657f1b0142c2d5b048f1706fe",
+    "corpus.jsonl": "c9229d2e8ad8ec84da91d2f30b9cf2d0f18213f405995e053fd81588c2eacaaf",
+    "reference/preflight.json": "85c9eaa46ce1126ebabbaacbc678735735caaf822b5ab74f6f11309723319e2f",
+    "requested_config": "fb4471a852228512aa3a272a65306603758bc21e296adb248e7129013fff83c1"
+  },
+  "campaign_sha256": "723fe808faff3add7a7797497c04f3ad44b51b4283da8e84a9a79d02a44474c9",
+  "cleanup_sha256": "efb40f66bd037a363c1188c3ab0422454f2b523fb5784e6a6fd7b701c3c3936a",
+  "cluster_sha256": "27a85ba6c2e1c26919dd22ad30506b6e798622235a0549ea4a1300246f2ee024",
+  "config_sha256": "fb4471a852228512aa3a272a65306603758bc21e296adb248e7129013fff83c1",
+  "plan_sha256": "b34c691c04875d3bc8a3de0d5d9d474d413a41b03b2fc539730c3330165ec92d",
+  "preflight_sha256": "d1677cf1d4f08d620e25ab0d3d12fcf52d2ed02ed833e729534d525b2f19a8ee",
+  "publication_sha256": "53bea489bb69c38df2b414bb13f8836e6228c68b7fd7e7e9608b1892df4836c5",
+  "environment": null,
+  "started_at": "2026-11-23T00:58:24.412171Z",
+  "ended_at": "2026-11-23T00:58:45.660924Z",
+  "duration_seconds": 21.248755493958015,
+  "limit_seconds": 7200,
+  "index_ended_at": "2026-11-23T00:58:45.660686Z",
+  "index_duration_seconds": 21.248515459999908,
+  "sealed_at": "2026-11-23T00:58:45.660843Z",
+  "sealed_duration_seconds": 21.24867333396105,
+  "removal_confirmed": true,
+  "pilot_reference": null,
+  "qualified_groups": [],
+  "estimated_matrix_seconds": null,
+  "matrix_estimate_groups": {},
+  "runs": [],
+  "errors": [
+    "pegasus: ValueError: GPU o puerto de rendezvous ocupado o sin verificar",
+    "griffin: ValueError: GPU o puerto de rendezvous ocupado o sin verificar",
+    "draggon: ValueError: GPU o puerto de rendezvous ocupado o sin verificar"
+  ],
+  "failures": [],
+  "pending_jobs": [
+    "pilot-four",
+    "pilot-pair",
+    "pilot-single"
+  ],
+  "comparisons": {},
+  "drift": {},
+  "capacity": {
+    "four": {
+      "qualified": [],
+      "measured": [],
+      "oom": [],
+      "indeterminate": []
+    },
+    "pair": {
+      "qualified": [],
+      "measured": [],
+      "oom": [],
+      "indeterminate": []
+    },
+    "single": {
+      "qualified": [],
+      "measured": [],
+      "oom": [],
+      "indeterminate": []
+    }
+  },
+  "pilot_capacity": {}
+}

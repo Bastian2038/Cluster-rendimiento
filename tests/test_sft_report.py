@@ -12,6 +12,7 @@ from unittest.mock import patch
 
 from infraestructura import manifest, sft_protocol, sft_report, sft_runtime
 from infraestructura.serving_capacity_protocol import _hardware_roster
+from tests.test_sft_runner import DESKTOP_ROWS, EMPTY_PROCESSES, GB10_SUMMARY
 
 
 def _write(path, value):
@@ -25,6 +26,28 @@ def _write_rows(path, rows):
 
 def _digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def _idle_record(processes=EMPTY_PROCESSES):
+    record = {"ports_in_use": [], "gpu_apps": {"returncode": 0, "stdout": ""},
+              "gpu_summary": {"returncode": 0, "stdout": GB10_SUMMARY.format(util=0, processes=processes)}}
+    return {**record, "gpu_idle_assessment": sft_runtime.gpu_idle_diagnosis(record)}
+
+
+def _idle_anomalies():
+    valid = _idle_record(DESKTOP_ROWS)
+    for field in ("ports_in_use", "gpu_apps", "gpu_summary", "gpu_idle_assessment"):
+        yield f"omisión de {field}", {key: value for key, value in valid.items() if key != field}, field
+    yield "puerto ocupado", {**valid, "ports_in_use": [29500]}, "ports_in_use"
+    yield "cómputo en consulta", {**valid, "gpu_apps": {"returncode": 0, "stdout": "GPU-abc, 8121, 64"}}, "cómputo"
+    yield "resumen censurado", {**valid, "gpu_summary": {"returncode": 0, "stdout": ""}}, "ilegible"
+    for label, util, processes, reason in (
+        ("GPU al 90 %", 90, EMPTY_PROCESSES, "utilización 0 %"),
+        ("cómputo en tabla", 0, DESKTOP_ROWS.replace("      G", "      C", 1), "tipo GPU no autorizado"),
+        ("PID manipulado", 0, DESKTOP_ROWS.replace("2868", "2869"), "gpu_idle_assessment"),
+    ):
+        summary = {"returncode": 0, "stdout": GB10_SUMMARY.format(util=util, processes=processes)}
+        yield label, {**valid, "gpu_summary": summary}, reason
 
 
 class SFTReportTests(unittest.TestCase):
@@ -62,7 +85,7 @@ class SFTReportTests(unittest.TestCase):
             "python": "3.12.1", "torch_cuda_version": "13.0", "nccl_version": [2, 28, 1],
             "gpus_hidden": True, "nccl_available": True}
         image = {key: self.config["image"][key] for key in ("id", "architecture")}
-        observed = [{**row, "sft_container_probe": runtime,
+        observed = [{**row, **_idle_record(), "sft_container_probe": runtime,
                      "image": {"returncode": 0, "stdout": f"{image['id']} {image['architecture']}"}}
                     for row in nodes]
         self.preflight = {"status": "ready", "errors": [], "roster": self.roster, "nodes": observed,
@@ -253,7 +276,7 @@ class SFTReportTests(unittest.TestCase):
                 limit = limits[node]
                 if phase != "pilot":
                     limit.update(checkpoint_bytes=0, checkpoint_inodes=0)
-                resources[node] = {"node_id": node, "phase": phase,
+                resources[node] = {**_idle_record(), "node_id": node, "phase": phase,
                                    "observed_at": self._stamp(self.run_offsets[directory.name] + 2),
                                    "memory_bytes": host["memory_bytes"], "resources": host["resources"],
                                    "assessment": sft_runtime._check_resources(host, limit)}
@@ -463,6 +486,56 @@ class SFTReportTests(unittest.TestCase):
         log = json.loads(log_path.read_text())
         _write(log_path, {**log, "command": [*log["command"][:-1], "a" * 64]})
         self.assertIn("logs de otro contenedor", sft_report.assess_run(run, job, self.config)["issues"][0])
+
+    def test_ready_preflight_replays_idle_evidence_without_comparing_pids(self):
+        row = self.preflight["nodes"][0]
+        baseline = sft_report._preflight_environment(self.preflight, self.config)
+        # Sustituir el bloque de evidencia completo para probar también campos omitidos.
+        node = {key: value for key, value in row.items() if key not in _idle_record()}
+        other_nodes = self.preflight["nodes"][1:]
+        for name, evidence, reason in _idle_anomalies():
+            with self.subTest(name=name):
+                preflight = {**self.preflight, "nodes": [{**node, **evidence}, *other_nodes]}
+                with self.assertRaisesRegex(ValueError, reason):
+                    sft_report._preflight_environment(preflight, self.config)
+        for rows in (DESKTOP_ROWS, DESKTOP_ROWS.replace("2868", "2869")):
+            preflight = {**self.preflight, "nodes": [{**node, **_idle_record(rows)}, *other_nodes]}
+            self.assertEqual(sft_report._preflight_environment(preflight, self.config), baseline)
+
+    def test_measure_rejects_unverified_idle_evidence_per_rank(self):
+        job = self._job("run", "pair", 1)
+        run = self._new_run("matrix-idle-evidence", job)
+        self._write_phase(run, job, "matrix-idle-evidence", "measure")
+        self._cleanup(run, "matrix-idle-evidence", job)
+        self.assertEqual(sft_report.assess_run(run, job, self.config)["outcome"], "measured")
+        path = run / "logs/measure-resources.json"
+        resources = json.loads(path.read_text())
+        node = {key: value for key, value in resources["octopus"].items() if key not in _idle_record()}
+        for name, evidence, reason in _idle_anomalies():
+            with self.subTest(name=name):
+                _write(path, {**resources, "octopus": {**node, **evidence}})
+                result = sft_report.assess_run(run, job, self.config)
+                self.assertEqual(result["outcome"], "indeterminate")
+                self.assertFalse(result["eligible"])
+                self.assertRegex(result["issues"][0], f"octopus/measure.*{reason}")
+
+    def test_blocked_preflight_without_runs_keeps_its_derived_reports(self):
+        # Un preflight bloqueado solo conserva evidencia diagnóstica.
+        self.preflight = {"status": "blocked", "nodes": [{"node_id": "pegasus"}],
+                          "errors": ["criterio anterior de reposo no satisfecho"]}
+        campaign = self._close("pilot-blocked", "pilot", [], [])
+        with patch.object(sft_report, "gpu_idle_diagnosis") as diagnose:
+            report = sft_report.build_report(campaign)
+            diagnose.assert_not_called()
+        self.assertEqual(report["status"], "partial")
+        self.assertIsNone(report["environment"])
+        self.assertEqual(report["runs"], [])
+        self.assertEqual(report["errors"], [])
+        self.assertEqual(report["preflight_sha256"], manifest.sha256_file(campaign / "preflight.json"))
+        output = self.root / "reporte"
+        sft_report.write_report(output, report)
+        self.assertEqual(json.loads(output.with_suffix(".json").read_text()), report)
+        self.assertEqual(output.with_suffix(".md").read_text(), sft_report._markdown(report))
 
     def test_requires_explicit_oom_and_preserves_failed_run(self):
         job = self._job("pilot", "single")
