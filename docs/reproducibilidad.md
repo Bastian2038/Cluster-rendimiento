@@ -1,6 +1,6 @@
 # Reproducibilidad de campañas de rendimiento
 
-El estudio caracteriza cuatro nodos para Qwen y Llama. Compara principalmente cuatro frente a dos (Pegasus + Octopus) y usa Pegasus como referencia contemporánea de un nodo donde sea viable. La campaña de inferencia 4/2/1 completó 18 corridas y 108 celdas. La campaña de capacidad de serving del 22 de noviembre cerró con 18 corridas, 126 puntos y 16.128 solicitudes medidas. La calificación de SFT sigue pendiente tras dos cierres parciales del piloto. [Inferencia 4/2/1](resultados/inference-20261119-analysis.md), [capacidad de serving](capacidad-serving.md) y [estado del piloto SFT](sft-completo.md#estado-del-piloto).
+El estudio caracteriza cuatro nodos para Qwen y Llama. Compara principalmente cuatro frente a dos (Pegasus + Octopus) y usa Pegasus como referencia contemporánea de un nodo donde sea viable. La campaña de inferencia 4/2/1 completó 18 corridas y 108 celdas. La campaña de capacidad de serving del 22 de noviembre cerró con 18 corridas, 126 puntos y 16.128 solicitudes medidas. El 23 de noviembre, el piloto v2 de SFT de Llama calificó cuatro, dos y un nodo. En las tres topologías, las pérdidas de los pasos 3 y 4 coincidieron al restaurar el checkpoint. [Inferencia 4/2/1](resultados/inference-20261119-analysis.md), [capacidad de serving](capacidad-serving.md) y [cierre del piloto SFT](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.md).
 
 ## Identidad y evidencia
 

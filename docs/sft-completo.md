@@ -1,10 +1,14 @@
 # Protocolo de SFT completo de Llama-3.1-8B-Instruct
 
-El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. La publicación comienza con este protocolo y sigue con los cierres del piloto y de la matriz. Los dos intentos v1 se autorizaron y la calificación sigue pendiente. El 23 de noviembre se autorizó una nueva sesión de hasta dos horas para ejecutar v2 tras publicar la receta revisada. La matriz requiere una autorización independiente. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
+El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. El piloto califica las topologías mediante una prueba de actualización de pesos y restauración. La matriz de rendimiento requiere autorización independiente. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
 
 ## Estado del piloto
 
-El primer intento quedó en el preflight. En el segundo, los cuatro nodos completaron ambas fases, con verificación de las huellas del checkpoint. La diferencia de pérdida del paso 4 excedió la tolerancia fijada y quedó pendiente la calificación. [Primer intento](resultados/README.md#primer-intento-del-piloto-sft) y [segundo intento](resultados/README.md#segundo-intento-del-piloto-sft).
+El 23 de noviembre de 2026, el piloto v2 calificó las tres topologías en **17 min 57 s** y cerró como `complete`, sin OOM y con retirada verificada. En cada trabajo, la auditoría del paso 4 cubrió los **8.030.261.248 parámetros** y verificó gradientes finitos, al menos un elemento de gradiente no nulo y un cambio de pesos en cada uno de los **291 tensores lógicos**. [Informe del piloto v2](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.md).
+
+En las tres topologías, la restauración reprodujo exactamente las pérdidas originales de **4,055137634277344** en el paso 3 y **4,321949005126953** en el paso 4. Cada uno de los siete ranks distribuidos entre los tres trabajos reprodujo sus propias huellas del paso 3 para los pesos antes del forward, los gradientes, los pesos tras SGD y los estados de los generadores aleatorios. [Pérdidas y huellas por rank](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.json).
+
+El primer intento v1 se detuvo en el preflight. En el segundo, los cuatro nodos completaron ambas fases y verificaron las huellas del checkpoint, pero la pérdida restaurada del paso 4 superó la tolerancia. Ambos intentos cerraron como parciales. [Primer intento v1](resultados/README.md#primer-intento-del-piloto-sft) y [segundo intento v1](resultados/README.md#segundo-intento-del-piloto-sft).
 
 ## Modelo, entorno y carga
 
@@ -20,9 +24,7 @@ Se usa FSDP2 con NCCL por las interfaces f0 configuradas, un rank por nodo y una
 
 Se prueba cada topología en orden cuatro → dos → uno. La fase `pilot` ejecuta cuatro pasos del optimizador y guarda un checkpoint local al terminar el segundo. La fase `resume` lanza procesos nuevos en la misma topología, restaura los pesos, el estado y el cursor del muestreo, y ejecuta los pasos 3 y 4 con los mismos IDs. La pérdida media global debe ser finita y cumplir `abs(restaurada - original) ≤ 0,0001 + 0,001 × abs(original)` en cada uno de esos pasos.
 
-El siguiente piloto usará la receta v2. Antes de entrenar, cada rank deberá exigir algoritmos deterministas en PyTorch, fijar las opciones de determinismo de cuDNN y usar el espacio de trabajo que el lanzador fija para cuBLAS antes de iniciar los procesos de PyTorch. Algunas implementaciones del cálculo de gradientes de atención en PyTorch dependen del modo de determinismo, y cuBLAS puede elegir implementaciones distintas cuando hay varios streams CUDA activos. Estos ajustes controlan una posible fuente de variación. La causa de la diferencia de pérdida del paso 4 sigue abierta. [Código de PyTorch en la revisión fijada](https://github.com/pytorch/pytorch/blob/9186a08b2c/aten/src/ATen/native/transformers/cuda/attention_backward.cu), [algoritmos deterministas de la misma revisión](https://github.com/pytorch/pytorch/blob/9186a08b2c/torch/__init__.py#L1271) y [reproducibilidad de cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility).
-
-La nueva receta conserva la carga, SGD y la tolerancia de restauración. Todas las fases del próximo piloto y, si procede, el calentamiento y las mediciones de la matriz usarán el mismo modo de ejecución. Los dos cierres anteriores conservan el protocolo v1.
+La receta v2 conserva la carga, SGD y la tolerancia de restauración de v1. Cada rank exige algoritmos deterministas en PyTorch y cuDNN. El lanzador fija el espacio de trabajo de cuBLAS antes de iniciar PyTorch. El calentamiento y las mediciones de la matriz usarán estos mismos controles. La causa de la diferencia de pérdida del paso 4 en v1 sigue abierta. [Código de PyTorch en la revisión fijada](https://github.com/pytorch/pytorch/blob/9186a08b2c/aten/src/ATen/native/transformers/cuda/attention_backward.cu), [algoritmos deterministas de la misma revisión](https://github.com/pytorch/pytorch/blob/9186a08b2c/torch/__init__.py#L1271) y [reproducibilidad de cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility).
 
 En v2, el paso 3 de las fases `pilot` y `resume` guarda en `steps.jsonl` las huellas por rank de los pesos maestros FP32 antes del forward, los gradientes, los pesos maestros tras SGD y el estado de los generadores aleatorios. Las huellas sirven para diagnosticar discrepancias sin cambiar el umbral de pérdida. La proyección excluye el coste de estas lecturas del tiempo de entrenamiento. La matriz omite estas lecturas.
 
@@ -32,7 +34,9 @@ Para calificar una topología se verifica la identidad de los ranks, las huellas
 
 ## Matriz de rendimiento
 
-Se hacen tres bloques contemporáneos en orden cuatro → dos → uno con las topologías calificadas. Cada corrida parte del snapshot fijado y hace cinco pasos de calentamiento y veinte medidos. La ventana real de los pasos 6 a 25 abarca **40.960 tokens procesados y 10.240 supervisados** de 80 ejemplos. Para throughput se divide cada total por la mayor ventana local observada entre los ranks. Se conservan los tiempos por paso, la pérdida, el pico de memoria asignada por CUDA y la telemetría por nodo. El pico del asignador describe una parte del uso de memoria unificada.
+El piloto proyecta **1.688,811 s** para cuatro nodos, **776,853 s** para Pegasus + Octopus y **1.138,824 s** para Pegasus solo. Los **3.604,488 s** corresponden al total de los tres bloques e incluyen el margen del 25 %. Se reservan otros **300 s** para el cierre de la sesión. [Proyección por topología](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.json).
+
+La matriz prevé tres bloques contemporáneos en orden cuatro → dos → uno. Cada corrida parte del snapshot fijado y hace cinco pasos de calentamiento y veinte medidos. La ventana de los pasos 6 a 25 abarca **40.960 tokens procesados y 10.240 supervisados** de 80 ejemplos. Para throughput se divide cada total por la mayor ventana local observada entre los ranks. Se conservan los tiempos por paso, la pérdida, el pico de memoria asignada por CUDA y la telemetría por nodo. El pico del asignador describe una parte del uso de memoria unificada.
 
 El speedup divide el tiempo de la topología menor por el de la mayor para el mismo bloque y trabajo. La eficiencia divide ese cociente por la razón de nodos. Se informa cobertura, mediana y rango para los pares válidos 4/2, 2/1 y 4/1, junto con la variación entre bloques y las exclusiones. Si una topología menor registra OOM, se informa la viabilidad observada para esta receta. El corpus y la ventana caracterizan rendimiento con este modelo y batch. La calidad tras el ajuste y el rendimiento de otros modelos, longitudes u optimizadores quedan fuera del estudio.
 
@@ -59,7 +63,7 @@ El criterio corregido de disponibilidad exige observar **0 % de utilización de 
 
 El lanzador repite la comprobación antes de cada fase. Para calificar una topología o aceptar su medición, el lector reconstruye el diagnóstico de GPU a partir de las consultas archivadas y comprueba que coincide con el registrado y que el puerto estaba libre.
 
-Cada checkpoint contiene unos **29,92 GiB** de pesos maestros FP32 repartidos entre los ranks. Si las tres topologías llegan al guardado, Pegasus conservará aproximadamente 52,35 GiB, Octopus 22,44 GiB y Griffin y Draggon 7,48 GiB cada uno. Los índices, el estado y los archivos auxiliares requieren espacio adicional.
+Cada checkpoint contiene unos **29,92 GiB** de pesos maestros FP32 repartidos entre los ranks. El presupuesto de disco para conservar los pesos de las tres topologías es de aproximadamente 52,35 GiB en Pegasus, 22,44 GiB en Octopus y 7,48 GiB en cada uno de Griffin y Draggon. Los índices, el estado y los archivos auxiliares requieren espacio adicional.
 
 Los techos son independientes, **7.200 s para el piloto y 28.800 s para la matriz**, con **300 s reservados** dentro de cada sesión para el cierre. Para cada topología calificada, la proyección suma la preparación en el coordinador, el arranque de los contenedores y los procesos, el primer paso, 24 veces el mayor tiempo observado de los pasos 2 a 4 y la retirada. El coordinador mide el lanzamiento hasta la salida y descuenta la duración del proceso más lento para estimar el tiempo externo al worker. La suma se multiplica por tres bloques y se añade un margen del 25 %. La matriz arranca si la proyección cabe en el tiempo disponible con la reserva.
 
@@ -69,7 +73,7 @@ El comando del piloto incluye el preflight operativo dentro de su presupuesto y 
 python3 -B -m infraestructura.sft pilot --config "$sft_config" --execute --session-limit-seconds 7200
 ```
 
-Asignar a `sft_pilot_dir` la ruta del cierre del piloto que imprime el evento `campaign_closed`. La matriz requiere su propia autorización. En la solicitud se incluye el identificador del piloto y el SHA-256 del JSON publicado. El ejecutor vuelve a generar el informe y comprueba la copia del commit de la matriz en `docs/resultados/sft-piloto-<id>.json`. Si se publicó en otra ruta, se indica con `--pilot-report`.
+Para el piloto v2, `sft_pilot_dir` corresponde a `resultados/raw/sft-campaign/20261123T124235.848078Z-2b3e57de`. La solicitud de autorización de la matriz incluye el identificador del piloto y el SHA-256 del JSON publicado. El ejecutor vuelve a generar el informe y comprueba la copia del commit de la matriz en `docs/resultados/sft-piloto-<id>.json`. Si se publicó en otra ruta, se indica con `--pilot-report`. [Identificador y huellas de publicación](resultados/README.md#piloto-v2-de-sft-completo).
 
 ```bash
 python3 -B -m infraestructura.sft run --config "$sft_config" --pilot-dir "$sft_pilot_dir" --execute --session-limit-seconds 28800

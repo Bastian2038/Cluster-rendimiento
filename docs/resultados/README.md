@@ -1,8 +1,21 @@
 # Índice de resultados de rendimiento
 
+### Piloto v2 de SFT completo
+
+El **23 de noviembre de 2026 (UTC)**, el grupo de cuatro nodos, Pegasus + Octopus y Pegasus solo calificaron en el piloto `20261123T124235.848078Z-2b3e57de` de Llama-3.1-8B-Instruct. Desde el inicio hasta la publicación del cierre `complete` transcurrieron **17 min 57 s**. Los tres trabajos completaron `pilot` y `resume` sin OOM. El cierre confirmó la retirada de los contenedores propios en los cuatro nodos.
+
+En cada topología, la auditoría cubrió **8.030.261.248 parámetros** y verificó gradientes finitos, gradiente no nulo y cambio de pesos en cada uno de los **291 tensores lógicos**. Tras restaurar el checkpoint del paso 2, la pérdida del paso 3 volvió a ser **4,055137634277344** y la del paso 4, **4,321949005126953**, idénticas a las originales en los tres trabajos. En cada uno de los siete ranks, las huellas del paso 3 coincidieron entre `pilot` y `resume` para los pesos antes del forward, los gradientes, los pesos tras SGD y los estados de los generadores aleatorios.
+
+En orden 4 → 2 → 1, la proyección para los tres bloques suma **1.688,811 + 776,853 + 1.138,824 = 3.604,488 s**, incluido el margen del 25 %. La sesión reserva otros **300 s** para el cierre. Las comparaciones de rendimiento corresponden a las ventanas medidas de la matriz, cuya ejecución requiere autorización independiente. [Protocolo de la matriz](../sft-completo.md#matriz-de-rendimiento).
+
+| Archivo publicado | SHA-256 |
+| --- | --- |
+| [JSON con pérdidas, huellas y proyección](sft-piloto-20261123T124235.848078Z-2b3e57de.json) | `1374ea43f8ffbe71f820f19c69d0c1d2ba7ffecf29f48f044de181d3d5d07d52` |
+| [Informe del piloto v2](sft-piloto-20261123T124235.848078Z-2b3e57de.md) | `81f0db5d006a20e8b7960080298f62fb5001d3ce5c590c20c037f9cff4e04576` |
+
 ### Segundo intento del piloto SFT
 
-El **23 de noviembre de 2026 (UTC)**, el intento `20261123T020835.137429Z-00bbd4e7` cerró como `partial` tras **223,042 s hasta la publicación del cierre**. Pegasus, Octopus, Griffin y Draggon completaron las fases `pilot` y `resume` de la corrida `20261123T020850.982184Z-6c270c5a`. La fase original acreditó gradientes finitos y no nulos y cambios de pesos en los **291 tensores lógicos**. Los recibos registran la restauración del checkpoint y la verificación de sus huellas.
+El **23 de noviembre de 2026 (UTC)**, el segundo intento v1 `20261123T020835.137429Z-00bbd4e7` cerró como `partial` tras **223,042 s hasta la publicación del cierre**. Pegasus, Octopus, Griffin y Draggon completaron las fases `pilot` y `resume` de la corrida `20261123T020850.982184Z-6c270c5a`. La fase original acreditó gradientes finitos y no nulos y cambios de pesos en los **291 tensores lógicos**. Los recibos registran la restauración del checkpoint y la verificación de sus huellas.
 
 | Paso | Pérdida original | Pérdida tras restaurar | Diferencia absoluta |
 | --- | ---: | ---: | ---: |
@@ -69,6 +82,7 @@ corrida de las 16:10 UTC validó ese filtro y completó la matriz.
 
 | Corrida | Fecha UTC | Participantes observados | Commit de captura | Alcance y resultado |
 | --- | --- | --- | --- | --- |
+| [20261123T124235.848078Z-2b3e57de](sft-piloto-20261123T124235.848078Z-2b3e57de.md) | 2026-11-23 12:42–13:00 | Pegasus, Octopus, Griffin y Draggon con ranks 0–3. Pegasus + Octopus con ranks 0–1. Pegasus con rank 0. | `482911fdef86aa62cba93f392846b2023cebf4f1` | COMPLETE. Piloto v2 de SFT completo con las tres topologías calificadas. |
 | [20261122T140741.033775Z-0cdcd86f](serving-capacidad-20261122T140741.033775Z-0cdcd86f.md) | 2026-11-22 14:07–22:59 | TP4 Pegasus, Octopus, Griffin y Draggon, ranks 0–3. TP2 Pegasus + Octopus, ranks 0–1. TP1 Pegasus, rank 0. | `f01ad0fc7c6504304cedc5298c4db463396c056a` | COMPLETE con 18 corridas y 126 puntos en tres bloques para Qwen3.5-9B y Llama-3.1-8B-Instruct en BF16 sin cuantización. Capacidad ofrecida en sol/s con ≥95 % de cumplimiento conjunto de TTFT ≤3 s y total ≤12 s. La síntesis anterior detalla las fronteras, las siguientes tasas ensayadas y los límites de resolución y estabilidad. [JSON de puntos, fronteras y evidencia](serving-capacidad-20261122T140741.033775Z-0cdcd86f.json). |
 | [20261121T210428.731080Z-c8c1766d](inference-20261121T210428.731080Z-c8c1766d.md) | 2026-11-21 21:04–23:30 | TP4 Pegasus, Octopus, Griffin y Draggon. TP2 Pegasus + Octopus. TP1 Pegasus. | `5e78f701d42c554f6fbde0091c07bdbb8fd2fb53` | COMPLETE. 54 celdas primarias, 24 auxiliares y 2496 solicitudes medidas. [Resultados por fase y por rank](inference-20261121T210428.731080Z-c8c1766d-diagnostico.json), [cronologías del 21](inference-20261121T210428.731080Z-c8c1766d-diagnostico.pdf) y [reconstrucción del 19](inference-20261119-cronologia.md). |
 | [20261119T175208.562948Z-e2644646](inference-20261119T175208.562948Z-e2644646.md) | 2026-11-19 17:52–23:25 | TP4 Pegasus, Octopus, Griffin y Draggon. TP2 Pegasus + Octopus. TP1 Pegasus rank 0. | `a0686d7a05294f0d39135db5a9ebd43a525f280d` | COMPLETE. Qwen3.5-9B y Llama-3.1-8B-Instruct en BF16. Tres bloques, 108 celdas y 36 comparaciones por cada par de topologías. [Cargas, revisiones y cierre raw](inference-20261119-analysis.md), [JSON de mediciones](inference-20261119T175208.562948Z-e2644646.json) y [JSON de telemetría](inference-20261119T175208.562948Z-e2644646-telemetry.json). |

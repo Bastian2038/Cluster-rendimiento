@@ -122,5 +122,5 @@ de NVIDIA, Qwen, Meta Llama y del framework; el soporte de una variante no
 demuestra el de otra.
 
 La inferencia ya cuenta con bloques contemporáneos 4 → 2 → 1 para ambos modelos.
-La campaña de capacidad bajo objetivos de latencia también cerró. En SFT, verificar las huellas del checkpoint y cumplir la tolerancia de pérdida son requisitos de calificación. En el segundo intento el paso 4 excedió esa tolerancia y el grupo de cuatro quedó sin calificar. [Evidencia del segundo intento](resultados/README.md#segundo-intento-del-piloto-sft).
+La campaña de capacidad bajo objetivos de latencia también cerró. En SFT, verificar las huellas del checkpoint y cumplir la tolerancia de pérdida son requisitos de calificación. El paso 4 excedió esa tolerancia en cuatro nodos en el segundo intento v1. El piloto v2 reprodujo las pérdidas originales de los pasos 3 y 4 en las tres topologías y las calificó con el mismo umbral. [Segundo intento v1](resultados/README.md#segundo-intento-del-piloto-sft) y [cierre del piloto v2](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.md).
 [Resultados 4/2/1](resultados/inference-20261119-analysis.md), [hoja de ruta](hoja-de-ruta.md) y [reproducibilidad](reproducibilidad.md).
