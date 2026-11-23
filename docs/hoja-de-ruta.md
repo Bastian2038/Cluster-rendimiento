@@ -2,7 +2,7 @@
 
 La campaña de capacidad de serving cerró el 22 de noviembre con 18 corridas, 126 puntos verificados y 16.128 solicitudes medidas. [Capacidad de serving](capacidad-serving.md).
 
-El primer intento del piloto autorizado de SFT de Llama cerró como `partial` en 21,249 s, con 0 de 3 trabajos lanzados. El siguiente hito es completar la calificación de las topologías con el criterio corregido de disponibilidad de GPU. [Informe del piloto](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.md), [JSON del cierre](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.json) y [protocolo SFT](sft-completo.md).
+El segundo intento del piloto SFT de Llama llegó a la restauración en cuatro nodos y cerró como `partial` al superar la tolerancia de pérdida del paso 4. Quedan cero grupos calificados y las pruebas de dos y un nodo pendientes. Los intentos v1 se autorizaron en la ventana original, cuyo límite era el **23 de noviembre de 2026 a las 02:58:24 UTC**. El 23 de noviembre se autorizó una nueva ventana de hasta dos horas para probar v2 tras la publicación de la receta. La matriz requiere autorización independiente. [Evidencia del segundo intento](resultados/README.md#segundo-intento-del-piloto-sft) y [protocolo SFT](sft-completo.md).
 
 ## Evidencia que ya se puede usar
 
@@ -17,7 +17,7 @@ El primer intento del piloto autorizado de SFT de Llama cerró como `partial` en
 
 | Prioridad | Trabajo y dependencia | Evidencia de cierre |
 | --- | --- | --- |
-| 1. Completar la calificación SFT | Aplicar el criterio de GPU corregido al preflight del piloto autorizado. Ejecutar cuatro pasos por topología y restaurar el checkpoint del paso dos en procesos nuevos. | Informe de gradientes, cambios de pesos, restauración, topologías calificadas y proyección de tiempo. [Protocolo SFT](sft-completo.md). |
+| 1. Completar la calificación SFT | En la nueva ventana autorizada para v2, revisar la diferencia del paso 4 en cuatro nodos y completar las pruebas pendientes con la tolerancia vigente. | Informe de gradientes, cambios de pesos, restauración, topologías calificadas y proyección de tiempo. [Protocolo SFT](sft-completo.md#piloto-y-restauración). |
 | 2. Medir SFT completo | Con el piloto cerrado y una autorización propia, medir tres bloques de trabajo global fijo en las topologías calificadas. | Informe con ventanas medidas, tokens/s, memoria y comparaciones pareadas. Registrar OOM comprobados y corridas pendientes o inconclusas. [Criterios de medición](sft-completo.md#matriz-de-rendimiento). |
 | En paralelo. Corroborar el mapa físico | Contrastar anuncios LLDP con la tabla MAC, los puertos del MikroTik y las etiquetas de cableado junto a quien administra la red. | Tabla nodo–interfaz–puerto–cable con fuente y grado de certeza por correspondencia. [Puertos anunciados y observaciones](cluster-cuatro-nodos.md#red-y-switch-observados). |
 | Opcional. Refinar capacidad de serving | Si se requiere distinguir cuatro de dos nodos, probar tasas intermedias y ventanas más largas con una nueva autorización. | Fronteras con mayor resolución y evidencia sobre estabilidad de pendientes. [Intervalos observados](capacidad-serving.md#cierre-del-22-de-noviembre-de-2026). |

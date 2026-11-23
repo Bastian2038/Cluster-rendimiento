@@ -30,6 +30,8 @@ from infraestructura.manifest import sha256_file
 TENSOR_COUNT = 291
 PARAMETER_COUNT = 8030261248
 HASH_CHUNK_ELEMENTS = 262144  # Un MiB FP32, sin clonar el modelo en GPU.
+DETERMINISM = {"algorithms": True, "warn_only": False, "cudnn_benchmark": False,
+               "cudnn_deterministic": True, "cublas_workspace_config": ":4096:8"}
 
 
 def _canonical_hash(value):
@@ -46,6 +48,37 @@ def framework_versions(config, torch, transformers):
         if observed != config["image"][key]:
             raise ValueError(f"{key} diferente del entorno aprobado: {observed}")
     return versions
+
+
+def validate_determinism_environment(config):
+    """El launcher fija cuBLAS antes de importar torch; v1 conserva su semántica."""
+    if "determinism" not in config["training"]:
+        return None
+    policy = config["training"]["determinism"]
+    if (not isinstance(policy, dict) or set(policy) != set(DETERMINISM)
+            or any(type(policy[key]) is not type(value) or policy[key] != value
+                   for key, value in DETERMINISM.items())):
+        raise ValueError("se requieren los cinco controles deterministas de la receta v2")
+    if os.environ.get("CUBLAS_WORKSPACE_CONFIG") != policy["cublas_workspace_config"]:
+        raise ValueError("el launcher debe fijar CUBLAS_WORKSPACE_CONFIG=:4096:8 antes de torchrun")
+    return policy
+
+
+def configure_determinism(config, torch):
+    policy = validate_determinism_environment(config)
+    if policy is None:
+        return None
+    torch.use_deterministic_algorithms(policy["algorithms"], warn_only=policy["warn_only"])
+    torch.backends.cudnn.benchmark = policy["cudnn_benchmark"]
+    torch.backends.cudnn.deterministic = policy["cudnn_deterministic"]
+    observed = {"algorithms": torch.are_deterministic_algorithms_enabled(),
+                "warn_only": torch.is_deterministic_algorithms_warn_only_enabled(),
+                "cudnn_benchmark": torch.backends.cudnn.benchmark,
+                "cudnn_deterministic": torch.backends.cudnn.deterministic,
+                "cublas_workspace_config": os.environ["CUBLAS_WORKSPACE_CONFIG"]}
+    if observed != policy:
+        raise RuntimeError("los controles deterministas efectivos difieren de la receta")
+    return observed
 
 
 def verify_tensor_shapes(model, protocol, config):
@@ -202,6 +235,71 @@ def _tensor_hash(tensor):
         digest.update(cpu.numpy().tobytes())
         del cpu
     return digest.hexdigest()
+
+
+def _rng_hashes(torch):
+    """Lee los estados sin consumir muestras ni alterar los generadores."""
+    return {"python_sha256": _canonical_hash(random.getstate()),
+            "torch_cpu_sha256": _tensor_hash(torch.get_rng_state()),
+            "torch_cuda_sha256": [_tensor_hash(state) for state in torch.cuda.get_rng_state_all()]}
+
+
+def begin_recovery_diagnostic(model, torch, step):
+    tensors = []
+    for name, parameter in model.named_parameters():
+        local = checkpoint.local_tensor(parameter)
+        if local.dtype != torch.float32:
+            raise ValueError("el diagnóstico de recuperación requiere maestros FP32")
+        tensors.append({"name": name, "local_numel": local.numel(),
+                        "weight_before_forward_sha256": _tensor_hash(local)})
+    return {"method": "sha256-full-local-fp32-v1", "step": step,
+            "hash_chunk_bytes": 4 * HASH_CHUNK_ELEMENTS, "tensor_count": len(tensors),
+            "local_parameter_count": sum(row["local_numel"] for row in tensors),
+            "rng_before_forward": _rng_hashes(torch), "tensors": tensors}
+
+
+def _diagnostic_parameters(model, diagnostic):
+    parameters = list(model.named_parameters())
+    if [name for name, _ in parameters] != [row["name"] for row in diagnostic["tensors"]]:
+        raise ValueError("cobertura de parámetros cambió durante el diagnóstico de recuperación")
+    return zip(parameters, diagnostic["tensors"])
+
+
+def recovery_gradient_diagnostic(model, torch, diagnostic):
+    for (name, parameter), row in _diagnostic_parameters(model, diagnostic):
+        grad = parameter.grad
+        if grad is not None:
+            grad = checkpoint.local_tensor(grad)
+            if grad.dtype != torch.float32 or grad.numel() != row["local_numel"]:
+                raise ValueError(f"gradiente local FP32 incompatible en diagnóstico: {name}")
+        row["gradient_sha256"] = _tensor_hash(grad) if grad is not None else None
+    diagnostic["rng_before_optimizer"] = _rng_hashes(torch)
+
+
+def finish_recovery_diagnostic(model, torch, diagnostic):
+    for (_, parameter), row in _diagnostic_parameters(model, diagnostic):
+        row["weight_after_optimizer_sha256"] = _tensor_hash(checkpoint.local_tensor(parameter))
+    diagnostic["rng_after_optimizer"] = _rng_hashes(torch)
+    diagnostic["local_updated_tensor_count"] = sum(
+        row["weight_before_forward_sha256"] != row["weight_after_optimizer_sha256"]
+        for row in diagnostic["tensors"])
+
+
+def compare_recovery_diagnostic(current, reference):
+    """Comparación informativa; el umbral de loss del protocolo no cambia."""
+    actual = {row["name"]: row for row in current["tensors"]}
+    original = {row["name"]: row for row in reference["tensors"]}
+    layout_equal = (current["method"] == reference["method"] and current["step"] == reference["step"]
+                    and actual.keys() == original.keys()
+                    and all(row["local_numel"] == original[name]["local_numel"] for name, row in actual.items()))
+    result = {"reference_phase": "pilot", "layout_equal": layout_equal}
+    for label, key in (("weights_before_forward_equal", "weight_before_forward_sha256"),
+                       ("gradients_equal", "gradient_sha256"),
+                       ("weights_after_optimizer_equal", "weight_after_optimizer_sha256")):
+        result[label] = layout_equal and all(row[key] == original[name][key] for name, row in actual.items())
+    for key in ("rng_before_forward", "rng_before_optimizer", "rng_after_optimizer"):
+        result[key + "_equal"] = current[key] == reference[key]
+    return result
 
 
 def _audit_before(model, torch):
@@ -416,10 +514,29 @@ def fsdp_loss_scale(microbatch_targets, global_targets, world_size):
     return microbatch_targets * world_size / global_targets
 
 
-def _train_step(work, model, optimizer, *, torch, dist, device, world_size, audit, set_stage=None):
+def _recovery_barrier(torch, dist, device):
+    torch.cuda.synchronize(device)
+    dist.barrier()
+    torch.cuda.synchronize(device)
+
+
+def _train_step(work, model, optimizer, *, torch, dist, device, world_size, audit,
+                set_stage=None, recovery_probe=False, recovery_reference=None):
     torch.cuda.synchronize(device)
     start = time.perf_counter()
     optimizer.zero_grad(set_to_none=True)
+    audit_seconds = 0.0
+    recovery_seconds = 0.0
+    recovery = None
+    if recovery_probe:
+        if set_stage is not None:
+            set_stage("parameter_audit")
+        audit_start = time.perf_counter()
+        recovery = begin_recovery_diagnostic(model, torch, work["step"])
+        _recovery_barrier(torch, dist, device)
+        recovery_seconds += time.perf_counter() - audit_start
+        if set_stage is not None:
+            set_stage("train_step")
     weighted_loss = torch.zeros((), device=device, dtype=torch.float32)
     batches = work["batches"]
     for index, batch in enumerate(batches):
@@ -436,34 +553,54 @@ def _train_step(work, model, optimizer, *, torch, dist, device, world_size, audi
         del result, loss, inputs
     dist.all_reduce(weighted_loss, op=dist.ReduceOp.SUM)
     before = None
-    audit_seconds = 0.0
-    if audit:
+    if audit or recovery_probe:
         # Finish outstanding training kernels before pausing the step clock.
         torch.cuda.synchronize(device)
         if set_stage is not None:
             set_stage("parameter_audit")
-        audit_start = time.perf_counter()
-        before = _audit_before(model, torch)
-        audit_seconds = time.perf_counter() - audit_start
+        if audit:
+            audit_start = time.perf_counter()
+            before = _audit_before(model, torch)
+            audit_seconds += time.perf_counter() - audit_start
+        if recovery_probe:
+            recovery_start = time.perf_counter()
+            recovery_gradient_diagnostic(model, torch, recovery)
+            _recovery_barrier(torch, dist, device)
+            recovery_seconds += time.perf_counter() - recovery_start
         if set_stage is not None:
             set_stage("train_step")
     optimizer.step()
     torch.cuda.synchronize(device)
-    seconds = time.perf_counter() - start - audit_seconds
+    seconds = time.perf_counter() - start - audit_seconds - recovery_seconds
     value = float(weighted_loss.item()) / work["global_supervised_tokens"]
     proof = None
-    if audit:
+    if audit or recovery_probe:
         if set_stage is not None:
             set_stage("parameter_audit")
-        audit_start = time.perf_counter()
-        proof = _audit_after(model, before, torch=torch, dist=dist, device=device, step=work["step"])
-        audit_seconds += time.perf_counter() - audit_start
+        if audit:
+            audit_start = time.perf_counter()
+            proof = _audit_after(model, before, torch=torch, dist=dist, device=device, step=work["step"])
+            audit_seconds += time.perf_counter() - audit_start
+        if recovery_probe:
+            recovery_start = time.perf_counter()
+            finish_recovery_diagnostic(model, torch, recovery)
+            if recovery_reference is not None:
+                recovery["comparison_to_pilot"] = (
+                    {"reference_phase": "pilot", "reference_missing": True}
+                    if recovery_reference.get("reference_missing") else
+                    compare_recovery_diagnostic(recovery, recovery_reference))
+            _recovery_barrier(torch, dist, device)
+            recovery["rank_barriers"] = 3
+            recovery_seconds += time.perf_counter() - recovery_start
         if set_stage is not None:
             set_stage("train_step")
     row = {key: value for key, value in work.items() if key != "batches"}
     row.update(loss=value, seconds=seconds,
                loss_definition="global_supervised_token_mean",
                cuda_memory=cuda_memory(torch, device), audit_performed=audit, parameter_audit_seconds=audit_seconds)
+    if recovery is not None:
+        row["recovery_diagnostic"] = recovery
+        row["recovery_diagnostic_seconds"] = recovery_seconds
     return row, proof
 
 
@@ -516,9 +653,11 @@ def execute(args):
     initialized = False
     stage = "imports"
     try:
+        validate_determinism_environment(config)
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
         import torch
+        determinism = configure_determinism(config, torch)
         import torch.distributed as dist
         from torch.distributed.device_mesh import init_device_mesh
         from torch.distributed.fsdp import fully_shard, MixedPrecisionPolicy
@@ -534,7 +673,10 @@ def execute(args):
         torch.cuda.set_device(device)
         stage = "identity"
         identity["gpu_uuid"] = _gpu_uuid(torch, device, observation.collect_sample())
-        checkpoint.write_json(out / "identity.json", identity)
+        identity_record = dict(identity)
+        if determinism is not None:
+            identity_record["determinism"] = determinism
+        checkpoint.write_json(out / "identity.json", identity_record)
         original_checkpoint_sha256 = resume_digest(args, identity, config) if args.phase == "resume" else None
         stage = "group_init"
         dist.init_process_group(backend="nccl", timeout=timedelta(seconds=300), device_id=device)
@@ -628,6 +770,13 @@ def execute(args):
         window_start = window_end = None
         warmup = config["measurement"]["warmup_steps"]
         torch.cuda.reset_peak_memory_stats(device)
+        recovery_step = config["measurement"]["checkpoint_step"] + 1
+        reference_recovery = None
+        if determinism is not None and args.phase == "resume":
+            reference_rows = [json.loads(line) for line in
+                              (out.parent / "pilot" / "steps.jsonl").read_text(encoding="utf-8").splitlines()]
+            reference_recovery = next((row.get("recovery_diagnostic") for row in reference_rows
+                                       if row["step"] == recovery_step), None) or {"reference_missing": True}
 
         def set_step_stage(value):
             nonlocal stage
@@ -649,7 +798,10 @@ def execute(args):
             row, audit_proof = _train_step(work, model, optimizer, torch=torch, dist=dist,
                                            device=device, world_size=world,
                                            audit=args.phase == "pilot" and work["step"] == config["measurement"]["pilot_steps"],
-                                           set_stage=set_step_stage)
+                                           set_stage=set_step_stage,
+                                           recovery_probe=determinism is not None and args.phase in ("pilot", "resume")
+                                           and work["step"] == recovery_step,
+                                           recovery_reference=reference_recovery)
             row.update(measured=measured, rank=rank, node_id=args.node_id, phase=args.phase)
             rows.append(row)
             if audit_proof is not None:
@@ -678,7 +830,7 @@ def execute(args):
         dist.barrier()
         telemetry.stop()
         telemetry = None
-        receipt = {**identity, "schema_version": "1.0", "status": "ok",
+        receipt = {**identity_record, "schema_version": "1.0", "status": "ok",
                    "corpus_sha256": config["workload"]["corpus_sha256"],
                    "tokens_sha256": config["workload"]["tokens_sha256"],
                    "model_revision": config["model"]["revision"],

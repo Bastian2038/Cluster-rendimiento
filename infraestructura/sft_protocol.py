@@ -10,7 +10,8 @@ from infraestructura.rutas import REPO_ROOT
 
 
 DEFAULT_CONFIG = REPO_ROOT / "experimentos/configs/sft-llama31-8b.json"
-PROTOCOL = "llama31-full-sft-4-2-1-v1"
+PROTOCOL = "llama31-full-sft-4-2-1-v2"
+_V1_PROTOCOL = "llama31-full-sft-4-2-1-v1"
 GROUPS = ("four", "pair", "single")
 SOURCE_MODULES = (
     "__init__", "cluster", "manifest", "rutas", "sft_protocol", "sft_train", "sft_checkpoint",
@@ -22,7 +23,8 @@ CORPUS_SHA256 = "c9229d2e8ad8ec84da91d2f30b9cf2d0f18213f405995e053fd81588c2eacaa
 TOKENS_SHA256 = "33ed6a6646bc673718436893862133523c07f0269790f426d72776f88db61907"
 _RECIPE_FIELDS = ("schema_version", "protocol_id", "reference_preflight_sha256", "model",
                   "image", "network", "training", "workload", "measurement")
-_RECIPE_SHA256 = "04909adb6412482b3f74f83dd6e386440db70e900a025c8eedaabe50d8e64a9a"
+_V1_RECIPE_SHA256 = "04909adb6412482b3f74f83dd6e386440db70e900a025c8eedaabe50d8e64a9a"
+_RECIPE_SHA256 = "636e5ed133301167c73e2909efa708ab1efb43a1847eb6832413334be999254d"
 _WORDS = "pan sal agua coco libro papel mesa bola foto flor disco carta mapa radio metal oro".split()
 _INSTRUCTION = "Devuelve en orden inverso los 127 productos finales del inventario."
 # Tokenization of the fixed instruction, word vocabulary and response delimiter
@@ -39,8 +41,9 @@ def validate_config(config):
     """A different numerical recipe needs a distinct protocol and fresh pilot."""
     recipe = {key: config[key] for key in _RECIPE_FIELDS}
     encoded = json.dumps(recipe, sort_keys=True, separators=(",", ":"), allow_nan=False).encode()
-    if hashlib.sha256(encoded).hexdigest() != _RECIPE_SHA256:
-        raise ValueError("la receta, imagen, red o referencia difiere del protocolo SFT v1")
+    approved = {PROTOCOL: _RECIPE_SHA256, _V1_PROTOCOL: _V1_RECIPE_SHA256}
+    if hashlib.sha256(encoded).hexdigest() != approved.get(config["protocol_id"]):
+        raise ValueError("la receta, imagen, red o referencia difiere del protocolo SFT declarado")
     for field in ("cluster_config", "reference_preflight"):
         path = Path(config[field])
         if path.is_absolute() or ".." in path.parts or not path.name:
@@ -233,7 +236,7 @@ def make_plan(config, stage, qualified=None):
                         for rank in range(len(job["nodes"]))]
                 for phase in phases
             }
-    return {"protocol_id": PROTOCOL, "stage": stage, "jobs": jobs, "launches": launches,
+    return {"protocol_id": config["protocol_id"], "stage": stage, "jobs": jobs, "launches": launches,
             "limit_seconds": config["measurement"][f"{stage}_limit_seconds"],
             "cleanup_reserve_seconds": config["measurement"]["cleanup_reserve_seconds"],
             "workload": config["workload"], "training": config["training"],
@@ -242,7 +245,7 @@ def make_plan(config, stage, qualified=None):
 
 def local_preflight(config):
     validate_config(config)
-    result = {"scope": "local_cpu", "protocol_id": PROTOCOL, "errors": [],
+    result = {"scope": "local_cpu", "protocol_id": config["protocol_id"], "errors": [],
               "corpus_sha256": hashlib.sha256(corpus_bytes()).hexdigest(),
               "tokens_sha256": tokens_sha256(frozen_tokens()), "examples": 100,
               "tokenization_source": "pinned_tokens", "weights_content_rehashed": False}

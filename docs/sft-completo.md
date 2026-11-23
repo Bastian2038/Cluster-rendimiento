@@ -1,10 +1,10 @@
 # Protocolo de SFT completo de Llama-3.1-8B-Instruct
 
-El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. La publicación comienza con este protocolo y sigue con los cierres del piloto y de la matriz. El piloto está autorizado y queda pendiente completar la calificación. La matriz requiere una autorización posterior. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
+El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. La publicación comienza con este protocolo y sigue con los cierres del piloto y de la matriz. Los dos intentos v1 se autorizaron y la calificación sigue pendiente. El 23 de noviembre se autorizó una nueva sesión de hasta dos horas para ejecutar v2 tras publicar la receta revisada. La matriz requiere una autorización independiente. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
 
-## Primer intento del piloto
+## Estado del piloto
 
-El intento `20261123T005824.457752Z-1b711e50` cerró como `partial` en **21,249 s de sesión**, con **0 de 3 trabajos lanzados**. Durante el preflight, los cuatro nodos registraron 0 % de utilización de GPU, listas de cómputo vacías y los puertos comprobados libres. El criterio anterior bloqueó Pegasus, Griffin y Draggon por las entradas gráficas de Xorg y GNOME Shell. Octopus figuró sin procesos de GPU. El cierre verificó la limpieza de contenedores propios en los cuatro nodos. [Informe del piloto](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.md) y [JSON del cierre](resultados/sft-piloto-20261123T005824.457752Z-1b711e50.json).
+El primer intento quedó en el preflight. En el segundo, los cuatro nodos completaron ambas fases, con verificación de las huellas del checkpoint. La diferencia de pérdida del paso 4 excedió la tolerancia fijada y quedó pendiente la calificación. [Primer intento](resultados/README.md#primer-intento-del-piloto-sft) y [segundo intento](resultados/README.md#segundo-intento-del-piloto-sft).
 
 ## Modelo, entorno y carga
 
@@ -19,6 +19,14 @@ Se usa FSDP2 con NCCL por las interfaces f0 configuradas, un rank por nodo y una
 ## Piloto y restauración
 
 Se prueba cada topología en orden cuatro → dos → uno. La fase `pilot` ejecuta cuatro pasos del optimizador y guarda un checkpoint local al terminar el segundo. La fase `resume` lanza procesos nuevos en la misma topología, restaura los pesos, el estado y el cursor del muestreo, y ejecuta los pasos 3 y 4 con los mismos IDs. La pérdida media global debe ser finita y cumplir `abs(restaurada - original) ≤ 0,0001 + 0,001 × abs(original)` en cada uno de esos pasos.
+
+El siguiente piloto usará la receta v2. Antes de entrenar, cada rank deberá exigir algoritmos deterministas en PyTorch, fijar las opciones de determinismo de cuDNN y usar el espacio de trabajo que el lanzador fija para cuBLAS antes de iniciar los procesos de PyTorch. Algunas implementaciones del cálculo de gradientes de atención en PyTorch dependen del modo de determinismo, y cuBLAS puede elegir implementaciones distintas cuando hay varios streams CUDA activos. Estos ajustes controlan una posible fuente de variación. La causa de la diferencia de pérdida del paso 4 sigue abierta. [Código de PyTorch en la revisión fijada](https://github.com/pytorch/pytorch/blob/9186a08b2c/aten/src/ATen/native/transformers/cuda/attention_backward.cu), [algoritmos deterministas de la misma revisión](https://github.com/pytorch/pytorch/blob/9186a08b2c/torch/__init__.py#L1271) y [reproducibilidad de cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility).
+
+La nueva receta conserva la carga, SGD y la tolerancia de restauración. Todas las fases del próximo piloto y, si procede, el calentamiento y las mediciones de la matriz usarán el mismo modo de ejecución. Los dos cierres anteriores conservan el protocolo v1.
+
+En v2, el paso 3 de las fases `pilot` y `resume` guarda en `steps.jsonl` las huellas por rank de los pesos maestros FP32 antes del forward, los gradientes, los pesos maestros tras SGD y el estado de los generadores aleatorios. Las huellas sirven para diagnosticar discrepancias sin cambiar el umbral de pérdida. La proyección excluye el coste de estas lecturas del tiempo de entrenamiento. La matriz omite estas lecturas.
+
+Si la única discrepancia de una topología es la pérdida tras restaurar, el piloto v2 registra el fallo y continúa con las topologías pendientes una vez verificada la retirada de los contenedores. La campaña cierra como parcial y esa topología queda sin calificar. Un error de operación o de integridad detiene la secuencia.
 
 Para calificar una topología se verifica la identidad de los ranks, las huellas y los conteos de la carga. La prueba del piloto exige que los fragmentos de los 291 tensores cubran los 8.030.261.248 parámetros, con gradientes finitos, gradiente no nulo y cambio real de pesos para cada tensor lógico al reunir la evidencia de sus fragmentos. Para atribuir un OOM de CUDA a una topología se exige el recibo del rank, la etapa del fallo y la evidencia de que todos los ranks reunieron el mismo grupo. Si la memoria se agota al verificar los gradientes o las huellas, el informe identifica la auditoría como la etapa afectada y deja abierta la viabilidad del entrenamiento. Un timeout, un fallo de infraestructura o evidencia insuficiente dejan indeterminada la viabilidad. La matriz usa las topologías calificadas en un piloto cerrado y verificable. [Proceso de entrenamiento](../infraestructura/sft_train.py) y [verificación de evidencia](../infraestructura/sft_report.py).
 
@@ -73,7 +81,7 @@ El repositorio conserva los cierres de campaña en `resultados/raw/sft-campaign/
 
 | Archivo | Evidencia |
 | --- | --- |
-| `identity.json` | Nodo, hostname, UUID de GPU, rank, world size, fase e IDs de corrida y campaña. |
+| `identity.json` | Nodo, hostname, UUID de GPU, rank, world size, fase e IDs de corrida y campaña. En v2 conserva los controles deterministas efectivos de ese proceso antes de formar el grupo. |
 | `group.json` | Participantes corroborados por cada rank después de reunir el grupo de NCCL. |
 | `steps.jsonl` | Paso desde 1, IDs locales, tokens procesados y supervisados locales, pérdida media global y segundos locales. |
 | `receipt.json` | Identidad, hashes del corpus y de los tokens, versión del modelo y librerías, conteos, duración de fase, ventana y pico asignado. El piloto y la restauración aportan evidencia del checkpoint y el piloto registra la prueba por tensor. |

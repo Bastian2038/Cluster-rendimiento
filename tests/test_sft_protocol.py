@@ -96,6 +96,22 @@ class SFTProtocolTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 protocol.validate_config(changed)
 
+    def test_rebuilds_v1_plans_and_pins_v2_determinism(self):
+        old = copy.deepcopy(self.config)
+        old["protocol_id"] = "llama31-full-sft-4-2-1-v1"
+        old["training"].pop("determinism")
+        old_plan = protocol.make_plan(old, "pilot")
+        current_plan = protocol.make_plan(self.config, "pilot")
+        self.assertEqual(old_plan["protocol_id"], old["protocol_id"])
+        self.assertEqual(current_plan["protocol_id"], self.config["protocol_id"])
+        self.assertEqual(old_plan["jobs"], current_plan["jobs"])
+        self.assertEqual(old_plan["measurement"], current_plan["measurement"])
+        for field in ("warn_only", "cudnn_benchmark"):
+            changed = copy.deepcopy(self.config)
+            changed["training"]["determinism"][field] = True
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                protocol.validate_config(changed)
+
     def test_only_closed_qualified_pilot_can_plan_a_matrix(self):
         pilot = {"stage": "pilot", "status": "complete", "removal_confirmed": True,
                  "errors": [], "qualified_groups": ["four", "pair"]}

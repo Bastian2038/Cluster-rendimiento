@@ -379,6 +379,7 @@ assert inventory['groups']['four'] == ['pegasus', 'octopus', 'griffin', 'draggon
         self.assertIn("109", argv)
         self.assertEqual(argv.count("--group-add"), 2)
         self.assertIn("NCCL_SOCKET_IFNAME==enp1s0f0np0", argv)
+        self.assertIn("CUBLAS_WORKSPACE_CONFIG=:4096:8", argv)
         self.assertIn("type=bind,src=/tmp/fixture/checkpoint,dst=/work/checkpoint,readonly", argv)
         self.assertIn("type=bind,src=" + config["paths"]["hf_hub"] + ",dst=/models,readonly", argv)
         self.assertEqual(argv[-len(worker):], worker)
@@ -456,7 +457,8 @@ assert inventory['groups']['four'] == ['pegasus', 'octopus', 'griffin', 'draggon
             name = node["node_id"]
             participants = phase_identities(workspace, phase)
             identity = participants[job["nodes"].index(name)]
-            data = {"identity.json": json.dumps(identity).encode()}
+            identity_record = {**identity, "determinism": config["training"]["determinism"]}
+            data = {"identity.json": json.dumps(identity_record).encode()}
             if not (omit_group and name == "octopus"):
                 data["group.json"] = json.dumps({**identity, "backend": "nccl", "participants": participants}).encode()
             if name == "pegasus":
@@ -592,6 +594,85 @@ assert inventory['groups']['four'] == ['pegasus', 'octopus', 'griffin', 'draggon
             campaign = json.loads((output / "campaign.json").read_bytes())
             self.assertEqual([row["outcome"] for row in campaign["runs"]], ["oom", "indeterminate"])
             self.assertTrue(campaign["removal_confirmed"])
+
+    def test_pilot_continues_in_order_only_after_isolated_restoration_loss(self):
+        root = Path(self.enterContext(tempfile.TemporaryDirectory()))
+        config, sources, contents = self._synthetic_inputs(root)
+        paths = {name: sources[name] for name in ("requested_config", "cluster.json", "reference/preflight.json")}
+        files = {name: contents[name] for name in (*paths, "corpus.jsonl")}
+        hashes = runner._hashes(files)
+        git = {"commit": "b" * 40, "dirty": False}
+        nodes = [{"node_id": row["node_id"], "hostname": row["expected_hostname"], "gpu_uuid": f"GPU-fixture-{i}"}
+                 for i, row in enumerate(protocol.cluster_config(config)["nodes"])]
+        cleanup = {"removal_confirmed": True, "nodes": {row["node_id"]: {"confirmed": True} for row in nodes}}
+        message = "pérdida tras restaurar fuera de tolerancia en paso 4"
+        loss = {"qualification_failure": "restoration_loss_outside_tolerance", "outcome": "indeterminate",
+                "eligible": False, "issues": [message], "input_hashes": hashes, "removal_confirmed": True}
+        success = {"outcome": "qualified", "eligible": True, "issues": [], "input_hashes": hashes}
+
+        def phase(_config, _nodes, _all, probes, _workspace, run, job, name, campaign_id, *_):
+            phases.append((job["group"], name))
+            states = {}
+            for rank, node in enumerate(job["nodes"]):
+                identity = {**probes[node], "phase": name, "rank": rank, "world_size": len(job["nodes"]),
+                            "run_id": run.name, "campaign_id": campaign_id}
+                inference.write_new(run / "raw" / "nodes" / node / name / "identity.json", identity)
+                states[node] = {"Status": "exited", "ExitCode": 0, "OOMKilled": False, "Error": ""}
+            return states, [], cleanup, 0.01
+
+        def assess(_run, job, _config):
+            if job["group"] == "four":
+                return loss
+            return pair if job["group"] == "pair" else success
+
+        finalize = manifest.finalize_run
+
+        def close(run, *, status, errors):
+            finalize(run, status=status, errors=errors)
+            if case == "close" and phases[-1][0] == "pair":
+                raise manifest.ManifestError("interrupción tras el cierre")
+
+        with (patch.object(runner, "_read_inputs", return_value=(paths, files)),
+              patch.object(runner, "_verify_tracked"), patch.object(runner, "_event"),
+              patch.object(runner, "reservation", return_value=nullcontext()),
+              patch.object(manifest, "capture_git", return_value=git),
+              patch.object(manifest, "capture_system", return_value={}),
+              patch.object(manifest, "capture_packages", return_value={}),
+              patch.object(manifest, "capture_nvidia", return_value={}),
+              patch.object(runtime, "preflight", return_value={"nodes": nodes, "errors": [], "removal": cleanup}),
+              patch.object(runtime, "stage", return_value={}), patch.object(runtime, "cleanup", return_value=cleanup),
+              patch.object(runner, "_phase", side_effect=phase),
+              patch.object(manifest, "finalize_run", side_effect=close),
+              patch.object(runner.sft_report, "assess_run", side_effect=assess)):
+            for case, pair in (("clean", success), ("additional", {**loss, "issues": [message, "telemetría incompleta"]}),
+                               ("hash", {**loss, "input_hashes": {}}), ("removal", {**loss, "removal_confirmed": False}),
+                               ("close", loss)):
+                with self.subTest(case=case):
+                    phases = []
+                    directory = runner.run_campaign(paths["requested_config"], "pilot", 720, results_root=root / case)
+                    campaign = inference.read_json(directory / "campaign.json")
+                    groups = ["four", "pair", "single"] if case == "clean" else ["four", "pair"]
+                    self.assertEqual(phases, [(group, phase) for group in groups for phase in ("pilot", "resume")])
+                    refs = campaign["runs"]
+                    self.assertEqual([ref["group"] for ref in refs], groups)
+                    self.assertEqual(campaign["qualified_groups"], groups[1:] if case == "clean" else [])
+                    self.assertEqual(campaign["status"], "partial")
+                    self.assertTrue((directory / "PARTIAL").is_file())
+                    self.assertIn(f"pilot-four: {message}", campaign["errors"])
+                    self.assertEqual((refs[0]["status"], refs[0]["outcome"]), ("failed", "indeterminate"))
+                    self.assertEqual(refs[0]["qualification_failure"], loss["qualification_failure"])
+                    archive = root / case / "full-sft"
+                    self.assertEqual(manifest.load_run(archive / refs[0]["run_id"])["errors"],
+                                     [{"type": loss["qualification_failure"], "message": message}])
+                    self.assertNotIn("qualification_failure", refs[1])
+                    if case != "clean":
+                        self.assertEqual(refs[1]["outcome"], "indeterminate")
+                        errors = manifest.load_run(archive / refs[1]["run_id"])["errors"]
+                        if case == "close":
+                            self.assertEqual(errors, [{"type": loss["qualification_failure"], "message": message}])
+                            self.assertTrue(any("interrupción tras el cierre" in e for e in campaign["errors"]))
+                        else:
+                            self.assertEqual([error["type"] for error in errors], ["operation_error"])
 
     def test_campaign_seal_accounts_for_late_hash_serialization_and_clock_skew(self):
         origin = datetime(2026, 11, 22, tzinfo=timezone.utc)

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "protocol_id": "llama31-full-sft-4-2-1-v1",
+  "protocol_id": "llama31-full-sft-4-2-1-v2",
   "cluster_config": "experimentos/configs/cluster.json",
   "reference_preflight": "resultados/raw/serving-capacity-campaign/20261122T140741.033775Z-0cdcd86f/preflight.json",
   "reference_preflight_sha256": "85c9eaa46ce1126ebabbaacbc678735735caaf822b5ab74f6f11309723319e2f",
@@ -44,7 +44,11 @@
     "global_batch": 4, "microbatch": 1, "optimizer": "SGD", "learning_rate": 0.001,
     "momentum": 0, "weight_decay": 0, "seed": 17,
     "compute_dtype": "bfloat16", "master_dtype": "float32", "gradient_dtype": "float32",
-    "activation_checkpointing": true, "use_cache": false, "quantization": null
+    "activation_checkpointing": true, "use_cache": false, "quantization": null,
+    "determinism": {
+      "algorithms": true, "warn_only": false, "cudnn_benchmark": false,
+      "cudnn_deterministic": true, "cublas_workspace_config": ":4096:8"
+    }
   },
   "measurement": {
     "blocks": 3, "warmup_steps": 5, "measured_steps": 20, "pilot_steps": 4,

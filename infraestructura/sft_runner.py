@@ -22,6 +22,7 @@ from infraestructura.serving_capacity_runner import reservation
 RESULTS_ROOT = REPO_ROOT / "resultados/raw"
 CAMPAIGN_FILES = ("plan", "config", "cluster", "preflight", "campaign", "cleanup")
 RANK_IDENTITY = ("node_id", "rank", "hostname", "gpu_uuid", "world_size", "phase", "run_id", "campaign_id")
+RESTORATION_LOSS_FAILURE = "restoration_loss_outside_tolerance"
 
 
 def _hashes(files):
@@ -386,6 +387,7 @@ def _job(config, inventory, preflight, directory, job, campaign_id, owner, paths
     workspace = Path(config["paths"]["workspace"]) / campaign_id / run_id
     model = config["model"]
     candidate, errors, removals = "indeterminate", [], {}
+    qualification_error = None
     removal_seconds = 0
     phases = ("pilot", "resume") if job["block"] == 0 else ("measure",)
     try:
@@ -457,16 +459,27 @@ def _job(config, inventory, preflight, directory, job, campaign_id, owner, paths
         _verify_archive(hashes, lambda name: run / "raw" / "inputs" / name)
         if not errors:
             assessment = sft_report.assess_run(run, job, config)
-            if (assessment["outcome"] != candidate or assessment["issues"]
-                    or assessment["eligible"] != (candidate in ("qualified", "measured"))
-                    or assessment["input_hashes"] != hashes):
-                raise ValueError(f"evidencia SFT incompatible: {assessment['issues']}")
+            if assessment["input_hashes"] != hashes:
+                raise ValueError("huellas de las entradas de la evaluación SFT incompatibles")
+            issues = assessment["issues"]
+            if (config["protocol_id"] == protocol.PROTOCOL and candidate == "qualified"
+                    and assessment.get("qualification_failure") == RESTORATION_LOSS_FAILURE
+                    and assessment["outcome"] == "indeterminate" and assessment["eligible"] is False
+                    and assessment.get("removal_confirmed") is True and isinstance(issues, list)
+                    and len(issues) == 1 and isinstance(issues[0], str) and issues[0]):
+                qualification_error = {"type": RESTORATION_LOSS_FAILURE, "message": issues[0]}
+                errors.append(issues[0])
+            elif (assessment["outcome"] != candidate or issues
+                    or assessment["eligible"] != (candidate in ("qualified", "measured"))):
+                raise ValueError(f"evidencia SFT incompatible: {issues}")
     except (Exception, KeyboardInterrupt) as exc:
         errors.append(f"{type(exc).__name__}: {exc}")
     outcome = "indeterminate" if errors else candidate
     status = "complete" if outcome in ("qualified", "measured") else "failed"
     if outcome == "oom":
         errors_for_manifest = [{"type": "cuda_oom", "message": "OOM CUDA documentado por un rank"}]
+    elif qualification_error is not None:
+        errors_for_manifest = [qualification_error]
     else:
         errors_for_manifest = [{"type": "operation_error", "message": error} for error in errors]
     try:
@@ -484,6 +497,9 @@ def _job(config, inventory, preflight, directory, job, campaign_id, owner, paths
     ref = {"job": job["name"], "group": job["group"], "block": job["block"], "run_id": run_id,
            "manifest_sha256": manifest.sha256_file(run / "manifest.json"), "status": closed["status"],
            "outcome": outcome, "duration_seconds": time.monotonic() - start}
+    if (qualification_error is not None and closed["status"] == "failed" and receipt["removal_confirmed"] is True
+            and errors == [qualification_error["message"]] and closed["errors"] == [qualification_error]):
+        ref["qualification_failure"] = qualification_error["type"]
     return ref, receipt["removal_confirmed"], errors
 
 
@@ -568,7 +584,11 @@ def run_campaign(config_path, stage, session_limit_seconds, pilot_dir=None, *,
                     _event(directory, "job_closed", **reference)
                     if issues or not retired or reference["outcome"] == "indeterminate":
                         errors.extend(f"{job['name']}: {issue}" for issue in issues)
-                        break
+                        if not (stage == "pilot" and config["protocol_id"] == protocol.PROTOCOL
+                                and reference.get("qualification_failure") == RESTORATION_LOSS_FAILURE
+                                and reference["outcome"] == "indeterminate" and reference["status"] == "failed"
+                                and len(issues) == 1 and removal is True):
+                            break
         except (Exception, KeyboardInterrupt) as exc:
             errors.append(f"{type(exc).__name__}: {exc}")
         finally:

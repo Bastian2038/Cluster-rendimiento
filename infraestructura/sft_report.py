@@ -16,6 +16,7 @@ from . import cluster as cluster_inventory, manifest, sft_protocol
 from .rutas import REPO_ROOT
 from .serving_capacity_protocol import _hardware_roster
 from .sft_runtime import GIB, gpu_idle_diagnosis, resource_limits
+from .sft_train import compare_recovery_diagnostic
 
 
 _GROUPS = ("four", "pair", "single")
@@ -32,6 +33,11 @@ _MEMORY_FIELDS = ("allocated_bytes", "reserved_bytes", "peak_allocated_bytes", "
                   "device_total_bytes")
 _OOM_STAGES = {"model_materialize", "snapshot_load", "restore", "checkpoint_write", "train_step"}
 _TORCH_VERSIONS = ("torch_version", "torch_runtime_version")
+_RESTORATION_LOSS_FAILURE = "restoration_loss_outside_tolerance"
+_CUBLAS_ENV = "CUBLAS_WORKSPACE_CONFIG"
+_CREATE_VALUE_OPTIONS = {"--name", "--label", "--uts", "--network", "--gpus", "--device", "--ulimit",
+                         "--shm-size", "--user", "--group-add", "--mount", "--workdir", "--stop-timeout",
+                         "--pull", "--entrypoint"}
 _EVIDENCE_ERRORS = (OSError, ValueError, KeyError, TypeError, AttributeError, OverflowError, manifest.ManifestError)
 
 
@@ -285,6 +291,8 @@ def _phase_control(root, job, config, campaign_id, phase, oom_nodes):
                  and config["image"]["id"] in command, f"{phase}: lanzamiento distinto en {node}")
         for name, value in config["network"]["environment"].items():
             _require(f"{name}={value}" in command, f"{phase}: entorno de red distinto en {node}")
+        if "determinism" in config["training"]:
+            _check_cublas_environment(command[:-len(worker)], config, f"{node}/{phase}")
         state = terminal["states"][node]
         _require(state["OOMKilled"] is False and state["Error"] == "",
                  f"{phase}: terminación del contenedor incompatible en {node}")
@@ -303,6 +311,34 @@ def _phase_control(root, job, config, campaign_id, phase, oom_nodes):
         _require(not failed and not running, f"{phase}: ranks sin salida correcta")
     elapsed = _number(terminal["launch_to_terminal_seconds"], f"tiempo de lanzamiento y fase {phase}")
     return containers, elapsed
+
+
+def _check_cublas_environment(argv, config, location):
+    location = f"{location}: {_CUBLAS_ENV}"
+    settings = []
+    args = iter(argv[2:])
+    for arg in args:
+        if arg == "--":
+            arg = next(args, None)
+            break
+        if not arg.startswith("-"):
+            break
+        option, equals, value = arg.partition("=")
+        if option in ("--env", "-e"):
+            settings.append(value if equals else next(args, None))
+        elif arg.startswith("-e"):
+            settings.append(arg[2:])
+        elif option in _CREATE_VALUE_OPTIONS:
+            if not equals:
+                _require(next(args, None) is not None, f"{location}: opción incompleta {option}")
+        else:
+            _require(arg == "--init", f"{location}: opción de Docker inesperada {arg}")
+    else:
+        arg = None
+    _require(arg == config["image"]["id"], f"{location}: imagen fuera de posición")
+    matches = [item for item in settings if item is not None and item.partition("=")[0] == _CUBLAS_ENV]
+    expected = config["training"]["determinism"]["cublas_workspace_config"]
+    _require(matches == [f"{_CUBLAS_ENV}={expected}"], f"{location} incompatible")
 
 
 def _phase_resources(receipt, node, phase, workspace, limit):
@@ -372,7 +408,12 @@ def _validate_identity(identity, node, phase, rank, job, run_id, campaign_id):
              and len(identity["gpu_uuid"]) > 4, "host o UUID de GPU ausente")
 
 
-def _groups_observed(root, run, job, campaign_id, phases, cluster, hardware):
+def _check_determinism(record, config, location):
+    if "determinism" in config["training"]:
+        _expect(record, {"determinism": config["training"]["determinism"]}, location)
+
+
+def _groups_observed(root, run, job, campaign_id, phases, cluster, hardware, config):
     hostnames = {row["node_id"]: row["expected_hostname"] for row in cluster["nodes"]}
     for phase in phases:
         roster = []
@@ -382,6 +423,7 @@ def _groups_observed(root, run, job, campaign_id, phases, cluster, hardware):
             _validate_identity(identity, node, phase, rank, job, root.name, campaign_id)
             _expect(identity, hardware[node], "preflight")
             _expect(identity, {"hostname": hostnames[node]}, "inventario")
+            _check_determinism(identity, config, f"identidad de {node}/{phase}")
             roster.append({key: identity[key] for key in _IDENTITY})
         for identity in roster:
             node = identity["node_id"]
@@ -422,6 +464,7 @@ def _receipt_evidence(root, base, receipt, identity, config, config_sha256, hist
     keys = ("global_batch", "microbatch", "compute_dtype", "master_dtype", "gradient_dtype", "use_cache",
             "optimizer", "learning_rate")
     expected.update({key: config["training"][key] for key in keys})
+    _check_determinism(receipt, config, f"recibo de {identity['node_id']}/{identity['phase']}")
     _expect(receipt, expected, "recibo")
     duration = _number(receipt["phase_seconds"], "duración de fase", positive=True)
     startup = _number(receipt["startup_seconds"], "arranque", positive=True)
@@ -466,6 +509,8 @@ def _phase_steps(rows, steps, identity, config):
     _require(len(rows) == len(steps), "número de pasos incompatible")
     phase, rank, world = (identity[key] for key in ("phase", "rank", "world_size"))
     workload, measurement = config["workload"], config["measurement"]
+    deterministic = "determinism" in config["training"]
+    recovery_step = measurement["checkpoint_step"] + 1 if phase in ("pilot", "resume") else None
     for number, row in zip(steps, rows):
         ids = sft_protocol.step_ids(number - 1, rank, world)
         _expect(row, {"step": number, "ids": ids, "rank": rank, "node_id": identity["node_id"], "phase": phase,
@@ -483,6 +528,16 @@ def _phase_steps(rows, steps, identity, config):
         _number(row["seconds"], "tiempo local del paso", positive=True)
         audit_seconds = _number(row["parameter_audit_seconds"], "tiempo de auditoría")
         _require((audit_seconds > 0) == row["audit_performed"], "tiempo de auditoría incompatible con el paso")
+        if deterministic:
+            expected_recovery = number == recovery_step
+            location = f"paso {number}: tiempo de diagnóstico de recuperación"
+            if expected_recovery:
+                _require("recovery_diagnostic_seconds" in row, f"{location} ausente")
+                _number(row["recovery_diagnostic_seconds"], location, positive=True)
+                _validate_recovery_diagnostic(row["recovery_diagnostic"], number, identity)
+            else:
+                _require(_number(row.get("recovery_diagnostic_seconds", 0), location) == 0
+                         and "recovery_diagnostic" not in row, f"{location} fuera del paso de recuperación")
         _number(row["loss"], "pérdida")
         _cuda_memory(row["cuda_memory"])
     return rows
@@ -506,8 +561,9 @@ def _summarize_steps(ranks):
     return steps
 
 
-def _phase(root, job, config, campaign_id, phase, steps, config_sha256, model_records):
+def _phase(root, job, config, campaign_id, phase, steps, config_sha256, model_records, recovery_diagnostics):
     ranks = []
+    deterministic = "determinism" in config["training"]
     for rank, node in enumerate(job["nodes"]):
         base = f"raw/nodes/{node}/{phase}"
         identity = _object(root, f"{base}/identity.json")
@@ -515,9 +571,20 @@ def _phase(root, job, config, campaign_id, phase, steps, config_sha256, model_re
         receipt = _object(root, f"{base}/receipt.json")
         _receipt_evidence(root, base, receipt, identity, config, config_sha256, model_records[node])
         rows = _phase_steps(_rows(root, f"{base}/steps.jsonl"), steps, identity, config)
-        _require(receipt["startup_seconds"] + math.fsum(row["seconds"] + row["parameter_audit_seconds"] for row in rows)
+        phase_steps_seconds = math.fsum(
+            row["seconds"] + row["parameter_audit_seconds"] +
+            (row.get("recovery_diagnostic_seconds", 0) if deterministic else 0) for row in rows
+        )
+        _require(receipt["startup_seconds"] + phase_steps_seconds
                  <= receipt["phase_seconds"] + 1e-6, "arranque y pasos exceden la duración local")
         telemetry = _telemetry(_rows(root, f"{base}/telemetry.jsonl"), identity, receipt)
+        if recovery_diagnostics is not None:
+            row = next(row for row in rows if "recovery_diagnostic" in row)
+            evidence = dict(row["recovery_diagnostic"])
+            evidence.pop("comparison_to_pilot", None)
+            recovery_diagnostics.setdefault(phase, {})[node] = {
+                "duration_seconds": row["recovery_diagnostic_seconds"], "evidence": evidence,
+            }
         ranks.append({"identity": identity, "receipt": receipt, "steps": rows, "telemetry": telemetry})
     return ranks
 
@@ -604,6 +671,12 @@ def _shape_size(shape):
     return math.prod(_count(value, "dimensión") for value in shape)
 
 
+def _local_shape(shape, rank, world):
+    first_dimension, *tail = shape
+    width = (first_dimension + world - 1) // world
+    return [min(width, max(0, first_dimension - rank * width)), *tail]
+
+
 def _checkpoint_indexes(pilot, resume, config, rank, world):
     step = config["measurement"]["checkpoint_step"]
     expected = {"step": step, "next_step": step + 1, "hashes_verified": True}
@@ -625,10 +698,7 @@ def _checkpoint_indexes(pilot, resume, config, rank, world):
                  and row["dtype"] == "torch.float32", "tensor de checkpoint inválido o repetido")
         local_size = _shape_size(row["shape"])
         global_size = _shape_size(row["global_shape"])
-        first_dimension, *tail = row["global_shape"]
-        width = (first_dimension + world - 1) // world
-        local_first_dimension = min(width, max(0, first_dimension - rank * width))
-        _expect(row, {"shape": [local_first_dimension, *tail]}, f"forma local de {name}")
+        _expect(row, {"shape": _local_shape(row["global_shape"], rank, world)}, f"forma local de {name}")
         _require(local_size <= global_size and row["bytes"] >= 4 * local_size,
                  "tamaño de shard de checkpoint incompatible")
         tensors[name] = {"global_shape": row["global_shape"], "local_size": local_size}
@@ -641,6 +711,52 @@ def _tensor_index(rows, expected, label):
     _require(len(by_name) == len(rows) and set(by_name) == set(expected),
              f"{label}: tensores incompletos o duplicados")
     return by_name
+
+
+def _validate_recovery_diagnostic(diagnostic, step, identity):
+    diagnostic = _json_object(diagnostic)
+    location = f"diagnóstico de recuperación en {identity['node_id']}/{identity['phase']}"
+    shapes = sft_protocol.llama_tensor_shapes()
+    rank, world = identity["rank"], identity["world_size"]
+    sizes = {name: _shape_size(_local_shape(shape, rank, world)) for name, shape in shapes.items()}
+    _expect(diagnostic, {"method": "sha256-full-local-fp32-v1", "step": step, "hash_chunk_bytes": 1048576,
+                         "tensor_count": len(sizes), "local_parameter_count": sum(sizes.values()),
+                         "rank_barriers": 3}, location)
+    tensors = _tensor_index(diagnostic.get("tensors"), sizes, location)
+    updated = 0
+    for name, row in tensors.items():
+        _expect(row, {"local_numel": sizes[name]}, f"{location}: {name}")
+        before, after = (row.get(field) for field in ("weight_before_forward_sha256",
+                                                      "weight_after_optimizer_sha256"))
+        _require(_digest(before) and _digest(after), f"{location}: huellas de pesos inválidas en {name}")
+        _require("gradient_sha256" in row and (row["gradient_sha256"] is None or _digest(row["gradient_sha256"])),
+                 f"{location}: huella de gradiente inválida en {name}")
+        updated += before != after
+    _expect(diagnostic, {"local_updated_tensor_count": updated}, location)
+    for field in ("rng_before_forward", "rng_before_optimizer", "rng_after_optimizer"):
+        rng = _json_object(diagnostic.get(field))
+        cuda = rng.get("torch_cuda_sha256")
+        _require(set(rng) == {"python_sha256", "torch_cpu_sha256", "torch_cuda_sha256"}
+                 and _digest(rng["python_sha256"]) and _digest(rng["torch_cpu_sha256"])
+                 and isinstance(cuda, list) and len(cuda) == 1 and _digest(cuda[0]),
+                 f"{location}: {field} inválido")
+    if identity["phase"] == "pilot":
+        _require("comparison_to_pilot" not in diagnostic, f"{location}: comparación fuera de resume")
+
+
+def _compare_recovery_diagnostics(diagnostics, resumed_ranks):
+    """Reconstruye todos los ranks antes de rechazar una declaración incompatible."""
+    for node, restored in diagnostics["resume"].items():
+        current = restored["evidence"]
+        reference = diagnostics["pilot"][node]["evidence"]
+        current["comparison_to_pilot"] = compare_recovery_diagnostic(current, reference)
+
+    for rank in resumed_ranks:
+        node = rank["identity"]["node_id"]
+        original = next(row["recovery_diagnostic"] for row in rank["steps"] if "recovery_diagnostic" in row)
+        if "comparison_to_pilot" in original:
+            comparison = diagnostics["resume"][node]["evidence"]["comparison_to_pilot"]
+            _expect(original, {"comparison_to_pilot": comparison}, f"diagnóstico de recuperación en {node}/resume")
 
 
 def _pilot_proof(phases, config):
@@ -707,6 +823,10 @@ def _pilot_proof(phases, config):
             "parameter_count": sum(expected_sizes.values()), "tensor_shapes_sha256": model["tensor_shapes_sha256"]}
 
 
+class _RestorationLossOutsideTolerance(ValueError):
+    pass
+
+
 def _loss_comparison(original, resumed, measurement):
     result = []
     for reference, restored in zip(original, resumed):
@@ -714,9 +834,13 @@ def _loss_comparison(original, resumed, measurement):
         tolerance = measurement["loss_atol"] + measurement["loss_rtol"] * abs(reference["loss"])
         fields = ("step", "samples", "processed_tokens", "supervised_tokens")
         _expect(restored, {key: reference[key] for key in fields}, "restauración")
-        _require(delta <= tolerance, f"pérdida tras restaurar fuera de tolerancia en paso {restored['step']}")
         result.append({"step": restored["step"], "reference_loss": reference["loss"],
                        "restored_loss": restored["loss"], "absolute_delta": delta, "tolerance": tolerance})
+    for row in result:
+        if row["absolute_delta"] > row["tolerance"]:
+            raise _RestorationLossOutsideTolerance(
+                f"pérdida tras restaurar fuera de tolerancia en paso {row['step']}"
+            )
     return result
 
 
@@ -748,11 +872,30 @@ def _assess(root, job, config, run, *, cluster=None, preflight=None):
         completed = stages[: stages.index(oom[0]["phase"]) + 1] if oom else stages
         result["removal_seconds"] = _cleanup(root, job, campaign_id, completed)
         result["removal_confirmed"] = True
-        result["participants"] = _groups_observed(root, run, job, campaign_id, completed, archived_cluster, hardware)
+        result["participants"] = _groups_observed(root, run, job, campaign_id, completed, archived_cluster, hardware,
+                                                  config)
         setup = _workspace(root, job, campaign_id, config, hashes)
         controls = {phase: _phase_control(root, job, config, campaign_id, phase,
                                           {row["node_id"] for row in oom if row["phase"] == phase})
                     for phase in completed}
+        deterministic = "determinism" in config["training"]
+        successful = completed[:-1] if oom else completed
+        if oom and not deterministic:
+            successful = ()
+        if pilot and not oom:
+            containers, launch_duration = controls["pilot"]
+            _require(set(containers.values()).isdisjoint(controls["resume"][0].values()),
+                     "restauración sin contenedores nuevos")
+        measurement = config["measurement"]
+        steps = {"pilot": range(1, measurement["pilot_steps"] + 1),
+                 "resume": range(measurement["checkpoint_step"] + 1, measurement["pilot_steps"] + 1),
+                 "measure": range(1, measurement["warmup_steps"] + measurement["measured_steps"] + 1)}
+        recovery_diagnostics = {} if pilot and deterministic and successful else None
+        if recovery_diagnostics is not None:
+            result["recovery_diagnostics"] = recovery_diagnostics
+        phases = {phase: _phase(root, job, config, campaign_id, phase, steps[phase],
+                                hashes["requested_config"], model_records, recovery_diagnostics) for phase in successful}
+        _check_receipt_rosters(phases)
         if oom:
             _require(run["status"] != "complete", "OOM contradice el estado completo")
             if run["status"] == "failed":
@@ -760,18 +903,8 @@ def _assess(root, job, config, run, *, cluster=None, preflight=None):
                          "OOM contradice los errores del manifiesto")
             result["outcome"] = "oom"
             return result
-        measurement = config["measurement"]
-        if pilot:
-            containers, launch_duration = controls["pilot"]
-            _require(set(containers.values()).isdisjoint(controls["resume"][0].values()),
-                     "restauración sin contenedores nuevos")
-            steps = {"pilot": range(1, measurement["pilot_steps"] + 1),
-                     "resume": range(measurement["checkpoint_step"] + 1, measurement["pilot_steps"] + 1)}
-        else:
-            steps = {"measure": range(1, measurement["warmup_steps"] + measurement["measured_steps"] + 1)}
-        phases = {phase: _phase(root, job, config, campaign_id, phase, steps[phase],
-                                hashes["requested_config"], model_records) for phase in stages}
-        _check_receipt_rosters(phases)
+        if recovery_diagnostics is not None:
+            _compare_recovery_diagnostics(recovery_diagnostics, phases["resume"])
         summaries = {phase: _summarize_steps(ranks) for phase, ranks in phases.items()}
         result["telemetry"] = {phase: {rank["identity"]["node_id"]: rank["telemetry"] for rank in ranks}
                                for phase, ranks in phases.items()}
@@ -780,11 +913,25 @@ def _assess(root, job, config, run, *, cluster=None, preflight=None):
             for phase, ranks in phases.items()
         }
         result["phase_steps"] = summaries
-        _require(run["status"] != "failed", "manifiesto cerrado con fallo")
+        v2_pilot = pilot and config["protocol_id"] == sft_protocol.PROTOCOL
+        replay_loss_failure = (
+            v2_pilot and run["status"] == "failed"
+            and [error.get("type") for error in run["errors"]] == [_RESTORATION_LOSS_FAILURE]
+        )
+        _require(run["status"] != "failed" or replay_loss_failure, "manifiesto cerrado con fallo")
         if pilot:
             result["parameter_audit"] = _pilot_proof(phases, config)
-            result["restoration"] = _loss_comparison(summaries["pilot"][measurement["checkpoint_step"]:],
-                                                      summaries["resume"], measurement)
+            try:
+                restoration = _loss_comparison(summaries["pilot"][measurement["checkpoint_step"]:],
+                                               summaries["resume"], measurement)
+            except _RestorationLossOutsideTolerance:
+                if v2_pilot and (run["status"] == "running" or replay_loss_failure):
+                    result["qualification_failure"] = _RESTORATION_LOSS_FAILURE
+                    if replay_loss_failure:
+                        result["issues"].append("manifiesto cerrado con fallo")
+                raise
+            _require(not replay_loss_failure, "manifiesto cerrado con fallo")
+            result["restoration"] = restoration
             worker_phase = max(rank["receipt"]["phase_seconds"] for rank in phases["pilot"])
             startup_components = {
                 "setup_before_launch_seconds": setup,

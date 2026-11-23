@@ -1,5 +1,6 @@
 """Fixtures CPU para reconstruir manifiestos y cierres de SFT."""
 
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
@@ -50,6 +51,29 @@ def _idle_anomalies():
         yield label, {**valid, "gpu_summary": summary}, reason
 
 
+def _recovery_diagnostic(phase, rank, world, step):
+    tensors = []
+    for name, shape in sft_protocol.llama_tensor_shapes().items():
+        local = math.prod(shape) // world
+        tensors.append({"name": name, "local_numel": local,
+                        "weight_before_forward_sha256": _digest(f"{name}/{rank}/prior".encode()),
+                        "gradient_sha256": _digest(f"{name}/{rank}/{phase}/gradient".encode()),
+                        "weight_after_optimizer_sha256": _digest(f"{name}/{rank}/{phase}/updated".encode())})
+    rng = {"python_sha256": _digest(b"python"), "torch_cpu_sha256": _digest(b"cpu"),
+           "torch_cuda_sha256": [_digest(f"cuda/{rank}".encode())]}
+    diagnostic = {"method": "sha256-full-local-fp32-v1", "step": step, "hash_chunk_bytes": 1048576,
+                  "tensor_count": len(tensors), "local_parameter_count": sum(row["local_numel"] for row in tensors),
+                  "rng_before_forward": rng, "rng_before_optimizer": rng, "rng_after_optimizer": rng,
+                  "tensors": tensors, "local_updated_tensor_count": len(tensors), "rank_barriers": 3}
+    if phase == "resume":
+        diagnostic["comparison_to_pilot"] = {"reference_phase": "pilot", "layout_equal": True,
+                                             "weights_before_forward_equal": True, "gradients_equal": False,
+                                             "weights_after_optimizer_equal": False,
+                                             "rng_before_forward_equal": True, "rng_before_optimizer_equal": True,
+                                             "rng_after_optimizer_equal": True}
+    return diagnostic
+
+
 class SFTReportTests(unittest.TestCase):
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
@@ -92,9 +116,7 @@ class SFTReportTests(unittest.TestCase):
                           "reference_preflight_sha256": _digest(history_bytes),
                           "removal": self._removal()}
         # En las fixtures solo se sustituye el preflight histórico de hardware.
-        recipe = {key: self.config[key] for key in sft_protocol._RECIPE_FIELDS}
-        fixture_recipe = _digest(json.dumps(recipe, sort_keys=True, separators=(",", ":"), allow_nan=False).encode())
-        self.enterContext(patch.object(sft_protocol, "_RECIPE_SHA256", fixture_recipe))
+        self._pin_fixture_recipe("_RECIPE_SHA256")
         self.inputs = self.root / "inputs"
         self.inputs.mkdir()
         (self.inputs / "reference").mkdir()
@@ -118,6 +140,11 @@ class SFTReportTests(unittest.TestCase):
             mock = patch.object(manifest, key, return_value=value)
             mock.start()
             self.addCleanup(mock.stop)
+
+    def _pin_fixture_recipe(self, field):
+        recipe = {key: self.config[key] for key in sft_protocol._RECIPE_FIELDS}
+        digest = _digest(json.dumps(recipe, sort_keys=True, separators=(",", ":"), allow_nan=False).encode())
+        self.enterContext(patch.object(sft_protocol, field, digest))
 
     def _job(self, stage, group, block=0):
         return next(job for job in sft_protocol.make_plan(self.config, stage)["jobs"]
@@ -156,23 +183,28 @@ class SFTReportTests(unittest.TestCase):
         identity = {key: self.roster[node][key] for key in fields}
         identity.update(campaign_id=campaign_id, run_id=directory.name, node_id=node, phase=phase,
                         rank=rank, world_size=len(job["nodes"]))
+        if "determinism" in self.config["training"]:
+            identity["determinism"] = self.config["training"]["determinism"]
         return identity
 
     def _phase_roster(self, directory, job, campaign_id, phase):
         roster = [self._identity(directory, node, rank, job, campaign_id, phase)
                   for rank, node in enumerate(job["nodes"])]
+        participants_roster = [{key: identity[key] for key in sft_report._IDENTITY} for identity in roster]
         participants = []
         for identity in roster:
             relative = f"raw/nodes/{identity['node_id']}/{phase}"
             _write(directory / relative / "identity.json", identity)
-            _write(directory / relative / "group.json", {**identity, "backend": "nccl", "participants": roster})
+            _write(directory / relative / "group.json",
+                   {**participants_roster[identity["rank"]], "backend": "nccl", "participants": participants_roster})
             participants.append({"evidence_path": f"{relative}/identity.json",
                                  **{key: identity[key] for key in ("node_id", "hostname", "gpu_uuid", "rank")}})
         if phase in ("pilot", "measure"):
             manifest.register_participants(directory, participants)
         return roster
 
-    def _write_phase(self, directory, job, campaign_id, phase, *, seconds=1, loss_offset=0):
+    def _write_phase(self, directory, job, campaign_id, phase, *, seconds=1, loss_offset=0,
+                     diagnostic_factory=_recovery_diagnostic):
         ranges = {"pilot": range(1, 5), "resume": range(3, 5), "measure": range(1, 26)}
         roster = self._phase_roster(directory, job, campaign_id, phase)
         for identity in roster:
@@ -191,6 +223,10 @@ class SFTReportTests(unittest.TestCase):
                              "audit_performed": phase == "pilot" and number == 4,
                              "parameter_audit_seconds": 20 if phase == "pilot" and number == 4 else 0,
                              "global_processed_tokens": 2048, "global_supervised_tokens": 512})
+                if ("determinism" in self.config["training"] and phase in ("pilot", "resume")
+                        and number == self.config["measurement"]["checkpoint_step"] + 1):
+                    rows[-1].update(recovery_diagnostic_seconds=4 + rank / 10,
+                                    recovery_diagnostic=diagnostic_factory(phase, rank, len(roster), number))
             _write_rows(base / "steps.jsonl", rows)
             gpu = {"uuid": identity["gpu_uuid"], "temperature_gpu": 42 + rank, "power_draw": None,
                    "utilization_gpu": 90, "memory_used": None, "memory_total": None,
@@ -231,7 +267,9 @@ class SFTReportTests(unittest.TestCase):
                        "window_end_monotonic_ns": end if phase == "measure" else None,
                        "tokenizer_revision": model["tokenizer_revision"], "model_source": self.model_source,
                        "status": "ok", "schema_version": "1.0", "config_sha256": self.input_hashes["requested_config"],
-                       "artifacts": artifact_records, "participants": roster, "reduce_dtype": "float32",
+                       "artifacts": artifact_records,
+                       "participants": [{key: row[key] for key in sft_report._IDENTITY} for row in roster],
+                       "reduce_dtype": "float32",
                        "startup_scope": "worker_execute_to_first_step", "attention": "sdpa",
                        "activation_checkpointing": "non-reentrant",
                        "gradient_accumulation_steps": 4 // len(roster), "checkpoint": None,
@@ -240,6 +278,7 @@ class SFTReportTests(unittest.TestCase):
             if phase in ("pilot", "resume"):
                 receipt.update(self._pilot_receipt(phase, rank, len(job["nodes"])))
             _write(base / "receipt.json", receipt)
+
     def _removal(self, removed=None, *, time_offset=10):
         nodes = self.cluster["groups"]["four"]
         ids = removed or {}
@@ -247,13 +286,14 @@ class SFTReportTests(unittest.TestCase):
                 "nodes": {node: {"confirmed": True, "remaining_ids": [], "removed_ids": ids.get(node, [])}
                           for node in nodes}}
 
-    def _cleanup(self, directory, campaign_id, job, *, oom=False):
-        phases = ("pilot",) if oom else ("pilot", "resume") if job["block"] == 0 else ("measure",)
+    def _cleanup(self, directory, campaign_id, job, *, oom_phase=None, oom_node=None):
+        phases = ("pilot",) if oom_phase == "pilot" else ("pilot", "resume") if job["block"] == 0 else ("measure",)
         receipts = {"final": self._removal()}
         for phase in phases:
             containers = {node: _digest(f"{phase}/{node}".encode()) for node in job["nodes"]}
             receipts[phase] = removal = self._removal({node: [cid] for node, cid in containers.items()})
-            states = {node: {"Status": "exited", "ExitCode": 1 if oom else 0, "OOMKilled": False, "Error": ""}
+            states = {node: {"Status": "exited", "ExitCode": int(phase == oom_phase and oom_node in (None, node)),
+                             "OOMKilled": False, "Error": ""}
                       for node in job["nodes"]}
             commands = {}
             resources = {}
@@ -266,8 +306,12 @@ class SFTReportTests(unittest.TestCase):
                     checkpoint_dir="/work/checkpoint", campaign_id=campaign_id, run_id=directory.name,
                 )
                 network = self.config["network"]["environment"]
-                commands[node] = ["docker", "create", "--pull=never", self.config["image"]["id"],
-                                  *[f"{key}={value}" for key, value in network.items()], *worker]
+                determinism = self.config["training"].get("determinism")
+                cublas = ["--env", f"CUBLAS_WORKSPACE_CONFIG={determinism['cublas_workspace_config']}"] if determinism else []
+                network_env = [arg for key, value in network.items() for arg in ("--env", f"{key}={value}")]
+                commands[node] = ["docker", "create", "--pull=never", *network_env, *cublas,
+                                  "--entrypoint", "timeout", self.config["image"]["id"],
+                                  "--signal=TERM", "--kill-after=5s", "600s", *worker]
                 host = {"memory_bytes": {"MemAvailable": 100 * sft_runtime.GIB},
                         "resources": {"cpu_affinity_count": 8, "workspace_writable": True, "workspace": workspace,
                                       "checkpoint_disk_free_inodes": 10_000,
@@ -295,8 +339,9 @@ class SFTReportTests(unittest.TestCase):
                 "removal_seconds": 4, "coverage": self.cluster["groups"]["four"], "phases": receipts,
                 "nodes": [{"node_id": node, "status": "confirmed_absent"} for node in job["nodes"]]})
 
-    def _finish(self, directory, job, outcome, *, status="complete"):
-        errors = [{"type": "cuda_oom", "message": "OOM CUDA documentado por un rank"}] if outcome == "oom" else []
+    def _finish(self, directory, job, outcome, *, status="complete", errors=None):
+        if errors is None:
+            errors = [{"type": "cuda_oom", "message": "OOM CUDA documentado por un rank"}] if outcome == "oom" else []
         with patch.object(manifest, "utc_now", return_value=self._stamp(self.run_offsets[directory.name] + 180)):
             manifest.finalize_run(directory, status=status, errors=errors)
         return {"job": job["name"], "group": job["group"], "block": job["block"], "run_id": directory.name,
@@ -397,7 +442,7 @@ class SFTReportTests(unittest.TestCase):
                    {**identity, "type": "cuda_oom", "status": "cuda_oom", "message": "CUDA out of memory",
                     "exception_type": "torch.OutOfMemoryError", "stage": "train_step", "oom_origin": "cuda",
                     "timestamp_utc": self._stamp(self.run_offsets[run.name] + 45)})
-        self._cleanup(run, campaign_id, job, oom=True)
+        self._cleanup(run, campaign_id, job, oom_phase="pilot")
 
     def test_qualification_reconstructs_checkpoint_and_projects_three_blocks(self):
         pilot, _ = self._pilot()
@@ -411,6 +456,9 @@ class SFTReportTests(unittest.TestCase):
         four = report["runs"][0]
         self.assertEqual(four["pilot_step_seconds"], [1.3] * 4)
         self.assertEqual(four["phase_steps"]["pilot"][3]["parameter_audit_seconds"], 20)
+        diagnostics = four["recovery_diagnostics"]
+        self.assertEqual(diagnostics["pilot"]["draggon"]["duration_seconds"], 4.3)
+        self.assertFalse(diagnostics["resume"]["pegasus"]["evidence"]["comparison_to_pilot"]["gradients_equal"])
         self.assertEqual([row["step"] for row in four["restoration"]], [3, 4])
         overhead = 77 - (20 + 35 * 1.3)
         self.assertAlmostEqual(four["startup_components"]["launcher_overhead_seconds"], overhead)
@@ -425,9 +473,245 @@ class SFTReportTests(unittest.TestCase):
         self._write_phase(run, job, "pilot-loss", "pilot")
         self._write_phase(run, job, "pilot-loss", "resume", loss_offset=0.01)
         self._cleanup(run, "pilot-loss", job)
+        reason = "restoration_loss_outside_tolerance"
         assessment = sft_report.assess_run(run, job, self.config)
         self.assertEqual(assessment["outcome"], "indeterminate")
+        self.assertFalse(assessment["eligible"])
+        self.assertEqual(assessment["qualification_failure"], reason)
         self.assertIn("fuera de tolerancia", assessment["issues"][0])
+        self.assertIn("pegasus", assessment["recovery_diagnostics"]["pilot"])
+        self.assertIn("pegasus", assessment["recovery_diagnostics"]["resume"])
+
+        terminal_path = run / "logs/resume-terminal.json"
+        terminal = json.loads(terminal_path.read_text())
+        failed = {**terminal["states"]["pegasus"], "ExitCode": 1}
+        _write(terminal_path, {**terminal, "states": {"pegasus": failed}})
+        operational_failure = sft_report.assess_run(run, job, self.config)
+        self.assertEqual(operational_failure["outcome"], "indeterminate")
+        self.assertFalse(operational_failure["eligible"])
+        self.assertIn("ranks sin salida correcta", operational_failure["issues"][0])
+        self.assertNotIn("qualification_failure", operational_failure)
+        _write(terminal_path, terminal)
+
+        errors = [{"type": reason, "message": assessment["issues"][0]}]
+        ref = self._finish(run, job, "indeterminate", status="failed", errors=errors)
+        campaign = self._close("pilot-loss", "pilot", [ref], [])
+        report = sft_report.build_report(campaign)
+        self.assertEqual(report["status"], "partial")
+        closed = report["runs"][0]
+        self.assertEqual(closed["qualification_failure"], reason)
+        self.assertEqual(closed["outcome"], "indeterminate")
+        self.assertFalse(closed["eligible"])
+        self.assertIn("manifiesto cerrado con fallo", closed["issues"])
+        self.assertEqual(closed["manifest_errors"], errors)
+        self.assertEqual(closed["recovery_diagnostics"], assessment["recovery_diagnostics"])
+
+    def test_v2_checks_recovery_diagnostic_time_and_phase_budget(self):
+        job = self._job("pilot", "single")
+        run = self._new_run("pilot-recovery-time", job)
+        self._write_phase(run, job, "pilot-recovery-time", "pilot")
+        self._write_phase(run, job, "pilot-recovery-time", "resume", loss_offset=0.0001)
+        self._cleanup(run, "pilot-recovery-time", job)
+        result = sft_report.assess_run(run, job, self.config)
+        self.assertEqual(result["outcome"], "qualified")
+        diagnostics = result["recovery_diagnostics"]
+        original = diagnostics["pilot"]["pegasus"]["evidence"]["tensors"][0]["gradient_sha256"]
+        restored = diagnostics["resume"]["pegasus"]["evidence"]["tensors"][0]["gradient_sha256"]
+        self.assertNotEqual(original, restored)
+
+        phase_dir = run / "raw/nodes/pegasus/resume"
+        step_path = phase_dir / "steps.jsonl"
+        receipt_path = phase_dir / "receipt.json"
+        recovery, last = [json.loads(line) for line in step_path.read_text().splitlines()]
+        receipt = json.loads(receipt_path.read_text())
+        field = "recovery_diagnostic_seconds"
+        cases = [
+            ({key: value for key, value in recovery.items() if key != field}, last, "diagnóstico de recuperación.*ausente"),
+            ({**recovery, field: 0}, last, "diagnóstico de recuperación.*inválido"),
+            ({**recovery, field: math.inf}, last, "diagnóstico de recuperación.*inválido"),
+            (recovery, {**last, field: 1}, "fuera del paso de recuperación"),
+            ({**recovery, field: 44}, last, "exceden la duración local"),
+        ]
+        for step3, step4, error in cases:
+            with self.subTest(error=error):
+                _write_rows(step_path, (step3, step4))
+                receipt["artifacts"]["steps.jsonl"] = {
+                    "sha256": manifest.sha256_file(step_path), "bytes": step_path.stat().st_size,
+                }
+                _write(receipt_path, receipt)
+                result = sft_report.assess_run(run, job, self.config)
+                self.assertEqual(result["outcome"], "indeterminate")
+                self.assertRegex(result["issues"][0], error)
+                self.assertIn("pegasus", result["recovery_diagnostics"]["pilot"])
+
+    def test_v2_requires_complete_recovery_evidence_and_recomputes_comparison(self):
+        campaign_id = "pilot-recovery-evidence"
+        job = self._job("pilot", "pair")
+        run = self._new_run(campaign_id, job)
+        for phase in ("pilot", "resume"):
+            self._write_phase(run, job, campaign_id, phase)
+        self._cleanup(run, campaign_id, job)
+        phase_dir = run / "raw/nodes/octopus/resume"
+        step_path = phase_dir / "steps.jsonl"
+        receipt_path = phase_dir / "receipt.json"
+        recovery, last = [json.loads(line) for line in step_path.read_text().splitlines()]
+        receipt = json.loads(receipt_path.read_text())
+        baseline = recovery["recovery_diagnostic"]
+
+        def assess(diagnostic):
+            _write_rows(step_path, ({**recovery, "recovery_diagnostic": diagnostic}, last))
+            receipt["artifacts"]["steps.jsonl"] = {
+                "sha256": manifest.sha256_file(step_path), "bytes": step_path.stat().st_size,
+            }
+            _write(receipt_path, receipt)
+            return sft_report.assess_run(run, job, self.config)
+
+        self.assertEqual(assess({"step": 3})["outcome"], "indeterminate")
+        for field, value in (
+            ("method", "otro"), ("hash_chunk_bytes", 0), ("tensor_count", 290),
+            ("local_parameter_count", 0), ("local_updated_tensor_count", 0), ("rank_barriers", 2),
+            ("tensors", baseline["tensors"][:-1]),
+            ("tensors", [baseline["tensors"][1], *baseline["tensors"][1:]]),
+            ("comparison_to_pilot", {**baseline["comparison_to_pilot"], "gradients_equal": True}),
+        ):
+            with self.subTest(field=field):
+                result = assess({**baseline, field: value})
+                self.assertEqual(result["outcome"], "indeterminate")
+                self.assertRegex(result["issues"][0], "diagnóstico de recuperación")
+        for field, value in (
+            ("name", "unrelated.weight"), ("local_numel", 128256 * 4096),
+            ("weight_before_forward_sha256", "no-es-sha"), ("weight_after_optimizer_sha256", ""),
+            ("gradient_sha256", "z" * 64),
+        ):
+            with self.subTest(tensor_field=field):
+                row, *rest = baseline["tensors"]
+                result = assess({**baseline, "tensors": [{**row, field: value}, *rest]})
+                self.assertEqual(result["outcome"], "indeterminate")
+                self.assertRegex(result["issues"][0], "diagnóstico de recuperación")
+        for stage, field, value in (
+            ("rng_before_forward", "python_sha256", "no-es-sha"),
+            ("rng_before_optimizer", "torch_cpu_sha256", None),
+            ("rng_after_optimizer", "torch_cuda_sha256", []),
+            ("rng_after_optimizer", "torch_cuda_sha256", ["z" * 64]),
+            ("rng_after_optimizer", "torch_cuda_sha256", ["a" * 64, "b" * 64]),
+        ):
+            with self.subTest(stage=stage, rng_field=field, value=value):
+                result = assess({**baseline, stage: {**baseline[stage], field: value}})
+                self.assertEqual(result["outcome"], "indeterminate")
+                self.assertRegex(result["issues"][0], stage)
+        modified = deepcopy(baseline)
+        del modified["tensors"][0]["gradient_sha256"]
+        self.assertEqual(assess(modified)["outcome"], "indeterminate")
+        modified["tensors"][0]["gradient_sha256"] = None
+        modified["rng_after_optimizer"]["python_sha256"] = "a" * 64
+        del modified["comparison_to_pilot"]
+        result = assess(modified)
+        self.assertEqual(result["outcome"], "qualified")
+        evidence = result["recovery_diagnostics"]["resume"]
+        self.assertFalse(evidence["octopus"]["evidence"]["comparison_to_pilot"]["gradients_equal"])
+        self.assertFalse(evidence["octopus"]["evidence"]["comparison_to_pilot"]["rng_after_optimizer_equal"])
+        self.assertTrue(evidence["pegasus"]["evidence"]["comparison_to_pilot"]["rng_after_optimizer_equal"])
+
+    def test_sealed_report_publishes_verified_comparisons_for_all_ranks_after_a_false_claim(self):
+        campaign_id = "pilot-false-comparison"
+        job = self._job("pilot", "four")
+        run = self._new_run(campaign_id, job)
+
+        def restored_diagnostic(phase, rank, world, step):
+            diagnostic = _recovery_diagnostic(phase, rank, world, step)
+            node = job["nodes"][rank]
+            if node == "octopus":
+                diagnostic["comparison_to_pilot"]["gradients_equal"] = True
+            if node in ("griffin", "draggon"):
+                del diagnostic["comparison_to_pilot"]
+            if node == "draggon":
+                original = _recovery_diagnostic("pilot", rank, world, step)
+                for restored, saved in zip(diagnostic["tensors"], original["tensors"]):
+                    restored["gradient_sha256"] = saved["gradient_sha256"]
+            return diagnostic
+
+        self._write_phase(run, job, campaign_id, "pilot")
+        self._write_phase(run, job, campaign_id, "resume", diagnostic_factory=restored_diagnostic, loss_offset=0.01)
+        self._cleanup(run, campaign_id, job)
+        issue = "diagnóstico de recuperación en octopus/resume: comparison_to_pilot incompatible"
+        ref = self._finish(run, job, "indeterminate", status="failed",
+                           errors=[{"type": "operation_error", "message": issue}])
+        campaign = self._close(campaign_id, "pilot", [ref], [])
+        report = sft_report.build_report(campaign)
+        self.assertEqual(report["status"], "partial")
+        self.assertEqual(report["qualified_groups"], [])
+        expected = {node: {"reference_phase": "pilot", "layout_equal": True, "weights_before_forward_equal": True,
+                           "gradients_equal": node == "draggon", "weights_after_optimizer_equal": False,
+                           "rng_before_forward_equal": True, "rng_before_optimizer_equal": True,
+                           "rng_after_optimizer_equal": True} for node in job["nodes"]}
+        for section in ("runs", "failures"):
+            with self.subTest(section=section):
+                record, = report[section]
+                self.assertEqual(record["outcome"], "indeterminate")
+                self.assertFalse(record["eligible"])
+                self.assertEqual(record["issues"], [issue])
+                self.assertNotIn("qualification_failure", record)
+                resumed = record["recovery_diagnostics"]["resume"]
+                comparisons = {node: row["evidence"]["comparison_to_pilot"] for node, row in resumed.items()}
+                self.assertEqual(comparisons, expected)
+
+    def test_early_roster_failure_omits_unverified_recovery_comparison(self):
+        campaign_id = "pilot-invalid-resume-roster"
+        job = self._job("pilot", "single")
+        run = self._new_run(campaign_id, job)
+        for phase in ("pilot", "resume"):
+            self._write_phase(run, job, campaign_id, phase)
+        self._cleanup(run, campaign_id, job)
+        receipt = run / "raw/nodes/pegasus/resume/receipt.json"
+        _write(receipt, {**json.loads(receipt.read_bytes()), "participants": []})
+        result = sft_report.assess_run(run, job, self.config)
+        self.assertEqual(result["outcome"], "indeterminate")
+        self.assertEqual(result["issues"], ["recibo de resume: participants incompatible"])
+        evidence = result["recovery_diagnostics"]["resume"]["pegasus"]["evidence"]
+        self.assertNotIn("comparison_to_pilot", evidence)
+        self.assertTrue(evidence["tensors"])
+
+    def test_v2_oom_in_resume_requires_observed_determinism_on_all_ranks(self):
+        campaign_id = "pilot-oom-in-resume"
+        job = self._job("pilot", "pair")
+        run = self._new_run(campaign_id, job)
+        self._write_phase(run, job, campaign_id, "pilot")
+        identities = self._phase_roster(run, job, campaign_id, "resume")
+        _write(run / "raw/nodes/pegasus/resume/failure.json",
+               {**identities[0], "type": "cuda_oom", "status": "cuda_oom", "message": "CUDA out of memory",
+                "exception_type": "torch.OutOfMemoryError", "stage": "restore", "oom_origin": "cuda",
+                "timestamp_utc": self._stamp(self.run_offsets[run.name] + 45)})
+        self._cleanup(run, campaign_id, job, oom_phase="resume", oom_node="pegasus")
+        self.assertEqual(sft_report.assess_run(run, job, self.config)["outcome"], "oom")
+        participants = manifest.load_run(run)["participants"]
+
+        def write_variant(path, record, *, anchored):
+            if anchored:
+                # Registrar la variante sintética con su propia huella antes de evaluarla.
+                manifest.register_participants(run, [])
+            _write(path, record)
+            if anchored:
+                manifest.register_participants(run, participants)
+
+        for node, phase, filename in (
+            ("pegasus", "pilot", "receipt.json"), ("octopus", "pilot", "receipt.json"),
+            ("octopus", "pilot", "identity.json"), ("pegasus", "resume", "identity.json"),
+            ("octopus", "resume", "identity.json"),
+        ):
+            path = run / f"raw/nodes/{node}/{phase}/{filename}"
+            record = json.loads(path.read_text())
+            anchored = phase == "pilot" and filename == "identity.json"
+            for policy in ({**record["determinism"], "algorithms": False}, None):
+                with self.subTest(node=node, phase=phase, filename=filename, policy=policy):
+                    modified = {key: value for key, value in record.items() if key != "determinism"}
+                    if policy is not None:
+                        modified["determinism"] = policy
+                    write_variant(path, modified, anchored=anchored)
+                    result = sft_report.assess_run(run, job, self.config)
+                    self.assertEqual(result["outcome"], "indeterminate")
+                    self.assertEqual([row["node_id"] for row in result["oom_evidence"]], ["pegasus"])
+                    self.assertIn(f"{node}/{phase}: determinism incompatible", result["issues"][0])
+            write_variant(path, record, anchored=anchored)
 
     def test_pilot_recounts_update_hashes_across_ranks(self):
         job = self._job("pilot", "pair")
@@ -486,6 +770,86 @@ class SFTReportTests(unittest.TestCase):
         log = json.loads(log_path.read_text())
         _write(log_path, {**log, "command": [*log["command"][:-1], "a" * 64]})
         self.assertIn("logs de otro contenedor", sft_report.assess_run(run, job, self.config)["issues"][0])
+
+    def test_v2_checks_effective_determinism_and_docker_env_in_every_phase(self):
+        variable = "CUBLAS_WORKSPACE_CONFIG=:4096:8"
+        for stage, block, phases, outcome in (
+            ("pilot", 0, ("pilot", "resume"), "qualified"),
+            ("run", 1, ("measure",), "measured"),
+        ):
+            campaign_id = f"{stage}-determinism"
+            job = self._job(stage, "pair", block)
+            run = self._new_run(campaign_id, job)
+            for phase in phases:
+                self._write_phase(run, job, campaign_id, phase)
+            self._cleanup(run, campaign_id, job)
+            self.assertEqual(sft_report.assess_run(run, job, self.config)["outcome"], outcome)
+            for phase in phases:
+                with self.subTest(phase=phase):
+                    path = run / f"logs/{phase}-commands.json"
+                    commands = json.loads(path.read_text())
+                    argv = commands["octopus"]
+                    index = argv.index(variable)
+                    # La asignación suelta no configura el entorno de Docker.
+                    _write(path, {**commands, "octopus": argv[:index - 1] + argv[index:]})
+                    result = sft_report.assess_run(run, job, self.config)
+                    self.assertEqual(result["outcome"], "indeterminate")
+                    self.assertRegex(result["issues"][0], f"octopus/{phase}.*CUBLAS_WORKSPACE_CONFIG")
+                    _write(path, commands)
+
+                    path = run / f"raw/nodes/octopus/{phase}/receipt.json"
+                    receipt = json.loads(path.read_text())
+                    observed = {**receipt["determinism"], "algorithms": False}
+                    for invalid in ({**receipt, "determinism": observed},
+                                    {key: value for key, value in receipt.items() if key != "determinism"}):
+                        _write(path, invalid)
+                        result = sft_report.assess_run(run, job, self.config)
+                        self.assertEqual(result["outcome"], "indeterminate")
+                        self.assertFalse(result["eligible"])
+                        self.assertIn("determinism incompatible", result["issues"][0])
+                    _write(path, receipt)
+
+    def test_v2_requires_one_cublas_assignment_before_docker_image(self):
+        variable = "CUBLAS_WORKSPACE_CONFIG=:4096:8"
+        prefix = ["docker", "create", "--pull=never"]
+        image = [self.config["image"]["id"]]
+        controls = [["-e" + variable], ["-e", variable], ["--env", variable], ["--env=" + variable]]
+        for env in controls:
+            with self.subTest(env=env):
+                sft_report._check_cublas_environment(prefix + env + image, self.config, "fixture")
+                for malformed in (env + controls[0] + image, image + env,
+                                  ["--label", *env] + image,
+                                  ["--env", "CUBLAS_WORKSPACE_CONFIG", *env] + image):
+                    with self.assertRaisesRegex(ValueError, "CUBLAS_WORKSPACE_CONFIG"):
+                        sft_report._check_cublas_environment(prefix + malformed, self.config, "fixture")
+
+    def test_v1_preserves_archived_evidence_and_expired_partial_derivatives(self):
+        self.config["protocol_id"] = sft_protocol._V1_PROTOCOL
+        del self.config["training"]["determinism"]
+        self._pin_fixture_recipe("_V1_RECIPE_SHA256")
+        config_path = self.inputs / "requested_config"
+        _write(config_path, self.config)
+        self.input_hashes["requested_config"] = manifest.sha256_file(config_path)
+        job = self._job("pilot", "single")
+        run = self._new_run("pilot-expired-v1", job)
+        self._write_phase(run, job, "pilot-expired-v1", "pilot")
+        self._write_phase(run, job, "pilot-expired-v1", "resume")
+        self._cleanup(run, "pilot-expired-v1", job)
+        self.assertEqual(sft_report.assess_run(run, job, self.config)["outcome"], "qualified")
+        ref = self._finish(run, job, "qualified")
+        campaign = self._close("pilot-expired-v1", "pilot", [ref], ["single"])
+        self._publish(campaign, "PARTIAL", observed=7200.25)
+        report = sft_report.build_report(campaign)
+        self.assertEqual(report["status"], "partial")
+        self.assertEqual(report["qualified_groups"], [])
+        self.assertIn("duración hasta la publicación superior al límite", report["errors"][0])
+        self.assertEqual(report["runs"][0]["observed_outcome"], "qualified")
+        self.assertNotIn("recovery_diagnostics", report["runs"][0])
+        for name in ("first", "reconstructed"):
+            sft_report.write_report(self.root / name, sft_report.build_report(campaign))
+        for extension in ("json", "md"):
+            self.assertEqual((self.root / f"first.{extension}").read_bytes(),
+                             (self.root / f"reconstructed.{extension}").read_bytes())
 
     def test_ready_preflight_replays_idle_evidence_without_comparing_pids(self):
         row = self.preflight["nodes"][0]

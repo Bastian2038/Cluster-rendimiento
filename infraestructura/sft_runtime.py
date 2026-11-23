@@ -571,6 +571,8 @@ def phase_command(config, probe, workspace, campaign_id, owner, name, worker, se
         "PYTHONUNBUFFERED": "1", "HF_HOME": "/work/cache/huggingface", "HF_HUB_CACHE": "/models",
         "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "HF_HUB_DISABLE_TELEMETRY": "1",
         "XDG_CACHE_HOME": "/work/cache", "TORCH_HOME": "/work/cache/torch"}
+    if "determinism" in config["training"]:
+        env["CUBLAS_WORKSPACE_CONFIG"] = config["training"]["determinism"]["cublas_workspace_config"]
     for key, value in env.items():
         argv += ["--env", f"{key}={value}"]
     return [*argv, "--entrypoint", "timeout", config["image"]["id"], "--signal=TERM",

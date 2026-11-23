@@ -7,6 +7,7 @@ calificación corresponde al piloto autorizado en la imagen fijada.
 from array import array
 from contextlib import nullcontext
 import copy
+from itertools import product
 import json
 from pathlib import Path
 import pickle
@@ -17,7 +18,7 @@ import tempfile
 import time
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from infraestructura import sft_checkpoint as checkpoint
 from infraestructura import sft_protocol as protocol
@@ -174,6 +175,91 @@ sft_train.main(['--help'])
                 with self.subTest(field=field), self.assertRaisesRegex(ValueError, field):
                     train.framework_versions({"image": wrong}, torch, transformers)
 
+    def test_historical_recipe_does_not_enable_new_controls_or_require_environment(self):
+        with patch.dict(train.os.environ, {}, clear=True):
+            self.assertIsNone(train.validate_determinism_environment({"training": {}}))
+            self.assertIsNone(train.configure_determinism({"training": {}}, object()))
+
+    def test_v2_requires_exact_policy_and_cublas_environment_before_cuda(self):
+        config = {"training": {"determinism": dict(train.DETERMINISM)}}
+        for environment in ({}, {"CUBLAS_WORKSPACE_CONFIG": ":16:8"}):
+            with patch.dict(train.os.environ, environment, clear=True), self.assertRaisesRegex(ValueError, "launcher"):
+                train.validate_determinism_environment(config)
+        with patch.dict(train.os.environ, {"CUBLAS_WORKSPACE_CONFIG": ":4096:8"}):
+            self.assertEqual(train.validate_determinism_environment(config), train.DETERMINISM)
+            for policy in ({}, {**train.DETERMINISM, "warn_only": True},
+                           {**train.DETERMINISM, "algorithms": 1}):
+                with self.subTest(policy=policy), self.assertRaisesRegex(ValueError, "cinco controles"):
+                    train.validate_determinism_environment({"training": {"determinism": policy}})
+
+    def test_v2_records_effective_strict_controls_without_calling_cuda(self):
+        calls = []
+        state = {"algorithms": False, "warn_only": True}
+
+        def set_algorithms(enabled, *, warn_only):
+            calls.append((enabled, warn_only))
+            state.update(algorithms=enabled, warn_only=warn_only)
+
+        def unexpected_cuda():
+            self.fail("los controles deben fijarse antes de consultar CUDA")
+
+        torch = SimpleNamespace(use_deterministic_algorithms=set_algorithms,
+            are_deterministic_algorithms_enabled=lambda: state["algorithms"],
+            is_deterministic_algorithms_warn_only_enabled=lambda: state["warn_only"],
+            backends=SimpleNamespace(cudnn=SimpleNamespace(deterministic=False, benchmark=True)),
+            cuda=SimpleNamespace(is_available=unexpected_cuda))
+        config = {"training": {"determinism": dict(train.DETERMINISM)}}
+        with patch.dict(train.os.environ, {"CUBLAS_WORKSPACE_CONFIG": ":4096:8"}):
+            observed = train.configure_determinism(config, torch)
+            self.assertEqual(observed, train.DETERMINISM)
+            self.assertEqual(calls, [(True, False)])
+            torch.are_deterministic_algorithms_enabled = lambda: False
+            with self.assertRaisesRegex(RuntimeError, "efectivos"):
+                train.configure_determinism(config, torch)
+
+    def test_identity_records_each_ranks_controls_before_group_even_on_oom(self):
+        class CudaOOM(RuntimeError):
+            pass
+
+        torch = Mock()
+        dist = torch.distributed
+        modules = {"torch": torch, "torch.distributed": dist, "torch.distributed.fsdp": dist.fsdp,
+                   "torch.distributed.device_mesh": dist.device_mesh, "transformers": Mock(), "safetensors": Mock()}
+        torch.are_deterministic_algorithms_enabled.return_value = True
+        torch.is_deterministic_algorithms_warn_only_enabled.return_value = False
+        torch.cuda.is_available.return_value = True
+        torch.cuda.device_count.return_value = 1
+        torch.cuda.OutOfMemoryError = CudaOOM
+        dist.all_gather_object.side_effect = CudaOOM("CUDA out of memory")
+        inventory = protocol.cluster_config(self.config)
+        hosts = {row["node_id"]: row["expected_hostname"] for row in inventory["nodes"]}
+        env = {"WORLD_SIZE": "4", "LOCAL_RANK": "0", "LOCAL_WORLD_SIZE": "1", "CUBLAS_WORKSPACE_CONFIG": ":4096:8"}
+        with (patch.dict(sys.modules, modules), patch.dict(train.os.environ, env),
+              patch.object(train.observation, "collect_sample", return_value={}),
+              patch.object(train, "framework_versions"), patch.object(train, "resume_digest"),
+              patch.object(train.socket, "gethostname") as hostname, patch.object(protocol, "load_config") as load):
+            for phase, rank, version in product(("pilot", "resume", "measure"), range(4), ("v1", "v2")):
+                with self.subTest(phase=phase, rank=rank, version=version):
+                    fields = {"determinism": train.DETERMINISM} if version == "v2" else {}
+                    load.return_value = {**self.config, "training": fields}
+                    node = inventory["groups"]["four"][rank]
+                    gpu = f"GPU-00000000-0000-0000-0000-{rank:012x}"
+                    torch.cuda.get_device_properties.return_value.uuid = gpu
+                    hostname.return_value = hosts[node]
+                    train.os.environ["RANK"] = str(rank)
+                    identity = dict(IDENTITY, phase=phase, rank=rank, world_size=4,
+                                    hostname=hosts[node], node_id=node, gpu_uuid=gpu)
+                    out = self.root / version / node / phase
+                    args = SimpleNamespace(config=protocol.DEFAULT_CONFIG, out=out, checkpoint_dir=self.root / "ckpt",
+                                           phase=phase, node_id=node, run_id=identity["run_id"],
+                                           campaign_id=identity["campaign_id"])
+                    dist.init_process_group.side_effect = lambda **_: self.assertEqual(
+                        json.loads((out / "identity.json").read_text()), {**identity, **fields})
+                    with self.assertRaises(CudaOOM):
+                        train.execute(args)
+                    self.assertEqual(dist.all_gather_object.call_args.args[1], identity)
+                    self.assertFalse((out / "receipt.json").exists())
+
     def test_tensor_shapes_bind_names_and_shapes_even_at_same_parameter_count(self):
         model = SmallModel()
         config = {"model": {"tensor_shapes_sha256": protocol.tensor_shapes_sha256(
@@ -246,6 +332,103 @@ sft_train.main(['--help'])
             row, _ = train._train_step(work, None, optimizer, torch=torch, dist=dist, device=0, world_size=1, audit=True)
         self.assertEqual(row["seconds"], 3)
         self.assertEqual(row["parameter_audit_seconds"], 22)
+
+    def test_recovery_hashes_comparison_and_three_barrier_waits_have_separate_cost(self):
+        elapsed = [0.0]
+        events = []
+
+        def advance(name, seconds, result=None):
+            events.append(name)
+            elapsed[0] += seconds
+            return result
+
+        torch = SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda device: None), float32="float32",
+                                zeros=lambda *a, **kw: SimpleNamespace(item=lambda: 4.0))
+        dist = SimpleNamespace(all_reduce=lambda *a, **kw: advance("reduce", 2),
+                               barrier=lambda: advance("barrier", 5), ReduceOp=SimpleNamespace(SUM="sum"))
+        optimizer = SimpleNamespace(zero_grad=lambda **kwargs: None, step=lambda: advance("sgd", 1))
+        work = {"step": 3, "batches": [], "global_supervised_tokens": 4}
+        with (patch.object(train.time, "perf_counter", side_effect=lambda: elapsed[0]),
+              patch.object(train, "begin_recovery_diagnostic", side_effect=lambda *a: advance("before", 2, {})),
+              patch.object(train, "recovery_gradient_diagnostic", side_effect=lambda *a: advance("gradient", 3)),
+              patch.object(train, "finish_recovery_diagnostic", side_effect=lambda *a: advance("after", 4)),
+              patch.object(train, "compare_recovery_diagnostic", side_effect=lambda *a:
+                           advance("compare", 7, {"gradients_equal": False})),
+              patch.object(train, "cuda_memory", return_value={})):
+            row, proof = train._train_step(work, None, optimizer, torch=torch, dist=dist, device=0,
+                world_size=1, audit=False, recovery_probe=True, recovery_reference={"method": "fixture"})
+        self.assertEqual(row["seconds"], 3)
+        self.assertEqual(row["recovery_diagnostic_seconds"], 31)
+        self.assertEqual(row["parameter_audit_seconds"], 0)
+        self.assertFalse(row["audit_performed"])
+        self.assertIsNone(proof)
+        self.assertEqual(row["recovery_diagnostic"]["rank_barriers"], 3)
+        self.assertFalse(row["recovery_diagnostic"]["comparison_to_pilot"]["gradients_equal"])
+        self.assertEqual(events, ["before", "barrier", "reduce", "gradient", "barrier", "sgd", "after", "compare", "barrier"])
+
+    def test_measure_without_recovery_does_not_add_barriers_or_diagnostic(self):
+        torch = SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda device: None), float32="float32",
+                                zeros=lambda *a, **kw: SimpleNamespace(item=lambda: 4.0))
+        dist = SimpleNamespace(all_reduce=lambda *a, **kw: None, ReduceOp=SimpleNamespace(SUM="sum"))
+        optimizer = SimpleNamespace(zero_grad=lambda **kwargs: None, step=lambda: None)
+        work = {"step": 6, "batches": [], "global_supervised_tokens": 4}
+        with patch.object(train, "cuda_memory", return_value={}):
+            row, _ = train._train_step(work, None, optimizer, torch=torch, dist=dist, device=0,
+                                       world_size=1, audit=False)
+        self.assertNotIn("recovery_diagnostic", row)
+        self.assertNotIn("recovery_diagnostic_seconds", row)
+        self.assertEqual(row["parameter_audit_seconds"], 0)
+
+    def test_recovery_diagnostic_distinguishes_restored_weights_gradients_and_update(self):
+        def update(multiplier=1):
+            model, torch = SmallModel(), SmallTorch()
+            for _, parameter in model.named_parameters():
+                parameter.grad = SmallTensor([0.25 * multiplier] * parameter.numel())
+            before_rng = copy.deepcopy(random.getstate())
+            diagnostic = train.begin_recovery_diagnostic(model, torch, 3)
+            train.recovery_gradient_diagnostic(model, torch, diagnostic)
+            for _, parameter in model.named_parameters():
+                for index, grad in enumerate(parameter.grad.values):
+                    parameter.values[index] -= 0.001 * grad
+            train.finish_recovery_diagnostic(model, torch, diagnostic)
+            self.assertEqual(before_rng, random.getstate())
+            return diagnostic
+
+        original, resumed, different_gradient = update(), update(), update(2)
+        comparison = train.compare_recovery_diagnostic(resumed, original)
+        self.assertTrue(all(value for key, value in comparison.items() if key != "reference_phase"))
+        self.assertEqual(resumed["local_updated_tensor_count"], 2)
+        self.assertLessEqual(resumed["hash_chunk_bytes"], 1024 * 1024)
+        changed = train.compare_recovery_diagnostic(different_gradient, original)
+        self.assertTrue(changed["weights_before_forward_equal"])
+        self.assertFalse(changed["gradients_equal"])
+        self.assertFalse(changed["weights_after_optimizer_equal"])
+        for row in resumed["tensors"]:
+            self.assertEqual(len(row["gradient_sha256"]), 64)
+            self.assertNotEqual(row["weight_before_forward_sha256"], row["weight_after_optimizer_sha256"])
+
+    def test_recovery_diagnostic_oom_is_audit_evidence_for_all_three_reads(self):
+        class CudaOOM(RuntimeError):
+            pass
+
+        def oom(*args):
+            raise CudaOOM("CUDA out of memory")
+
+        helpers = ("begin_recovery_diagnostic", "recovery_gradient_diagnostic", "finish_recovery_diagnostic")
+        for failed in helpers:
+            stages = ["train_step"]
+            torch = SimpleNamespace(cuda=SimpleNamespace(synchronize=lambda device: None, OutOfMemoryError=CudaOOM),
+                                    float32="float32", zeros=lambda *a, **kw: SimpleNamespace(item=lambda: 4.0))
+            dist = SimpleNamespace(all_reduce=lambda *a, **kw: None, barrier=lambda: None,
+                                   ReduceOp=SimpleNamespace(SUM="sum"))
+            optimizer = SimpleNamespace(zero_grad=lambda **kwargs: None, step=lambda: None)
+            with (patch.object(train, helpers[0], side_effect=oom if failed == helpers[0] else lambda *a: {}),
+                  patch.object(train, helpers[1], side_effect=oom if failed == helpers[1] else lambda *a: None),
+                  patch.object(train, helpers[2], side_effect=oom if failed == helpers[2] else lambda *a: None),
+                  self.assertRaises(CudaOOM)):
+                train._train_step({"step": 3, "batches": [], "global_supervised_tokens": 4}, None, optimizer,
+                    torch=torch, dist=dist, device=0, world_size=1, audit=False, recovery_probe=True, set_stage=stages.append)
+            self.assertEqual(stages[-1], "parameter_audit")
 
     def test_snapshot_index_hashes_actual_files_and_rejects_missing_tensor(self):
         for name in ("config.json", "tokenizer.json", "tokenizer_config.json"):
