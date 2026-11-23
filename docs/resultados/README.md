@@ -1,6 +1,26 @@
 # Índice de resultados de rendimiento
 
-El **23 de noviembre de 2026 (UTC)**, el primer intento del piloto autorizado de SFT de Llama cerró como `partial` tras **21,249 s**, con **0 de 3 trabajos lanzados**. En los cuatro nodos se observó **0 % de utilización de GPU**, la consulta de cómputo devolvió una lista vacía y los puertos comprobados estaban libres. El preflight bloqueó Pegasus, Griffin y Draggon al encontrar Xorg y GNOME Shell como clientes gráficos de tipo `G`. Octopus figuró sin procesos de GPU. El cierre confirmó la limpieza de contenedores propios en los cuatro nodos. La evidencia corresponde al preflight y al cierre de la sesión. Queda pendiente completar la calificación del piloto y la matriz requiere una autorización posterior. [Informe del piloto](sft-piloto-20261123T005824.457752Z-1b711e50.md), [JSON del cierre](sft-piloto-20261123T005824.457752Z-1b711e50.json) y [criterio corregido](../sft-completo.md#recursos-y-ejecución-autorizada).
+### Segundo intento del piloto SFT
+
+El **23 de noviembre de 2026 (UTC)**, el intento `20261123T020835.137429Z-00bbd4e7` cerró como `partial` tras **223,042 s hasta la publicación del cierre**. Pegasus, Octopus, Griffin y Draggon completaron las fases `pilot` y `resume` de la corrida `20261123T020850.982184Z-6c270c5a`. La fase original acreditó gradientes finitos y no nulos y cambios de pesos en los **291 tensores lógicos**. Los recibos registran la restauración del checkpoint y la verificación de sus huellas.
+
+| Paso | Pérdida original | Pérdida tras restaurar | Diferencia absoluta |
+| --- | ---: | ---: | ---: |
+| 3 | 4,063664436340332 | 4,063664436340332 | 0 |
+| 4 | 4,209922790527344 | 4,219796180725098 | 0,009873390197754 |
+
+La diferencia del paso 4 superó el límite de **0,00430992279** y la clasificación del grupo de cuatro quedó indeterminada. La causa de la diferencia sigue abierta. El cierre dejó **cero grupos calificados** y los trabajos de dos y un nodo pendientes. No se registró ningún OOM y se verificó la limpieza de contenedores propios en los cuatro nodos. [Informe del segundo intento](sft-piloto-20261123T020835.137429Z-00bbd4e7.md) y [JSON del cierre](sft-piloto-20261123T020835.137429Z-00bbd4e7.json).
+
+| Archivo publicado | SHA-256 |
+| --- | --- |
+| JSON | `d61d5fe6d89a2a81cbc67ddadfad81676098f702cfe4a78b827af5ccf4a9513c` |
+| Markdown | `e4b6b9312d89d236cd42d02a36fdcc742361ab283b50025149d3fb81a35f8550` |
+
+### Primer intento del piloto SFT
+
+El **23 de noviembre de 2026 (UTC)**, el primer intento autorizado del piloto v1 de SFT de Llama cerró como `partial` tras **21,249 s**, con **0 de 3 trabajos lanzados**. En los cuatro nodos se observó **0 % de utilización de GPU**, la consulta de cómputo devolvió una lista vacía y los puertos comprobados estaban libres. El preflight bloqueó Pegasus, Griffin y Draggon al encontrar Xorg y GNOME Shell como clientes gráficos de tipo `G`. Octopus figuró sin procesos de GPU. El cierre confirmó la limpieza de contenedores propios en los cuatro nodos. La evidencia corresponde al preflight y al cierre de la sesión. [Informe del piloto](sft-piloto-20261123T005824.457752Z-1b711e50.md), [JSON del cierre](sft-piloto-20261123T005824.457752Z-1b711e50.json) y [criterio corregido](../sft-completo.md#recursos-y-ejecución-autorizada).
+
+### Inferencia y serving
 
 El **22 de noviembre de 2026**, la campaña de capacidad de serving cerró **COMPLETE**, con 18 corridas, 126 puntos verificados y 16 128 solicitudes medidas. Comparó Qwen3.5-9B y Llama-3.1-8B-Instruct en BF16, sin cuantización, en tres bloques 4 → 2 → 1. TP4 reunió a Pegasus, Octopus, Griffin y Draggon, TP2 a Pegasus + Octopus y TP1 a Pegasus. Las llegadas regulares alternaron entradas de 512 y 2048 tokens, con 128 de salida. El SLO conjunto exige TTFT ≤ 3 s y latencia total ≤ 12 s desde la llegada programada en al menos el 95 % de todas las ofertas. El umbral es 122/128 por punto, incluidos errores, rechazos y timeouts en el denominador. [Informe y puntos](serving-capacidad-20261122T140741.033775Z-0cdcd86f.md) y [JSON con revisiones, hashes y evidencia](serving-capacidad-20261122T140741.033775Z-0cdcd86f.json).
 
