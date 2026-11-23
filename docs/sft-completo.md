@@ -1,6 +1,6 @@
 # Protocolo de SFT completo de Llama-3.1-8B-Instruct
 
-El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. El piloto califica las topologías mediante una prueba de actualización de pesos y restauración. La matriz de rendimiento requiere autorización independiente. [Metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
+El estudio compara el ajuste de todos los parámetros con trabajo global fijo en cuatro nodos, Pegasus + Octopus y Pegasus solo. El piloto califica las topologías mediante una prueba de actualización de pesos y restauración. La matriz de tres bloques cerró el 23 de noviembre de 2026 con autorización independiente y evidencia completa. Cada nueva ejecución requiere autorización propia. [Cierre de la matriz](#cierre-de-la-matriz-del-23-de-noviembre-de-2026), [metodología](metodologia-rendimiento.md#d-sft-completo) y [reglas operacionales](../AGENTS.md).
 
 ## Estado del piloto
 
@@ -24,7 +24,7 @@ Se usa FSDP2 con NCCL por las interfaces f0 configuradas, un rank por nodo y una
 
 Se prueba cada topología en orden cuatro → dos → uno. La fase `pilot` ejecuta cuatro pasos del optimizador y guarda un checkpoint local al terminar el segundo. La fase `resume` lanza procesos nuevos en la misma topología, restaura los pesos, el estado y el cursor del muestreo, y ejecuta los pasos 3 y 4 con los mismos IDs. La pérdida media global debe ser finita y cumplir `abs(restaurada - original) ≤ 0,0001 + 0,001 × abs(original)` en cada uno de esos pasos.
 
-La receta v2 conserva la carga, SGD y la tolerancia de restauración de v1. Cada rank exige algoritmos deterministas en PyTorch y cuDNN. El lanzador fija el espacio de trabajo de cuBLAS antes de iniciar PyTorch. El calentamiento y las mediciones de la matriz usarán estos mismos controles. La causa de la diferencia de pérdida del paso 4 en v1 sigue abierta. [Código de PyTorch en la revisión fijada](https://github.com/pytorch/pytorch/blob/9186a08b2c/aten/src/ATen/native/transformers/cuda/attention_backward.cu), [algoritmos deterministas de la misma revisión](https://github.com/pytorch/pytorch/blob/9186a08b2c/torch/__init__.py#L1271) y [reproducibilidad de cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility).
+La receta v2 conserva la carga, SGD y la tolerancia de restauración de v1. Cada rank exige algoritmos deterministas en PyTorch y cuDNN. El lanzador fija el espacio de trabajo de cuBLAS antes de iniciar PyTorch. El calentamiento y las mediciones de la matriz usan estos mismos controles. La causa de la diferencia de pérdida del paso 4 en v1 sigue abierta. [Código de PyTorch en la revisión fijada](https://github.com/pytorch/pytorch/blob/9186a08b2c/aten/src/ATen/native/transformers/cuda/attention_backward.cu), [algoritmos deterministas de la misma revisión](https://github.com/pytorch/pytorch/blob/9186a08b2c/torch/__init__.py#L1271) y [reproducibilidad de cuBLAS](https://docs.nvidia.com/cuda/cublas/index.html#results-reproducibility).
 
 En v2, el paso 3 de las fases `pilot` y `resume` guarda en `steps.jsonl` las huellas por rank de los pesos maestros FP32 antes del forward, los gradientes, los pesos maestros tras SGD y el estado de los generadores aleatorios. Las huellas sirven para diagnosticar discrepancias sin cambiar el umbral de pérdida. La proyección excluye el coste de estas lecturas del tiempo de entrenamiento. La matriz omite estas lecturas.
 
@@ -34,11 +34,15 @@ Para calificar una topología se verifica la identidad de los ranks, las huellas
 
 ## Matriz de rendimiento
 
-El piloto proyecta **1.688,811 s** para cuatro nodos, **776,853 s** para Pegasus + Octopus y **1.138,824 s** para Pegasus solo. Los **3.604,488 s** corresponden al total de los tres bloques e incluyen el margen del 25 %. Se reservan otros **300 s** para el cierre de la sesión. [Proyección por topología](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.json).
+Como antecedente de preparación, el piloto proyectó **1.688,811 s** para cuatro nodos, **776,853 s** para Pegasus + Octopus y **1.138,824 s** para Pegasus solo. Los **3.604,488 s** estimados corresponden al total de los tres bloques e incluyen el margen del 25 %. Se reservaron otros **300 s** para el cierre de la sesión. [Proyección por topología](resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.json).
 
-La matriz prevé tres bloques contemporáneos en orden cuatro → dos → uno. Cada corrida parte del snapshot fijado y hace cinco pasos de calentamiento y veinte medidos. La ventana de los pasos 6 a 25 abarca **40.960 tokens procesados y 10.240 supervisados** de 80 ejemplos. Para throughput se divide cada total por la mayor ventana local observada entre los ranks. Se conservan los tiempos por paso, la pérdida, el pico de memoria asignada por CUDA y la telemetría por nodo. El pico del asignador describe una parte del uso de memoria unificada.
+La matriz usa tres bloques contemporáneos en orden cuatro → dos → uno. Cada corrida parte del snapshot fijado y hace cinco pasos de calentamiento y veinte medidos. La ventana de los pasos 6 a 25 abarca **40.960 tokens procesados y 10.240 supervisados** de 80 ejemplos. Para throughput se divide cada total por la mayor ventana local observada entre los ranks. Se conservan los tiempos por paso, la pérdida, el pico de memoria asignada por CUDA y la telemetría por nodo. El pico del asignador describe una parte del uso de memoria unificada.
 
 El speedup divide el tiempo de la topología menor por el de la mayor para el mismo bloque y trabajo. La eficiencia divide ese cociente por la razón de nodos. Se informa cobertura, mediana y rango para los pares válidos 4/2, 2/1 y 4/1, junto con la variación entre bloques y las exclusiones. Si una topología menor registra OOM, se informa la viabilidad observada para esta receta. El corpus y la ventana caracterizan rendimiento con este modelo y batch. La calidad tras el ajuste y el rendimiento de otros modelos, longitudes u optimizadores quedan fuera del estudio.
+
+### Cierre de la matriz del 23 de noviembre de 2026
+
+El 23 de noviembre de 2026, la campaña `20261123T145848.085415Z-0ea5e3a5` de Llama-3.1-8B-Instruct con FSDP2 y batch global **4** cerró **COMPLETE** con nueve corridas en tres bloques 4 → 2 → 1, sin OOM ni pendientes y con retirada verificada de los contenedores propios. Cada corrida midió **80 ejemplos, 40.960 tokens procesados y 10.240 supervisados**. La duración real hasta publicar el cierre fue **2.755,177 s**, dentro del límite autorizado de **5.400 s**. [Síntesis de resultados](resultados/README.md#matriz-de-sft-completo-de-llama) y [JSON canónico](resultados/sft-matriz-20261123T145848.085415Z-0ea5e3a5.json).
 
 ## Preparación en CPU
 
@@ -73,10 +77,12 @@ El comando del piloto incluye el preflight operativo dentro de su presupuesto y 
 python3 -B -m infraestructura.sft pilot --config "$sft_config" --execute --session-limit-seconds 7200
 ```
 
-Para el piloto v2, `sft_pilot_dir` corresponde a `resultados/raw/sft-campaign/20261123T124235.848078Z-2b3e57de`. La solicitud de autorización de la matriz incluye el identificador del piloto y el SHA-256 del JSON publicado. El ejecutor vuelve a generar el informe y comprueba la copia del commit de la matriz en `docs/resultados/sft-piloto-<id>.json`. Si se publicó en otra ruta, se indica con `--pilot-report`. [Identificador y huellas de publicación](resultados/README.md#piloto-v2-de-sft-completo).
+La solicitud de autorización de cada matriz incluye el identificador del piloto y el SHA-256 del JSON publicado. El ejecutor vuelve a generar el informe y comprueba la copia del commit de la matriz en `docs/resultados/sft-piloto-<id>.json`. Si se publicó en otra ruta, se indica con `--pilot-report`. La matriz del 23 de noviembre se ejecutó con el límite autorizado de 5.400 s. [Identificador y huellas de publicación del piloto](resultados/README.md#piloto-v2-de-sft-completo).
 
 ```bash
-python3 -B -m infraestructura.sft run --config "$sft_config" --pilot-dir "$sft_pilot_dir" --execute --session-limit-seconds 28800
+python3 -B -m infraestructura.sft run \
+  --pilot-dir resultados/raw/sft-campaign/20261123T124235.848078Z-2b3e57de \
+  --execute --session-limit-seconds 5400
 ```
 
 ## Evidencia y publicación

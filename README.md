@@ -1,6 +1,6 @@
 # Rendimiento en clúster de cuatro nodos
 
-Este repositorio caracteriza **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. El inventario pasivo del 2026-10-31 confirmó identidad y acceso a tres NVIDIA DGX Spark y un ASUS GX10 (Griffin), todos con GPU GB10. LLDP anuncia un switch MikroTik CRS804-4DDQ. Queda pendiente corroborar su mapa de puertos y cables. Hay mediciones NCCL y de inferencia en cuatro, dos y un nodo. [Inventario del clúster](docs/cluster-cuatro-nodos.md).
+Este repositorio caracteriza **Pegasus, Octopus, Griffin y Draggon** con Qwen y Llama. El inventario pasivo del 2026-10-31 confirmó identidad y acceso a tres NVIDIA DGX Spark y un ASUS GX10 (Griffin), todos con GPU GB10. LLDP anuncia un switch MikroTik CRS804-4DDQ. Queda pendiente corroborar su mapa de puertos y cables. Se midieron la comunicación con NCCL, la inferencia de ambas familias y el SFT completo de Llama en cuatro, dos y un nodo. [Inventario del clúster](docs/cluster-cuatro-nodos.md).
 
 La primera campaña completa de inferencia 4/2, del 2026-11-06, midió Qwen3.5-9B y Llama-3.1-8B-Instruct en BF16 con 12 corridas, 72 celdas, tres bloques y 2304 solicitudes medidas sin fallos. Cuatro nodos mejoraron cinco de las seis cargas de cada modelo. Con entrada 2048 y concurrencia 8 fueron más lentos en los tres bloques. [Resultados de inferencia 4/2](docs/resultados/inference-20261106-analysis.md)
 
@@ -8,7 +8,9 @@ El 19 de noviembre se completó la referencia contemporánea de Pegasus en los t
 
 La campaña de capacidad de serving del 22 de noviembre cerró con 18 corridas, 126 puntos verificados y 16.128 solicitudes medidas. Con cuatro y dos nodos, Qwen3.5-9B cumplió el SLO conjunto hasta 1,00 solicitudes/s de las tasas probadas y Llama-3.1-8B-Instruct hasta 1,25. Pegasus solo cumplió hasta 0,50 con ambos modelos. Cuatro y dos nodos quedaron en el mismo intervalo por modelo, delimitado con una resolución de 0,25 solicitudes/s en la frontera. [Capacidad observada y refinamiento opcional](docs/capacidad-serving.md).
 
-El piloto v2 de SFT completo de Llama-3.1-8B-Instruct cerró el 23 de noviembre en **17 min 57 s**. El grupo de cuatro nodos, Pegasus + Octopus y Pegasus solo calificaron tras reproducir exactamente las pérdidas de los pasos 3 y 4 al restaurar el checkpoint. La matriz que medirá el rendimiento en tres bloques requiere autorización independiente. [Cierre del piloto v2](docs/resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.md), [intentos v1](docs/resultados/README.md#segundo-intento-del-piloto-sft), [protocolo SFT](docs/sft-completo.md) y [hoja de ruta](docs/hoja-de-ruta.md).
+El piloto v2 de SFT completo de Llama-3.1-8B-Instruct cerró el 23 de noviembre en **17 min 57 s**. El grupo de cuatro nodos, Pegasus + Octopus y Pegasus solo calificaron tras reproducir exactamente las pérdidas de los pasos 3 y 4 al restaurar el checkpoint. [Cierre del piloto v2](docs/resultados/sft-piloto-20261123T124235.848078Z-2b3e57de.md) e [intentos v1](docs/resultados/README.md#segundo-intento-del-piloto-sft).
+
+La matriz de SFT de ese día completó nueve corridas. **Pegasus + Octopus fueron los más rápidos en los tres bloques** con cuatro ejemplos por paso global. Para los mismos 40.960 tokens procesados, la mediana fue de **135,35 s en dos nodos**, 177,00 s en Pegasus solo y 337,71 s en cuatro nodos. Cuatro nodos tuvieron el menor pico de memoria asignada por GPU, 20,85 GiB. [Mediciones y comparaciones pareadas](docs/resultados/sft-matriz-20261123T145848.085415Z-0ea5e3a5.md), [protocolo SFT](docs/sft-completo.md) y [hoja de ruta](docs/hoja-de-ruta.md).
 
 La [sesión NCCL con el filtro f0](docs/resultados/nccl-20261106-f0-analysis.md)
 completó las 31 pruebas NCCL en orden 4 → 2 → 1, con 666 filas válidas, cero

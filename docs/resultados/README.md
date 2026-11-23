@@ -1,12 +1,43 @@
 # Índice de resultados de rendimiento
 
+### Matriz de SFT completo de Llama
+
+El **23 de noviembre de 2026 (UTC)**, la campaña `20261123T145848.085415Z-0ea5e3a5` cerró **COMPLETE** con **9 corridas** en tres bloques 4 → 2 → 1, sin OOM, fallos ni trabajos pendientes y con retirada de los contenedores propios verificada en los cuatro nodos. Comenzó a las **14:58:47,805228 UTC** y publicó el cierre a las **15:44:42,982672 UTC**. La duración real fue **2.755,177 s**, dentro del límite de 5.400 s. Partió del commit `5ac1085854bd1552087b803e6e9ff80b9537af1d`, con árbol limpio, y del piloto v2 `20261123T124235.848078Z-2b3e57de`. [Cierre del piloto v2](sft-piloto-20261123T124235.848078Z-2b3e57de.md).
+
+Se midió Llama-3.1-8B-Instruct con FSDP2, batch global de **4 ejemplos**, microbatch 1 y acumulación 1/2/4 por rank en cuatro/dos/un nodo. Cada corrida hizo cinco pasos de calentamiento y veinte medidos, con trabajo global fijo de **80 ejemplos, 40.960 tokens procesados y 10.240 supervisados** en su ventana medida. El modelo, la revisión y la receta permanecieron fijados entre topologías. [Protocolo y alcance](../sft-completo.md#matriz-de-rendimiento).
+
+Las ventanas y las dos tasas de la tabla son medianas de los tres bloques. Cada ventana es la mayor de las ventanas locales de sus ranks y cada tasa divide el trabajo global por esa ventana. Para la memoria se toma el mayor pico de asignación CUDA entre las GPU de cada corrida y se informa la mediana de esos tres máximos. En cada topología, todos los nodos y bloques registraron el mismo pico. El asignador contabiliza una parte de la memoria unificada.
+
+| Topología | Ventana mediana (s) | Tokens procesados/s | Tokens supervisados/s | Pico asignado por GPU (GiB) |
+| --- | ---: | ---: | ---: | ---: |
+| Cuatro nodos con Pegasus, Octopus, Griffin y Draggon | 337,714 | 121,286 | 30,321 | 20,854 |
+| Dos nodos con Pegasus + Octopus | 135,348 | 302,628 | 75,657 | 49,791 |
+| Pegasus solo | 177,001 | 231,411 | 57,853 | 64,757 |
+
+En las corridas de Pegasus solo, el paso 7 tardó **14,205 s, 8,870 s y 8,930 s** en los bloques 1, 2 y 3, respectivamente, y se conservó en todas las ventanas.
+
+El speedup es el tiempo de la topología menor dividido por el de la mayor **en el mismo bloque**. La eficiencia divide ese cociente por la razón de nodos. Las medianas y los rangos se calculan sobre los tres cocientes pareados, sin exclusiones.
+
+| Par | Bloques válidos / planificados / diseño | Speedup mediano [mínimo–máximo] | Eficiencia mediana [mínimo–máximo] |
+| --- | --- | --- | --- |
+| 4/2 | 3 / 3 / 3 | 0,4009 [0,4001–0,4011] | 0,2004 [0,2001–0,2006] |
+| 2/1 | 3 / 3 / 3 | 1,3067 [1,3031–1,3463] | 0,6533 [0,6515–0,6732] |
+| 4/1 | 3 / 3 / 3 | 0,5241 [0,5214–0,5397] | 0,1310 [0,1303–0,1349] |
+
+Pegasus + Octopus completaron la ventana antes que Pegasus solo y que cuatro nodos en los tres bloques. Los drivers observados fueron **580.173.02 en Pegasus y Octopus**, y **580.178.04 en Griffin y Draggon**. Las diferencias de tiempo son mediciones de estas configuraciones. La atribución a la red o a los drivers queda abierta. El alcance es esta receta de Llama con FSDP2 y batch global 4. La calidad tras el ajuste y otras cargas quedan fuera.
+
+| Archivo publicado | SHA-256 |
+| --- | --- |
+| [JSON canónico con corridas, entorno y evidencia](sft-matriz-20261123T145848.085415Z-0ea5e3a5.json) | `a0e6aba40451fcedc7796e6a79f1dfeaeec2c66065d452b52bac4a617bf19fcb` |
+| [Informe canónico de la matriz](sft-matriz-20261123T145848.085415Z-0ea5e3a5.md) | `9a47893ebc8dde34b962c1584d1439d32dd286e976592f2adf676e15fec24bf9` |
+
 ### Piloto v2 de SFT completo
 
 El **23 de noviembre de 2026 (UTC)**, el grupo de cuatro nodos, Pegasus + Octopus y Pegasus solo calificaron en el piloto `20261123T124235.848078Z-2b3e57de` de Llama-3.1-8B-Instruct. Desde el inicio hasta la publicación del cierre `complete` transcurrieron **17 min 57 s**. Los tres trabajos completaron `pilot` y `resume` sin OOM. El cierre confirmó la retirada de los contenedores propios en los cuatro nodos.
 
 En cada topología, la auditoría cubrió **8.030.261.248 parámetros** y verificó gradientes finitos, gradiente no nulo y cambio de pesos en cada uno de los **291 tensores lógicos**. Tras restaurar el checkpoint del paso 2, la pérdida del paso 3 volvió a ser **4,055137634277344** y la del paso 4, **4,321949005126953**, idénticas a las originales en los tres trabajos. En cada uno de los siete ranks, las huellas del paso 3 coincidieron entre `pilot` y `resume` para los pesos antes del forward, los gradientes, los pesos tras SGD y los estados de los generadores aleatorios.
 
-En orden 4 → 2 → 1, la proyección para los tres bloques suma **1.688,811 + 776,853 + 1.138,824 = 3.604,488 s**, incluido el margen del 25 %. La sesión reserva otros **300 s** para el cierre. Las comparaciones de rendimiento corresponden a las ventanas medidas de la matriz, cuya ejecución requiere autorización independiente. [Protocolo de la matriz](../sft-completo.md#matriz-de-rendimiento).
+Como antecedente de preparación, el piloto proyectó en orden 4 → 2 → 1 **1.688,811 + 776,853 + 1.138,824 = 3.604,488 s** para los tres bloques, incluido el margen del 25 %, y se reservaron otros **300 s** para el cierre. La matriz se autorizó por separado y sus comparaciones usan las ventanas medidas publicadas arriba. [Protocolo de la matriz](../sft-completo.md#matriz-de-rendimiento).
 
 | Archivo publicado | SHA-256 |
 | --- | --- |
@@ -82,6 +113,7 @@ corrida de las 16:10 UTC validó ese filtro y completó la matriz.
 
 | Corrida | Fecha UTC | Participantes observados | Commit de captura | Alcance y resultado |
 | --- | --- | --- | --- | --- |
+| [20261123T145848.085415Z-0ea5e3a5](sft-matriz-20261123T145848.085415Z-0ea5e3a5.md) | 2026-11-23 14:58–15:44 | Pegasus (`spark-cfea`), Octopus (`spark-60c3`), Griffin (`gx10-726d`) y Draggon (`spark-192d`) formaron el grupo de cuatro con ranks 0–3 respectivamente. Pegasus + Octopus usaron ranks 0–1 en el par. Pegasus solo usó rank 0. | `5ac1085854bd1552087b803e6e9ff80b9537af1d` | COMPLETE. Llama-3.1-8B-Instruct, FSDP2, batch global 4. Nueve corridas, tres bloques 4 → 2 → 1 y cobertura 3/3 para cada par. Retirada verificada. [JSON de mediciones y evidencia](sft-matriz-20261123T145848.085415Z-0ea5e3a5.json). |
 | [20261123T124235.848078Z-2b3e57de](sft-piloto-20261123T124235.848078Z-2b3e57de.md) | 2026-11-23 12:42–13:00 | Pegasus, Octopus, Griffin y Draggon con ranks 0–3. Pegasus + Octopus con ranks 0–1. Pegasus con rank 0. | `482911fdef86aa62cba93f392846b2023cebf4f1` | COMPLETE. Piloto v2 de SFT completo con las tres topologías calificadas. |
 | [20261122T140741.033775Z-0cdcd86f](serving-capacidad-20261122T140741.033775Z-0cdcd86f.md) | 2026-11-22 14:07–22:59 | TP4 Pegasus, Octopus, Griffin y Draggon, ranks 0–3. TP2 Pegasus + Octopus, ranks 0–1. TP1 Pegasus, rank 0. | `f01ad0fc7c6504304cedc5298c4db463396c056a` | COMPLETE con 18 corridas y 126 puntos en tres bloques para Qwen3.5-9B y Llama-3.1-8B-Instruct en BF16 sin cuantización. Capacidad ofrecida en sol/s con ≥95 % de cumplimiento conjunto de TTFT ≤3 s y total ≤12 s. La síntesis anterior detalla las fronteras, las siguientes tasas ensayadas y los límites de resolución y estabilidad. [JSON de puntos, fronteras y evidencia](serving-capacidad-20261122T140741.033775Z-0cdcd86f.json). |
 | [20261121T210428.731080Z-c8c1766d](inference-20261121T210428.731080Z-c8c1766d.md) | 2026-11-21 21:04–23:30 | TP4 Pegasus, Octopus, Griffin y Draggon. TP2 Pegasus + Octopus. TP1 Pegasus. | `5e78f701d42c554f6fbde0091c07bdbb8fd2fb53` | COMPLETE. 54 celdas primarias, 24 auxiliares y 2496 solicitudes medidas. [Resultados por fase y por rank](inference-20261121T210428.731080Z-c8c1766d-diagnostico.json), [cronologías del 21](inference-20261121T210428.731080Z-c8c1766d-diagnostico.pdf) y [reconstrucción del 19](inference-20261119-cronologia.md). |
